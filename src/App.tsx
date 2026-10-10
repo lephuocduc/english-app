@@ -32,6 +32,7 @@ import { VocabularyView } from './features/vocabulary/VocabularyView'
 import { ProgressView } from './features/progress/ProgressView'
 import { Navbar } from './components/Navbar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
+import { CloudSyncModal } from './components/CloudSyncModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 
@@ -39,6 +40,7 @@ export function App() {
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<NavTab>('practice')
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+  const [showCloudSyncModal, setShowCloudSyncModal] = useState(false)
 
   // Quick YouTube URL input state
   const [quickUrlInput, setQuickUrlInput] = useState('')
@@ -85,6 +87,31 @@ export function App() {
 
   const activeSegment: SentenceSegment | undefined =
     activeLesson?.sentences ? activeLesson.sentences[activeSegmentIndex] : undefined
+
+  // Refresh all state from local storage after cloud sync
+  const refreshAllData = useCallback(() => {
+    const freshVideos = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
+    setVideosList(freshVideos)
+    setVocabularyList(storage.loadVocabulary())
+    const map: Record<string, UserLessonProgress> = {}
+    freshVideos.forEach((l) => {
+      const prog = storage.loadLessonProgress(l.id)
+      if (prog) map[l.id] = prog
+    })
+    setAllLessonsProgress(map)
+  }, [])
+
+  // Auto-sync with Cloudflare D1 on initial load
+  useEffect(() => {
+    storage
+      .syncWithCloud()
+      .then((res) => {
+        if (res.lessonsCount > 0 || res.vocabCount > 0 || res.progressCount > 0) {
+          refreshAllData()
+        }
+      })
+      .catch(() => {})
+  }, [refreshAllData])
 
   // Helper to update a lesson's title with the real YouTube title
   const updateVideoTitle = useCallback((videoId: string, newTitle: string) => {
@@ -626,6 +653,7 @@ export function App() {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+        onOpenCloudSync={() => setShowCloudSyncModal(true)}
         vocabularyCount={vocabularyList.length}
       />
 
@@ -909,6 +937,13 @@ export function App() {
       <KeyboardShortcutsModal
         isOpen={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
+      />
+
+      {/* Cloudflare D1 Sync Modal */}
+      <CloudSyncModal
+        isOpen={showCloudSyncModal}
+        onClose={() => setShowCloudSyncModal(false)}
+        onSyncComplete={refreshAllData}
       />
 
       {/* Quick Transcript Import Modal */}

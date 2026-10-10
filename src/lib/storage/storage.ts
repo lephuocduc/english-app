@@ -153,6 +153,19 @@ export const storage = {
     current.updatedAt = new Date().toISOString()
 
     safeSetItem(`${STORAGE_KEYS.LESSON_PROGRESS_PREFIX}${lessonId}`, current)
+
+    // Synchronize to Cloudflare D1 in background
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient
+        .saveSentenceProgress(lessonId, sentenceProgress.sentenceId, {
+          userInput: sentenceProgress.userInput,
+          score: sentenceProgress.score,
+          isRevealed: sentenceProgress.isRevealed,
+          attemptsCount: sentenceProgress.attempts,
+          completed: sentenceProgress.completed,
+        })
+        .catch(() => {})
+    }
   },
 
   loadActiveLessonId(): string | null {
@@ -291,9 +304,13 @@ export const storage = {
     return updated
   },
 
-  async syncWithCloud(): Promise<{ lessonsCount: number; vocabCount: number }> {
+  async syncWithCloud(): Promise<{
+    lessonsCount: number
+    vocabCount: number
+    progressCount: number
+  }> {
     if (typeof window === 'undefined' || typeof fetch !== 'function') {
-      return { lessonsCount: 0, vocabCount: 0 }
+      return { lessonsCount: 0, vocabCount: 0, progressCount: 0 }
     }
 
     try {
@@ -302,34 +319,82 @@ export const storage = {
         apiClient.listVocabulary(),
       ])
 
-      if (cloudLessons.length > 0) {
-        const local = this.loadVideos() || []
-        const merged = [...cloudLessons]
-        for (const l of local) {
-          if (!merged.some((c) => c.videoId === l.videoId || c.id === l.id)) {
-            merged.push(l)
-          }
+      const local = this.loadVideos() || []
+      const merged = [...cloudLessons]
+      for (const l of local) {
+        if (!merged.some((c) => c.videoId === l.videoId || c.id === l.id)) {
+          merged.push(l)
+          // Upload local lesson to cloud
+          apiClient
+            .createLesson({
+              id: l.id,
+              videoId: l.videoId,
+              title: l.title,
+              description: l.description,
+              language: l.language,
+              level: l.level,
+              sentences: l.sentences,
+            })
+            .catch(() => {})
         }
-        this.saveVideos(merged)
       }
+      this.saveVideos(merged)
 
-      if (cloudVocab.length > 0) {
-        const localV = this.loadVocabulary() || []
-        const mergedV = [...cloudVocab]
-        for (const v of localV) {
-          if (!mergedV.some((c) => c.word.toLowerCase() === v.word.toLowerCase() && c.videoId === v.videoId)) {
-            mergedV.push(v)
+      const localV = this.loadVocabulary() || []
+      const mergedV = [...cloudVocab]
+      for (const v of localV) {
+        if (!mergedV.some((c) => c.word.toLowerCase() === v.word.toLowerCase() && c.videoId === v.videoId)) {
+          mergedV.push(v)
+          apiClient.saveVocabulary(v).catch(() => {})
+        }
+      }
+      this.saveVocabulary(mergedV)
+
+      // Sync progress across lessons
+      let progressCount = 0
+      for (const l of merged) {
+        // Upload local progress to cloud
+        const localProg = this.loadLessonProgress(l.id)
+        if (localProg?.sentenceProgress) {
+          for (const [segId, sp] of Object.entries(localProg.sentenceProgress)) {
+            apiClient
+              .saveSentenceProgress(l.id, segId, {
+                userInput: sp.userInput,
+                score: sp.score,
+                isRevealed: sp.isRevealed,
+                attemptsCount: sp.attempts,
+                completed: sp.completed,
+              })
+              .catch(() => {})
+            progressCount++
           }
         }
-        this.saveVocabulary(mergedV)
+
+        // Fetch cloud progress and merge
+        const cloudProg = await apiClient.getLessonProgress(l.id)
+        if (cloudProg?.sentenceProgress && Object.keys(cloudProg.sentenceProgress).length > 0) {
+          const current = this.loadLessonProgress(l.id) || {
+            lessonId: l.id,
+            sentenceProgress: {},
+            lastSentenceId: cloudProg.lastSentenceId,
+            updatedAt: new Date().toISOString(),
+          }
+          current.sentenceProgress = {
+            ...cloudProg.sentenceProgress,
+            ...current.sentenceProgress,
+          }
+          safeSetItem(`${STORAGE_KEYS.LESSON_PROGRESS_PREFIX}${l.id}`, current)
+          progressCount += Object.keys(cloudProg.sentenceProgress).length
+        }
       }
 
       return {
-        lessonsCount: cloudLessons.length,
-        vocabCount: cloudVocab.length,
+        lessonsCount: merged.length,
+        vocabCount: mergedV.length,
+        progressCount,
       }
     } catch {
-      return { lessonsCount: 0, vocabCount: 0 }
+      return { lessonsCount: 0, vocabCount: 0, progressCount: 0 }
     }
   },
 }

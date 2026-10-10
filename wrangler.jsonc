@@ -8,7 +8,7 @@
     {
       "binding": "DB",
       "database_name": "listenflow-db",
-      "database_id": "d1-listenflow-preview-id",
+      "database_id": "0dd6083f-76d3-429a-9b44-929d848943ae",
       "migrations_dir": "migrations"
     }
   ],

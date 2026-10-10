@@ -60,19 +60,22 @@ attemptsRouter.post('/', async (c) => {
   const attemptId = data.id || `attempt-${crypto.randomUUID()}`
 
   try {
-    // 1. Check segment existence & ownership
-    const segment = await db
-      .prepare('SELECT user_id, lesson_id FROM transcript_segments WHERE id = ?')
-      .bind(data.segmentId)
-      .first<{ user_id: string; lesson_id: string }>()
+    // 1. Ensure lesson and segment exist for client-first flows
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO lessons (id, user_id, video_id, title, language, level, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'en', 'Intermediate', datetime('now'), datetime('now'))`
+      )
+      .bind(data.lessonId, userId, data.lessonId, data.lessonId)
+      .run()
 
-    if (!segment) {
-      return c.json({ success: false, error: 'Transcript segment not found' }, 404)
-    }
-
-    if (segment.user_id !== userId) {
-      return c.json({ success: false, error: 'Forbidden: You do not own this segment' }, 403)
-    }
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO transcript_segments (id, lesson_id, user_id, start_time, end_time, text, sequence_order, created_at)
+         VALUES (?, ?, ?, 0, 0, '', 0, datetime('now'))`
+      )
+      .bind(data.segmentId, data.lessonId, userId)
+      .run()
 
     // 2. Insert dictation attempt using parameterized query
     const insertAttemptStmt = db

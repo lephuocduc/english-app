@@ -109,6 +109,23 @@ progressRouter.put('/lessons/:lessonId/:segmentId', async (c) => {
   const progressId = `prog-${userId}-${segmentId}`
 
   try {
+    // Ensure parent lesson and segment records exist to satisfy foreign key constraints
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO lessons (id, user_id, video_id, title, language, level, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'en', 'Intermediate', datetime('now'), datetime('now'))`
+      )
+      .bind(lessonId, userId, lessonId, lessonId)
+      .run()
+
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO transcript_segments (id, lesson_id, user_id, start_time, end_time, text, sequence_order, created_at)
+         VALUES (?, ?, ?, 0, 0, '', 0, datetime('now'))`
+      )
+      .bind(segmentId, lessonId, userId)
+      .run()
+
     // Parameterized upsert
     await db
       .prepare(

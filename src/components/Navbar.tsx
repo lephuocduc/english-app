@@ -13,6 +13,7 @@ interface NavbarProps {
   activeTab: NavTab
   onSelectTab: (tab: NavTab) => void
   onOpenKeyboardShortcuts: () => void
+  onOpenCloudSync?: () => void
   vocabularyCount: number
 }
 
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   onSelectTab,
   onOpenKeyboardShortcuts,
+  onOpenCloudSync,
   vocabularyCount,
 }) => {
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
@@ -106,7 +108,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                storage.syncWithCloud().catch(() => {})
+                if (onOpenCloudSync) {
+                  onOpenCloudSync()
+                } else {
+                  storage.syncWithCloud().catch(() => {})
+                }
               }}
               title="Lưu trữ & Đồng bộ dữ liệu Cloudflare D1"
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200/60 rounded-lg transition cursor-pointer"

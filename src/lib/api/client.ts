@@ -11,34 +11,47 @@ const USER_ID_KEY = 'listenflow_user_id_v1'
  * Returns or generates a stable anonymous or authenticated user ID
  */
 export function getStoredUserId(): string {
-  if (typeof window === 'undefined') return 'guest-user-default'
+  if (typeof window === 'undefined') return 'leducst1'
   try {
     let id = window.localStorage.getItem(USER_ID_KEY)
     if (!id) {
-      id = `usr-${crypto.randomUUID().slice(0, 12)}`
+      id = 'leducst1'
       window.localStorage.setItem(USER_ID_KEY, id)
     }
     return id
   } catch {
-    return 'guest-user-fallback'
+    return 'leducst1'
   }
 }
 
 export function setStoredUserId(newId: string): void {
   if (typeof window === 'undefined') return
   try {
-    window.localStorage.setItem(USER_ID_KEY, newId)
+    const trimmed = newId.trim()
+    if (trimmed) {
+      window.localStorage.setItem(USER_ID_KEY, trimmed)
+    }
   } catch {
     // ignore
   }
 }
+
+export const CLOUDFLARE_WORKER_DEFAULT_API = 'https://listenflow-api.duc-todo-api.workers.dev/api'
 
 export class ApiClient {
   private baseUrl: string
   private apiKey?: string
 
   constructor(baseUrl?: string, apiKey?: string) {
-    this.baseUrl = baseUrl || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '/api'
+    const customUrl =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem('listenflow_api_base_url')
+        : null
+    this.baseUrl =
+      baseUrl ||
+      customUrl ||
+      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+      CLOUDFLARE_WORKER_DEFAULT_API
     this.apiKey = apiKey
   }
 
