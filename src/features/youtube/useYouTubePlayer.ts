@@ -7,6 +7,7 @@ export interface YouTubePlayerHookOptions {
   onSegmentEnd?: () => void
   onStateChange?: (state: number) => void
   onError?: (errorMessage: string) => void
+  onVideoMetadata?: (metadata: { title?: string; author?: string }) => void
 }
 
 declare global {
@@ -114,6 +115,7 @@ export function useYouTubePlayer({
   onSegmentEnd,
   onStateChange,
   onError,
+  onVideoMetadata,
 }: YouTubePlayerHookOptions) {
   const playerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
@@ -343,6 +345,10 @@ export function useYouTubePlayer({
               setIsReady(true)
               try {
                 event.target.setPlaybackRate(initialSpeed)
+                const videoData = event.target.getVideoData?.()
+                if (videoData?.title && onVideoMetadata) {
+                  onVideoMetadata({ title: videoData.title, author: videoData.author })
+                }
               } catch {
                 // ignore
               }

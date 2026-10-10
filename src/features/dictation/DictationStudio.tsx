@@ -79,8 +79,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   const [bookmarkSuccess, setBookmarkSuccess] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-focus textarea on mount or when segment changes
+  // When switching to another sentence, reset the typing input to blank and focus
   useEffect(() => {
+    setUserInput('')
+    setScoreResult(null)
+    setIsRevealed(false)
+    setSelectedWordToBookmark(null)
+    setBookmarkSuccess(false)
+
     const timer = setTimeout(() => {
       textareaRef.current?.focus()
     }, 80)

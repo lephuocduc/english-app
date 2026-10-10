@@ -105,4 +105,40 @@ describe('DictationStudio Component', () => {
       })
     )
   })
+
+  it('resets user input to blank and clears previous score when activeSegmentIndex changes', () => {
+    const { rerender } = render(
+      <DictationStudio
+        lesson={lesson}
+        activeSegmentIndex={0}
+        isPlayerReady={true}
+        onSelectSegment={vi.fn()}
+        onReplaySegment={vi.fn()}
+        onSaveProgress={vi.fn()}
+        savedProgressMap={{}}
+      />
+    )
+
+    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/) as HTMLTextAreaElement
+    fireEvent.change(input, {
+      target: { value: 'My answer for first sentence' },
+    })
+    expect(input.value).toBe('My answer for first sentence')
+
+    // Switch to segment 1 (next sentence)
+    rerender(
+      <DictationStudio
+        lesson={lesson}
+        activeSegmentIndex={1}
+        isPlayerReady={true}
+        onSelectSegment={vi.fn()}
+        onReplaySegment={vi.fn()}
+        onSaveProgress={vi.fn()}
+        savedProgressMap={{}}
+      />
+    )
+
+    // The typing input must now be blank!
+    expect(input.value).toBe('')
+  })
 })

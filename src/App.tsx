@@ -33,6 +33,7 @@ import { ProgressView } from './features/progress/ProgressView'
 import { Navbar } from './components/Navbar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
+import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 
 export function App() {
   // Navigation tab state
@@ -85,6 +86,32 @@ export function App() {
   const activeSegment: SentenceSegment | undefined =
     activeLesson?.sentences ? activeLesson.sentences[activeSegmentIndex] : undefined
 
+  // Helper to update a lesson's title with the real YouTube title
+  const updateVideoTitle = useCallback((videoId: string, newTitle: string) => {
+    if (!newTitle || !newTitle.trim()) return
+    const trimmed = newTitle.trim()
+    setVideosList((prev) => {
+      let changed = false
+      const updated = prev.map((v) => {
+        if (
+          v.videoId === videoId &&
+          (v.title.startsWith('YouTube: ') ||
+            v.title === 'YouTube Video' ||
+            v.title === 'Đang tải tiêu đề YouTube...' ||
+            v.title === `video-${videoId}`)
+        ) {
+          changed = true
+          return { ...v, title: trimmed }
+        }
+        return v
+      })
+      if (changed) {
+        storage.saveVideos(updated)
+      }
+      return changed ? updated : prev
+    })
+  }, [])
+
   // Setup YouTube IFrame Player hook
   const {
     isReady: isPlayerReady,
@@ -100,7 +127,28 @@ export function App() {
     containerId: 'listenflow-youtube-player-frame',
     videoId: activeLesson ? activeLesson.videoId : '',
     initialSpeed: preferences.playbackSpeed,
+    onVideoMetadata: (meta) => {
+      if (meta?.title && activeLesson) {
+        updateVideoTitle(activeLesson.videoId, meta.title)
+      }
+    },
   })
+
+  // Automatically fetch official title if active video currently has a placeholder title
+  useEffect(() => {
+    if (
+      activeLesson?.videoId &&
+      (activeLesson.title.startsWith('YouTube: ') ||
+        activeLesson.title === 'YouTube Video' ||
+        activeLesson.title === 'Đang tải tiêu đề YouTube...')
+    ) {
+      fetchYouTubeVideoMetadata(activeLesson.videoId).then((meta) => {
+        if (meta?.title) {
+          updateVideoTitle(activeLesson.videoId, meta.title)
+        }
+      })
+    }
+  }, [activeLesson?.videoId, activeLesson?.title, updateVideoTitle])
 
   // Set active segment and auto-seek player to start time
   const handleSelectSegment = useCallback(
@@ -271,10 +319,17 @@ export function App() {
           handleAutoFetchTranscript(existing.id)
         }, 100)
       }
+      if (!customTitle && (existing.title.startsWith('YouTube: ') || existing.title === 'YouTube Video')) {
+        fetchYouTubeVideoMetadata(videoId).then((meta) => {
+          if (meta?.title) {
+            updateVideoTitle(videoId, meta.title)
+          }
+        })
+      }
     } else {
       const newVideo: Lesson = {
         id: videoItemId,
-        title: customTitle || `YouTube: ${videoId}`,
+        title: customTitle || 'Đang tải tiêu đề YouTube...',
         videoId,
         language: 'English',
         transcriptSource: 'YouTube Video',
@@ -290,6 +345,17 @@ export function App() {
       storage.saveVideos(updated)
       setActiveLessonId(videoItemId)
       storage.saveActiveLessonId(videoItemId)
+
+      // Fetch real YouTube title immediately via oEmbed / noembed
+      if (!customTitle) {
+        fetchYouTubeVideoMetadata(videoId).then((meta) => {
+          if (meta?.title) {
+            updateVideoTitle(videoId, meta.title)
+          } else {
+            updateVideoTitle(videoId, `YouTube: ${videoId}`)
+          }
+        })
+      }
 
       // Automatically trigger transcript auto-fetch for the newly inserted video!
       setTimeout(() => {
