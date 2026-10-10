@@ -1,5 +1,5 @@
 import { build } from 'vite'
-import { cpSync, rmSync, existsSync, copyFileSync } from 'node:fs'
+import { cpSync, rmSync, existsSync, copyFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
@@ -23,6 +23,8 @@ try {
   if (existsSync(join('dist', 'index.html'))) {
     copyFileSync(join('dist', 'index.html'), join('dist', '404.html'))
   }
+  // Create .nojekyll to disable Jekyll processing on GitHub Pages
+  writeFileSync(join('dist', '.nojekyll'), '')
   console.log('✓ Production build completed successfully!')
 } catch (err) {
   console.error('Copy to dist error:', err)
