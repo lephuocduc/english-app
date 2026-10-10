@@ -5,18 +5,11 @@ import {
   CheckCircle2,
   RefreshCw,
   Database,
-  Key,
   Download,
   Upload,
   AlertCircle,
-  Copy,
-  Check,
 } from 'lucide-react'
-import {
-  getStoredUserId,
-  setStoredUserId,
-  CLOUDFLARE_WORKER_DEFAULT_API,
-} from '../lib/api/client'
+import { CLOUDFLARE_WORKER_DEFAULT_API } from '../lib/api/client'
 import { storage } from '../lib/storage/storage'
 
 interface CloudSyncModalProps {
@@ -30,8 +23,6 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   onClose,
   onSyncComplete,
 }) => {
-  const [syncId, setSyncId] = useState('')
-  const [isCopied, setIsCopied] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{
     success?: boolean
@@ -43,7 +34,6 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSyncId(getStoredUserId())
       setSyncResult(null)
       checkHealth()
     }
@@ -66,19 +56,6 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   if (!isOpen) return null
 
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(syncId)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 2000)
-  }
-
-  const handleSaveSyncId = (newVal: string) => {
-    const trimmed = newVal.trim()
-    setSyncId(trimmed)
-    if (trimmed) {
-      setStoredUserId(trimmed)
-    }
-  }
 
   const handleSyncNow = async () => {
     setIsSyncing(true)
@@ -104,7 +81,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
     try {
       const backupData = {
         exportedAt: new Date().toISOString(),
-        userId: syncId,
+        userId: 'owner',
         videos: storage.loadVideos(),
         vocabulary: storage.loadVocabulary(),
         preferences: storage.loadPreferences(),
@@ -240,42 +217,19 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
             </div>
           </div>
 
-          {/* Sync User ID Field */}
-          <div className="space-y-1.5">
-            <label className="flex items-center justify-between text-xs font-semibold text-slate-700">
-              <span className="flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-indigo-500" />
-                Mã định danh đồng bộ (Sync User ID)
-              </span>
-              <span className="text-[10px] text-slate-400 font-normal">
-                Dùng cùng mã này trên các thiết bị
-              </span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={syncId}
-                onChange={(e) => handleSaveSyncId(e.target.value)}
-                placeholder="Nhập mã đồng bộ của bạn..."
-                className="flex-1 px-3.5 py-2 text-xs font-mono bg-white border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 text-slate-800"
-              />
-              <button
-                type="button"
-                onClick={handleCopyId}
-                title="Sao chép mã"
-                className="px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition flex items-center gap-1 cursor-pointer"
-              >
-                {isCopied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-                <span>{isCopied ? 'Đã chép' : 'Sao chép'}</span>
-              </button>
+          {/* Personal Account Info */}
+          <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
-            <p className="text-[11px] text-slate-500">
-              💡 <strong>Mẹo:</strong> Nhập cùng mã định danh này trên máy tính khác hoặc điện thoại để tự động truy cập cùng tiến độ học tập và bài nghe.
-            </p>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-slate-900">
+                Chế độ cá nhân (Tự động đồng bộ xuyên suốt)
+              </h4>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Ứng dụng tự động kết nối trực tiếp vào kho dữ liệu Cloudflare D1 của riêng bạn. Khi bạn mở trang web này trên máy tính, điện thoại hay trình duyệt khác, toàn bộ bài học, tiến độ và từ vựng sẽ tự động đồng bộ mà không cần sao chép hay nhập bất kỳ mã nào.
+              </p>
+            </div>
           </div>
 
           {/* Sync Feedback Message */}

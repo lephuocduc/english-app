@@ -10,18 +10,10 @@ const USER_ID_KEY = 'listenflow_user_id_v1'
 /**
  * Returns or generates a stable anonymous or authenticated user ID
  */
+export const DEFAULT_OWNER_ID = 'owner'
+
 export function getStoredUserId(): string {
-  if (typeof window === 'undefined') return 'leducst1'
-  try {
-    let id = window.localStorage.getItem(USER_ID_KEY)
-    if (!id) {
-      id = 'leducst1'
-      window.localStorage.setItem(USER_ID_KEY, id)
-    }
-    return id
-  } catch {
-    return 'leducst1'
-  }
+  return DEFAULT_OWNER_ID
 }
 
 export function setStoredUserId(newId: string): void {
