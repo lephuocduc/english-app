@@ -1,0 +1,4 @@
+# Server-side environment variables and secrets (Never commit real secrets or expose to frontend)
+# For local Wrangler development, copy this file to .dev.vars
+API_SECRET=listenflow-local-secret-key-32chars-min
+JWT_SECRET=listenflow-jwt-dev-secret-change-in-prod

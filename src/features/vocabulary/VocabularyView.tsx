@@ -1,0 +1,147 @@
+import React, { useState } from 'react'
+import {
+  Bookmark,
+  Search,
+  Trash2,
+  Clock,
+  Sparkles,
+  ExternalLink,
+  BookMarked,
+} from 'lucide-react'
+import type { VocabularyItem } from '../../types'
+
+interface VocabularyViewProps {
+  vocabularyList: VocabularyItem[]
+  onRemoveVocabulary: (id: string) => void
+  onJumpToTimestamp?: (videoId: string, timestamp: number) => void
+}
+
+export const VocabularyView: React.FC<VocabularyViewProps> = ({
+  vocabularyList,
+  onRemoveVocabulary,
+  onJumpToTimestamp,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60)
+    const rem = Math.floor(secs % 60)
+    return `${mins}:${rem < 10 ? '0' : ''}${rem}`
+  }
+
+  const filteredWords = vocabularyList.filter(
+    (item) =>
+      item.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.contextSentence.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Header & Search Bar */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="space-y-1.5 max-w-xl">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
+            <Bookmark className="w-3.5 h-3.5" />
+            <span>Sổ tay từ vựng ({vocabularyList.length} từ)</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+            Từ vựng đã lưu trong bài học
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600">
+            Các từ vựng bạn đã đánh dấu từ phần đối chiếu chính tả kèm câu ngữ cảnh thực tế.
+          </p>
+        </div>
+
+        {/* Search Input */}
+        {vocabularyList.length > 0 && (
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm từ vựng..."
+              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-slate-800"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Words List or Empty State */}
+      {vocabularyList.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200 p-10 sm:p-14 text-center max-w-xl mx-auto shadow-xs space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+            <BookMarked className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              Chưa có từ vựng nào trong sổ tay
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+              Trong khi luyện nghe tại màn hình <strong className="text-indigo-600">Luyện tập</strong>,
+              sau khi kiểm tra đáp án, bạn chỉ cần bấm vào bất kỳ từ nào trong bảng đối chiếu để lưu lại cùng câu ngữ cảnh.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1.5 text-xs text-indigo-600 font-semibold bg-indigo-50/80 px-3.5 py-1.5 rounded-lg border border-indigo-100">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Mẹo: Lưu từ vựng kèm ngữ cảnh giúp ghi nhớ lâu hơn x3 lần</span>
+          </div>
+        </div>
+      ) : filteredWords.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-sm">
+          Không tìm thấy từ vựng phù hợp với từ khóa &quot;{searchQuery}&quot;.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredWords.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-indigo-200 hover:shadow-sm transition flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-base font-bold text-indigo-950 capitalize">
+                    {item.word}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveVocabulary(item.id)}
+                    title="Xóa từ khỏi sổ từ"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-700 leading-relaxed">
+                  <span className="font-semibold text-slate-500 block text-[10px] uppercase mb-0.5">
+                    Ngữ cảnh trong video:
+                  </span>
+                  &quot;{item.contextSentence}&quot;
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span className="inline-flex items-center gap-1 font-mono">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  {formatTime(item.timestamp)}
+                </span>
+
+                {onJumpToTimestamp && (
+                  <button
+                    type="button"
+                    onClick={() => onJumpToTimestamp(item.videoId, item.timestamp)}
+                    className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
+                  >
+                    <span>Nghe lại đoạn này</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
