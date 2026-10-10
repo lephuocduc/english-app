@@ -206,8 +206,6 @@ export function App() {
       } catch (err) {
         const errorMsg =
           err instanceof Error ? err.message : 'Lỗi kết nối khi tải phụ đề từ YouTube.'
-        const isRateLimit =
-          errorMsg.includes('429') || errorMsg.toLowerCase().includes('giới hạn')
         setTranscriptBannerMessage({
           type: 'error',
           message: errorMsg,

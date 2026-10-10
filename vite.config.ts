@@ -2,7 +2,8 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig(async () => {
+export default defineConfig(async (env) => {
+  const command = env?.command || (process.env.NODE_ENV === 'production' ? 'build' : 'serve')
   const plugins: any[] = [react()]
   if (!process.env.VITEST) {
     const tailwind = (await import('@tailwindcss/vite')).default
@@ -41,6 +42,7 @@ export default defineConfig(async () => {
   }
 
   return {
+    base: process.env.VITE_BASE || (command === 'build' ? '/english-app/' : '/'),
     plugins,
     test: {
       globals: true,

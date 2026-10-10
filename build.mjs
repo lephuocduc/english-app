@@ -1,5 +1,5 @@
 import { build } from 'vite'
-import { cpSync, rmSync, existsSync } from 'node:fs'
+import { cpSync, rmSync, existsSync, copyFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
@@ -19,6 +19,10 @@ await build({
 console.log('Syncing artifacts to dist/ ...')
 try {
   cpSync(tempOut, 'dist', { recursive: true, force: true })
+  // Create 404.html fallback for GitHub Pages SPA routing
+  if (existsSync(join('dist', 'index.html'))) {
+    copyFileSync(join('dist', 'index.html'), join('dist', '404.html'))
+  }
   console.log('✓ Production build completed successfully!')
 } catch (err) {
   console.error('Copy to dist error:', err)
