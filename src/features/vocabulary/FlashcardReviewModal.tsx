@@ -19,7 +19,6 @@ import {
   getIntervalPreviewText,
   speakWord,
   createClozeSentence,
-  toggleWordMastered,
 } from '../../lib/srs/sm2'
 
 interface FlashcardReviewModalProps {
@@ -134,16 +133,6 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
     [currentCard, currentIndex, queue.length, onUpdateVocabulary]
   )
 
-  const handleToggleMasteredInCard = useCallback(() => {
-    if (!currentCard) return
-    const updated = toggleWordMastered(currentCard)
-    onUpdateVocabulary(updated)
-    // Update active item in queue
-    setQueue((prev) =>
-      prev.map((it, idx) => (idx === currentIndex ? updated : it))
-    )
-  }, [currentCard, currentIndex, onUpdateVocabulary])
-
   const handleReviewMissedCards = () => {
     if (missedItems.length === 0) return
     setQueue([...missedItems])
@@ -195,11 +184,6 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
         }
       }
 
-      if (e.key === 'm' || e.key === 'M') {
-        e.preventDefault()
-        handleToggleMasteredInCard()
-      }
-
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault()
         setIsCloze((prev) => !prev)
@@ -215,7 +199,6 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
     currentCard,
     handleFlip,
     handleRating,
-    handleToggleMasteredInCard,
     onClose,
   ])
 
@@ -383,27 +366,17 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                 onClick={handleFlip}
                 className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-3xl p-6 sm:p-8 min-h-[260px] sm:min-h-[300px] flex flex-col justify-between cursor-pointer transition shadow-sm hover:shadow-md relative group"
               >
-                {/* Card Top Pill: Video Title & Mastered Status */}
+                {/* Card Top Pill: Video Title & Mastered Status Badge */}
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[240px]">
                     {currentCard.lessonTitle}
                   </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleToggleMasteredInCard()
-                    }}
-                    title={currentCard.mastered ? 'Bỏ đánh dấu đã thuộc (M)' : 'Đánh dấu đã thuộc từ này (M)'}
-                    className={`px-2 py-0.5 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer ${
-                      currentCard.mastered
-                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                        : 'bg-white dark:bg-slate-800 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 border-slate-200 dark:border-slate-700'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>{currentCard.mastered ? 'Đã thuộc' : 'Thuộc? (M)'}</span>
-                  </button>
+                  {currentCard.mastered && (
+                    <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-[11px] font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Đã thuộc</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Card Center: English Word and Pronunciation */}

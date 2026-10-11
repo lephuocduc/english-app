@@ -9,7 +9,6 @@ import {
   BookMarked,
   Volume2,
   CheckCircle2,
-  Flame,
   Plus,
   Play,
   Check,
@@ -21,7 +20,6 @@ import {
   isWordDue,
   getDueVocabulary,
   speakWord,
-  toggleWordMastered,
 } from '../../lib/srs/sm2'
 import { FlashcardReviewModal } from './FlashcardReviewModal'
 import { AddVocabularyModal } from './AddVocabularyModal'
@@ -36,7 +34,7 @@ interface VocabularyViewProps {
   activeVideoId?: string
 }
 
-type VocabFilterTab = 'all' | 'due' | 'learning' | 'mastered'
+type VocabFilterTab = 'all' | 'due' | 'mastered'
 
 export const VocabularyView: React.FC<VocabularyViewProps> = ({
   vocabularyList,
@@ -62,12 +60,6 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
     return `${mins}:${rem < 10 ? '0' : ''}${rem}`
   }
 
-  const handleToggleMastered = (item: VocabularyItem) => {
-    if (!onUpdateVocabulary) return
-    const updated = toggleWordMastered(item)
-    onUpdateVocabulary(updated)
-  }
-
   // Filter words by tab and search query
   const filteredWords = useMemo(() => {
     return vocabularyList.filter((item) => {
@@ -76,8 +68,6 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
         if (!isWordDue(item)) return false
       } else if (activeFilter === 'mastered') {
         if (!item.mastered) return false
-      } else if (activeFilter === 'learning') {
-        if (item.mastered) return false
       }
 
       // 2. Search query filter
@@ -149,9 +139,9 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
         </div>
       </div>
 
-      {/* SRS Quick Stats Grid */}
+      {/* SRS Quick Stats Grid: 3 columns (Total, Due, Mastered) */}
       {vocabularyList.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {/* Stat 1: Total */}
           <div
             onClick={() => setActiveFilter('all')}
@@ -199,27 +189,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             </div>
           </div>
 
-          {/* Stat 3: Learning / New */}
-          <div
-            onClick={() => setActiveFilter('learning')}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              activeFilter === 'learning'
-                ? 'bg-blue-50/80 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 ring-2 ring-blue-500/20'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                Đang học
-              </span>
-              <Flame className="w-4 h-4 text-blue-500" />
-            </div>
-            <span className="text-2xl font-extrabold font-mono text-slate-900 dark:text-white mt-1 block">
-              {srsStats.learning + srsStats.newWords}
-            </span>
-          </div>
-
-          {/* Stat 4: Mastered */}
+          {/* Stat 3: Mastered */}
           <div
             onClick={() => setActiveFilter('mastered')}
             className={`p-4 rounded-2xl border transition cursor-pointer ${
@@ -272,17 +242,6 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   {srsStats.due}
                 </span>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveFilter('learning')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                activeFilter === 'learning'
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              Đang học ({srsStats.learning + srsStats.newWords})
             </button>
             <button
               type="button"
@@ -374,22 +333,6 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {/* Mastered toggle button */}
-                      {onUpdateVocabulary && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleMastered(item)}
-                          title={item.mastered ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc từ này'}
-                          className={`p-1 rounded-lg border transition cursor-pointer ${
-                            item.mastered
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                              : 'text-slate-300 dark:text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 border-transparent hover:border-slate-200'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
-                      )}
-
                       {/* Delete button */}
                       <button
                         type="button"

@@ -39,7 +39,7 @@ const mockVocabList: VocabularyItem[] = [
 ]
 
 describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
-  it('renders SRS statistics bar with total, due, learning, and mastered counts', () => {
+  it('renders SRS statistics bar with total, due, and mastered counts', () => {
     render(
       <VocabularyView
         vocabularyList={mockVocabList}
@@ -49,7 +49,7 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
 
     expect(screen.getByText('Tổng số từ')).toBeInTheDocument()
     expect(screen.getByText('Cần ôn hôm nay')).toBeInTheDocument()
-    expect(screen.getByText('Đang học')).toBeInTheDocument()
+    expect(screen.queryByText('Đang học')).not.toBeInTheDocument()
     expect(screen.getAllByText('Đã thuộc')[0]).toBeInTheDocument()
 
     // Button Ôn Flashcard (x) strictly displays count of words due today (1 word due)
@@ -72,7 +72,7 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
     expect(screen.getByRole('button', { name: /Ôn Flashcard \(0\)/i })).toBeInTheDocument()
   })
 
-  it('filters vocabulary cards by tab (All, Due, Learning, Mastered)', () => {
+  it('filters vocabulary cards by tab (All, Due, Mastered)', () => {
     render(
       <VocabularyView
         vocabularyList={mockVocabList}
@@ -91,15 +91,18 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
     expect(screen.getByText('curiosity')).toBeInTheDocument()
     expect(screen.queryByText('resilient')).not.toBeInTheDocument()
 
-    // Filter by Learning tab
-    const learningTab = screen.getByRole('button', { name: /Đang học/i })
-    fireEvent.click(learningTab)
+    // Filter by Due tab
+    const dueTab = screen.getByRole('button', { name: /Cần ôn/i })
+    fireEvent.click(dueTab)
 
     expect(screen.getByText('resilient')).toBeInTheDocument()
     expect(screen.queryByText('curiosity')).not.toBeInTheDocument()
+
+    // Learning tab is removed
+    expect(screen.queryByRole('button', { name: /Đang học/i })).not.toBeInTheDocument()
   })
 
-  it('toggles mastered status when clicking checkmark button', () => {
+  it('does not display manual toggle mastered button on cards (mastery managed via SM-2 review)', () => {
     const onUpdateVocabulary = vi.fn()
     render(
       <VocabularyView
@@ -109,14 +112,8 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
       />
     )
 
-    const toggleBtn = screen.getByTitle('Đánh dấu đã thuộc từ này')
-    fireEvent.click(toggleBtn)
-
-    expect(onUpdateVocabulary).toHaveBeenCalledTimes(1)
-    const updatedArg = onUpdateVocabulary.mock.calls[0][0] as VocabularyItem
-    expect(updatedArg.id).toBe('v1')
-    expect(updatedArg.mastered).toBe(true)
-    expect(updatedArg.interval).toBe(30)
+    expect(screen.queryByTitle('Đánh dấu đã thuộc từ này')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Bỏ đánh dấu đã thuộc')).not.toBeInTheDocument()
   })
 
   it('searches and filters words by query string', () => {
