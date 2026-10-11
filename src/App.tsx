@@ -8,6 +8,11 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  Minimize2,
+  Moon,
+  Sun,
+  Headphones,
+  EyeOff,
 } from 'lucide-react'
 import type {
   Lesson,
@@ -70,6 +75,64 @@ export function App() {
   const [preferences, setPreferences] = useState<StudyPreferences>(() =>
     storage.loadPreferences()
   )
+
+  // Focus, Blind Listening, and Dark Mode States
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(() => preferences.isFocusMode ?? false)
+  const [isBlindListening, setIsBlindListening] = useState<boolean>(
+    () => preferences.isBlindListening ?? false
+  )
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof preferences.isDarkMode === 'boolean') {
+      return preferences.isDarkMode
+    }
+    return (
+      typeof window !== 'undefined' &&
+      Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    )
+  })
+
+  // Sync dark class on root document element
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDarkMode)
+    }
+  }, [isDarkMode])
+
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode((prev) => {
+      const next = !prev
+      setPreferences((currentPrefs) => {
+        const updated = { ...currentPrefs, isDarkMode: next }
+        storage.savePreferences(updated)
+        return updated
+      })
+      return next
+    })
+  }, [])
+
+  const toggleFocusMode = useCallback(() => {
+    setIsFocusMode((prev) => {
+      const next = !prev
+      setPreferences((currentPrefs) => {
+        const updated = { ...currentPrefs, isFocusMode: next }
+        storage.savePreferences(updated)
+        return updated
+      })
+      return next
+    })
+  }, [])
+
+  const toggleBlindListening = useCallback(() => {
+    setIsBlindListening((prev) => {
+      const next = !prev
+      setPreferences((currentPrefs) => {
+        const updated = { ...currentPrefs, isBlindListening: next }
+        storage.savePreferences(updated)
+        return updated
+      })
+      return next
+    })
+  }, [])
   const [allLessonsProgress, setAllLessonsProgress] = useState<
     Record<string, UserLessonProgress>
   >(() => {
@@ -708,6 +771,29 @@ export function App() {
         return
       }
 
+      // Alt + Z: toggle Focus / Zen Mode
+      if (e.altKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.repeat) return
+        toggleFocusMode()
+        return
+      }
+
+      // Alt + B: toggle Blind Listening Mode
+      if (e.altKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        if (e.repeat) return
+        toggleBlindListening()
+        return
+      }
+
+      // Esc to exit Focus Mode if active
+      if (e.key === 'Escape' && isFocusMode) {
+        e.preventDefault()
+        setIsFocusMode(false)
+        return
+      }
+
       // Navigate sentences (Alt + Left / Alt + Right)
       if (activeLesson && activeLesson.sentences.length > 0) {
         if (e.altKey && e.key === 'ArrowLeft') {
@@ -737,6 +823,9 @@ export function App() {
     handleReplayCurrent,
     togglePlayPause,
     toggleLoop,
+    toggleFocusMode,
+    toggleBlindListening,
+    isFocusMode,
   ])
 
   const activeLessonProgress = activeLesson
@@ -744,114 +833,173 @@ export function App() {
     : {}
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-800">
-      {/* Top Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
-        onOpenCloudSync={() => setShowCloudSyncModal(true)}
-        vocabularyCount={vocabularyList.length}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* VIEW 1: PRACTICE STUDIO (Kept mounted via CSS to avoid destroying YouTube iframe on tab switch) */}
-        <div className={activeTab === 'practice' ? 'space-y-6' : 'hidden'}>
-          {/* Quick YouTube URL Bar */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs">
-            <form
-              onSubmit={handleQuickImport}
-              className="flex flex-col sm:flex-row items-stretch gap-2.5"
-            >
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={quickUrlInput}
-                  onChange={(e) => {
-                    setQuickUrlInput(e.target.value)
-                    if (quickImportError) setQuickImportError(null)
-                  }}
-                  placeholder="Dán link YouTube bất kỳ (https://www.youtube.com/watch?v=..., youtu.be, shorts)..."
-                  className="w-full pl-3.5 pr-16 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 placeholder-slate-400 font-mono transition"
-                />
-                <button
-                  type="button"
-                  onClick={handleQuickPaste}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg shadow-2xs transition"
-                >
-                  Dán
-                </button>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-98"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Nạp video</span>
-              </button>
-            </form>
-
-            {quickImportError && (
-              <p className="mt-2 text-xs text-rose-600">{quickImportError}</p>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col text-slate-800 dark:text-slate-100 transition-colors">
+      {/* Top Navigation: Ultra-clean Zen Bar in Focus Mode, Full Navbar otherwise */}
+      {isFocusMode ? (
+        <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs transition-colors shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
+            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+              <Headphones className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Chế độ tập trung (Zen Mode)</span>
+            </div>
+            {activeLesson?.title && (
+              <span className="text-slate-500 dark:text-slate-400 hidden sm:inline truncate max-w-sm">
+                • {activeLesson.title}
+              </span>
             )}
           </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={toggleBlindListening}
+              title={isBlindListening ? 'Tắt rèm che video (Alt + B)' : 'Bật rèm che video (Alt + B)'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                isBlindListening
+                  ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400'
+              }`}
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Nghe mù{isBlindListening ? ' (Bật)' : ''}</span>
+            </button>
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              title={isDarkMode ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
+              className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition cursor-pointer"
+            >
+              {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-600" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFocusMode(false)}
+              title="Thoát chế độ tập trung (Alt + Z hoặc Esc)"
+              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+              <span>Thoát tập trung</span>
+            </button>
+          </div>
+        </header>
+      ) : (
+        <Navbar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+          onOpenCloudSync={() => setShowCloudSyncModal(true)}
+          vocabularyCount={vocabularyList.length}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+          isFocusMode={isFocusMode}
+          onToggleFocusMode={toggleFocusMode}
+        />
+      )}
+
+      {/* Main Content Area */}
+      <main className={`flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 transition-all ${
+        isFocusMode ? 'max-w-6xl py-4 sm:py-6' : 'max-w-7xl py-6 sm:py-8'
+      }`}>
+        {/* VIEW 1: PRACTICE STUDIO (Kept mounted via CSS to avoid destroying YouTube iframe on tab switch) */}
+        <div className={activeTab === 'practice' ? 'space-y-6' : 'hidden'}>
+          {/* Quick YouTube URL Bar (Hidden in Zen Focus Mode to eliminate distractions) */}
+          {!isFocusMode && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-4 shadow-xs transition-colors">
+              <form
+                onSubmit={handleQuickImport}
+                className="flex flex-col sm:flex-row items-stretch gap-2.5"
+              >
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={quickUrlInput}
+                    onChange={(e) => {
+                      setQuickUrlInput(e.target.value)
+                      if (quickImportError) setQuickImportError(null)
+                    }}
+                    placeholder="Dán link YouTube bất kỳ (https://www.youtube.com/watch?v=..., youtu.be, shorts)..."
+                    className="w-full pl-3.5 pr-16 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-mono transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleQuickPaste}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-2xs transition"
+                  >
+                    Dán
+                  </button>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-98"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Nạp video</span>
+                </button>
+              </form>
+
+              {quickImportError && (
+                <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{quickImportError}</p>
+              )}
+            </div>
+          )}
 
           {/* Active Video Header or Empty State */}
           {activeLesson ? (
             <>
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      YouTube ID: {activeLesson.videoId}
-                    </span>
-                    <a
-                      href={`https://www.youtube.com/watch?v=${activeLesson.videoId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-indigo-600 transition"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Xem trên YouTube</span>
-                    </a>
+              {!isFocusMode && (
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 transition-colors">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        YouTube ID: {activeLesson.videoId}
+                      </span>
+                      <a
+                        href={`https://www.youtube.com/watch?v=${activeLesson.videoId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Xem trên YouTube</span>
+                      </a>
+                    </div>
+                    <h1 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                      {activeLesson.title}
+                    </h1>
                   </div>
-                  <h1 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                    {activeLesson.title}
-                  </h1>
-                </div>
 
-                {/* Switch video button */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('lessons')}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Đổi video khác ({videosList.length})</span>
-                </button>
-              </div>
+                  {/* Switch video button */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('lessons')}
+                    className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-2xs border border-slate-200/80 dark:border-slate-700"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Đổi video khác ({videosList.length})</span>
+                  </button>
+                </div>
+              )}
 
               {/* Transcript Auto-fetch / Import Status Banner */}
               {transcriptBannerMessage && (
                 <div
                   className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-fade-in ${
                     transcriptBannerMessage.type === 'loading'
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200'
                       : transcriptBannerMessage.type === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-medium'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-medium'
                       : transcriptBannerMessage.type === 'error'
-                      ? 'bg-rose-50 border-rose-200 text-rose-900'
-                      : 'bg-amber-50 border-amber-200 text-amber-900'
+                      ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                      : 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
                   }`}
                 >
                   <div className="flex items-start sm:items-center gap-2.5 flex-1">
                     {transcriptBannerMessage.type === 'loading' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0 mt-0.5 sm:mt-0" />
+                      <Loader2 className="w-4 h-4 animate-spin text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5 sm:mt-0" />
                     ) : transcriptBannerMessage.type === 'success' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
                     )}
                     <span className="leading-relaxed">{transcriptBannerMessage.message}</span>
                   </div>
@@ -868,7 +1016,7 @@ export function App() {
                     <button
                       type="button"
                       onClick={() => setTranscriptBannerMessage(null)}
-                      className="p-1 hover:opacity-70 text-slate-400 hover:text-slate-700 rounded cursor-pointer"
+                      className="p-1 hover:opacity-70 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded cursor-pointer"
                       aria-label="Đóng thông báo"
                     >
                       <X className="w-4 h-4" />
@@ -887,6 +1035,7 @@ export function App() {
                     isReady={isPlayerReady}
                     isPlaying={isPlaying}
                     isLooping={isLooping}
+                    isBlindListening={isBlindListening}
                     playerError={playerError}
                     currentSpeed={playbackRate}
                     activeSegment={activeSegment || null}
@@ -899,6 +1048,7 @@ export function App() {
                     }}
                     onTogglePlayPause={togglePlayPause}
                     onToggleLoop={toggleLoop}
+                    onToggleBlindListening={toggleBlindListening}
                     onReloadPlayer={reloadPlayer}
                     onChangeSpeed={handleSpeedChange}
                     onPreviousSegment={
@@ -951,40 +1101,42 @@ export function App() {
                     getCurrentPlayerTime={getCurrentTime}
                   />
 
-                  {/* Tips box */}
-                  <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 text-xs space-y-1.5 text-indigo-950">
-                    <h5 className="font-bold flex items-center gap-1.5 text-indigo-900">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Mẹo luyện nghe &amp; chép chính tả hiệu quả:</span>
-                    </h5>
-                    <ol className="list-decimal list-inside space-y-0.5 text-slate-600 leading-relaxed">
-                      <li>
-                        Bấm <strong className="text-slate-800">Nghe lại câu (Ctrl+Space)</strong> để nắm bắt cấu trúc và nhịp điệu.
-                      </li>
-                      <li>Gõ những từ bạn nghe rõ nhất vào ô văn bản.</li>
-                      <li>Nghe lại lần 2 để bổ sung các từ nối, mạo từ và đuôi thì quá khứ/số nhiều.</li>
-                      <li>
-                        Bật <strong className="text-slate-800">Lặp câu (Alt+L)</strong> nếu muốn nghe câu lặp lại liên tục trong khi gõ.
-                      </li>
-                      <li>
-                        Nhấn <strong className="text-slate-800">Kiểm tra đáp án (Enter)</strong> để xem đối chiếu từ đúng/sai và lưu từ vựng mới.
-                      </li>
-                    </ol>
-                  </div>
+                  {/* Tips box (Hidden in Zen Focus Mode) */}
+                  {!isFocusMode && (
+                    <div className="bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl p-4 text-xs space-y-1.5 text-indigo-950 dark:text-indigo-200 transition-colors">
+                      <h5 className="font-bold flex items-center gap-1.5 text-indigo-900 dark:text-indigo-300">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Mẹo luyện nghe &amp; chép chính tả hiệu quả:</span>
+                      </h5>
+                      <ol className="list-decimal list-inside space-y-0.5 text-slate-600 dark:text-slate-400 leading-relaxed">
+                        <li>
+                          Bấm <strong className="text-slate-800 dark:text-slate-200">Nghe lại câu (Ctrl+Space)</strong> để nắm bắt cấu trúc và nhịp điệu.
+                        </li>
+                        <li>Gõ những từ bạn nghe rõ nhất vào ô văn bản.</li>
+                        <li>Nghe lại lần 2 để bổ sung các từ nối, mạo từ và đuôi thì quá khứ/số nhiều.</li>
+                        <li>
+                          Bật <strong className="text-slate-800 dark:text-slate-200">Nghe mù (Alt+B)</strong> để luyện đôi tai thuần túy mà không bị phân tâm bởi video.
+                        </li>
+                        <li>
+                          Bật <strong className="text-slate-800 dark:text-slate-200">Chế độ tập trung (Alt+Z)</strong> để loại bỏ hoàn toàn các thanh công cụ thừa.
+                        </li>
+                      </ol>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
           ) : (
             /* Empty state when user has no videos at all */
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 transition-colors">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-sm">
                 <Video className="w-7 h-7" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                   Bắt đầu với video YouTube bất kỳ
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
                   Dán link video YouTube ở thanh tìm kiếm phía trên để bắt đầu thêm bài học và luyện nghe chép chính tả.
                 </p>
               </div>
@@ -1024,6 +1176,96 @@ export function App() {
         )}
       </main>
 
+      {/* Hands-free Floating Keyboard Shortcuts HUD (Always accessible, minimal bottom dock) */}
+      {activeTab === 'practice' && (
+        <aside
+          aria-label="Thanh phím tắt nhanh"
+          className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center pointer-events-auto animate-fade-in"
+        >
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xl rounded-full px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 sm:gap-3 text-xs text-slate-700 dark:text-slate-300">
+            {/* Replay */}
+            <button
+              type="button"
+              onClick={handleReplayCurrent}
+              title="Nghe lại phân đoạn (Ctrl+Space hoặc Alt+R)"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+R</kbd>
+              <span className="hidden sm:inline">Nghe lại</span>
+            </button>
+
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Loop */}
+            <button
+              type="button"
+              onClick={toggleLoop}
+              title="Bật/tắt lặp phân đoạn (Alt+L)"
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
+                isLooping
+                  ? 'text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+L</kbd>
+              <span className="hidden sm:inline">Loop{isLooping ? ' ✓' : ''}</span>
+            </button>
+
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Blind Listening */}
+            <button
+              type="button"
+              onClick={toggleBlindListening}
+              title="Bật/tắt rèm che video - Nghe mù (Alt+B)"
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
+                isBlindListening
+                  ? 'text-violet-700 dark:text-violet-400 font-bold bg-violet-50 dark:bg-violet-950/60'
+                  : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+B</kbd>
+              <span className="hidden sm:inline">Nghe mù{isBlindListening ? ' ✓' : ''}</span>
+            </button>
+
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Sentence navigation */}
+            <div className="hidden md:flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+←/→</kbd>
+              <span>Câu</span>
+            </div>
+
+            <span className="hidden md:block w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Zen Mode */}
+            <button
+              type="button"
+              onClick={toggleFocusMode}
+              title="Bật/tắt chế độ tập trung (Alt+Z)"
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
+                isFocusMode
+                  ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60'
+                  : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+Z</kbd>
+              <span>{isFocusMode ? 'Thoát Zen' : 'Zen'}</span>
+            </button>
+
+            {/* Shortcuts Dialog */}
+            <button
+              type="button"
+              onClick={() => setShowKeyboardShortcuts(true)}
+              title="Xem toàn bộ phím tắt (?)"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 ml-0.5 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              <kbd className="px-1 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-300">?</kbd>
+            </button>
+          </div>
+        </aside>
+      )}
+
       {/* Keyboard Shortcuts Dialog */}
       <KeyboardShortcutsModal
         isOpen={showKeyboardShortcuts}
@@ -1050,14 +1292,14 @@ export function App() {
       )}
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-6 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">ListenFlow</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300">ListenFlow</span>
             <span>•</span>
             <span>Ứng dụng Luyện nghe &amp; Chép chính tả YouTube</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
+          <div className="flex items-center gap-4 text-slate-400 dark:text-slate-500">
             <span>Powered by official YouTube IFrame Player API</span>
             <span>•</span>
             <span>Lưu trữ nội bộ an toàn (Local-First)</span>

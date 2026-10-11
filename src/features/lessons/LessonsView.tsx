@@ -32,16 +32,16 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
   return (
     <div className="space-y-8">
       {/* Intro banner */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-colors">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Thư viện Video YouTube</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             Video YouTube luyện nghe &amp; chép chính tả
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             Dán đường link bất kỳ từ YouTube để tạo video học tập, thêm các mốc phân đoạn câu và bắt đầu luyện tập phản xạ nghe chính tả.
           </p>
         </div>
@@ -49,8 +49,8 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
 
       {/* YouTube URL Importer Section */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
-          <Plus className="w-5 h-5 text-indigo-600" />
+        <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+          <Plus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           <span>Thêm video YouTube mới</span>
         </div>
         <YouTubeImportForm onImportVideo={onImportCustomVideo} />
@@ -59,21 +59,21 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
       {/* Saved YouTube Videos Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Headphones className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Headphones className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <span>Danh sách video đã lưu ({lessons.length})</span>
           </h3>
         </div>
 
         {lessons.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
               <Headphones className="w-6 h-6" />
             </div>
-            <h4 className="text-base font-bold text-slate-800">
+            <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
               Chưa có video YouTube nào trong thư viện
             </h4>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               Hãy dán đường link YouTube ở khung phía trên để bắt đầu thêm video và luyện nghe.
             </p>
           </div>
@@ -91,10 +91,10 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
               return (
                 <div
                   key={lesson.id}
-                  className={`bg-white rounded-2xl border transition-all flex flex-col justify-between overflow-hidden shadow-xs ${
+                  className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all flex flex-col justify-between overflow-hidden shadow-xs ${
                     isActive
-                      ? 'border-indigo-500 ring-2 ring-indigo-100 shadow-sm'
-                      : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                      ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
                   }`}
                 >
                   {/* YouTube Thumbnail Preview */}
@@ -127,12 +127,12 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
 
                   <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                     <div className="space-y-2">
-                      <h4 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
                         {lesson.title}
                       </h4>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-700">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                           {total > 0 ? `${total} phân đoạn câu` : 'Chưa có phân đoạn'}
                         </span>
                       </div>

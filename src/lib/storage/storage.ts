@@ -22,6 +22,9 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   autoReplayCount: 1,
   volume: 100,
   showInstantHint: false,
+  isDarkMode: false,
+  isBlindListening: false,
+  isFocusMode: false,
 }
 
 /**

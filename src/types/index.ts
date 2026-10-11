@@ -81,6 +81,9 @@ export interface StudyPreferences {
   autoReplayCount: number
   volume: number
   showInstantHint: boolean
+  isDarkMode?: boolean
+  isBlindListening?: boolean
+  isFocusMode?: boolean
 }
 
 export interface VocabularyItem {

@@ -648,25 +648,25 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   const progressPercent = Math.round((completedCount / totalSentences) * 100)
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col divide-y divide-slate-100">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
       {/* Studio Header: Sentence navigation & progress indicator */}
       <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-100 shadow-2xs">
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-100 dark:border-indigo-800 shadow-2xs">
             {activeSegmentIndex + 1}
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 Câu {activeSegmentIndex + 1} / {totalSentences}
               </h3>
               {savedProgressMap[currentSegment.id]?.completed && (
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-md border border-emerald-200 flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                   <Check className="w-3 h-3" /> Hoàn thành
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Tiến độ bài học: {completedCount}/{totalSentences} câu ({progressPercent}%)
             </p>
           </div>
@@ -678,7 +678,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             <button
               type="button"
               onClick={() => setShowTranscriptImportModal(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 rounded-lg border border-sky-200 dark:border-sky-800 transition cursor-pointer"
               title="Quản lý / Đổi phụ đề"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -697,7 +697,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                 }
                 setShowAddSegmentModal((prev) => !prev)
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
               title="Thêm phân đoạn câu mới"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -713,7 +713,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   onDeleteSegment(currentSegment.id)
                 }
               }}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg border border-slate-200 dark:border-slate-800 transition cursor-pointer"
               title="Xóa câu này"
               aria-label="Xóa câu này"
             >
@@ -725,7 +725,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             type="button"
             onClick={handlePrev}
             disabled={activeSegmentIndex === 0}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+            className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             title="Câu trước"
             aria-label="Câu trước"
           >
@@ -736,7 +736,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             type="button"
             onClick={handleNext}
             disabled={activeSegmentIndex === totalSentences - 1}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+            className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             title="Câu tiếp theo"
             aria-label="Câu tiếp theo"
           >
@@ -747,22 +747,22 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
       {/* Add segment inline form when opened in active sentence view */}
       {showAddSegmentModal && onAddSegment && (
-        <form onSubmit={handleCreateSegment} className="p-4 sm:p-5 bg-indigo-50/70 border-b border-indigo-200 space-y-3.5 animate-fade-in">
+        <form onSubmit={handleCreateSegment} className="p-4 sm:p-5 bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-200 dark:border-indigo-800 space-y-3.5 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+            <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
               <Plus className="w-4 h-4" /> Thêm phân đoạn câu mới
             </h4>
             <button
               type="button"
               onClick={() => setShowAddSegmentModal(false)}
-              className="text-xs text-slate-500 hover:text-slate-800"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             >
               Đóng
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian bắt đầu (giây):</label>
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Thời gian bắt đầu (giây):</label>
               <div className="flex gap-1.5">
                 <input
                   type="number"
@@ -770,14 +770,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   min="0"
                   value={newStartTime}
                   onChange={(e) => setNewStartTime(e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-mono"
+                  className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 font-mono text-slate-900 dark:text-white"
                   required
                 />
                 {getCurrentPlayerTime && (
                   <button
                     type="button"
                     onClick={handleCaptureStartTime}
-                    className="px-2.5 py-1.5 text-[11px] font-medium bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-indigo-700 shadow-2xs transition"
+                    className="px-2.5 py-1.5 text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-indigo-700 dark:text-indigo-300 shadow-2xs transition"
                     title="Lấy giây hiện tại từ Video"
                   >
                     ⏱ Lấy giây video
@@ -786,7 +786,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian kết thúc (giây):</label>
+              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Thời gian kết thúc (giây):</label>
               <div className="flex gap-1.5">
                 <input
                   type="number"
@@ -794,14 +794,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   min="0"
                   value={newEndTime}
                   onChange={(e) => setNewEndTime(e.target.value)}
-                  className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-indigo-500 font-mono"
+                  className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 font-mono text-slate-900 dark:text-white"
                   required
                 />
                 {getCurrentPlayerTime && (
                   <button
                     type="button"
                     onClick={handleCaptureEndTime}
-                    className="px-2.5 py-1.5 text-[11px] font-medium bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-indigo-700 shadow-2xs transition"
+                    className="px-2.5 py-1.5 text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-indigo-700 dark:text-indigo-300 shadow-2xs transition"
                     title="Lấy giây hiện tại từ Video"
                   >
                     ⏱ Lấy giây video
@@ -811,31 +811,31 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-700 mb-1">Câu tiếng Anh mẫu (Expected text):</label>
+            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Câu tiếng Anh mẫu (Expected text):</label>
             <input
               type="text"
               value={newText}
               onChange={(e) => setNewText(e.target.value)}
               placeholder="Ví dụ: Today I want to tell you three stories from my life."
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-indigo-500 text-slate-900"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
               required
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-700 mb-1">Dịch nghĩa tiếng Việt (tùy chọn):</label>
+            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Dịch nghĩa tiếng Việt (tùy chọn):</label>
             <input
               type="text"
               value={newTranslation}
               onChange={(e) => setNewTranslation(e.target.value)}
               placeholder="Ví dụ: Hôm nay tôi muốn kể cho các bạn nghe ba câu chuyện..."
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-indigo-500 text-slate-900"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={() => setShowAddSegmentModal(false)}
-              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
             >
               Hủy
             </button>
@@ -850,7 +850,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       )}
 
       {/* Progress Bar */}
-      <div className="w-full bg-slate-100 h-1.5">
+      <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5">
         <div
           className="bg-indigo-600 h-1.5 transition-all duration-300"
           style={{ width: `${((activeSegmentIndex + 1) / totalSentences) * 100}%` }}
@@ -868,11 +868,11 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
           return (
             <>
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                  <Volume2 className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 transition-colors">
+                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                   <span>
-                    Đoạn này gồm <strong className="text-slate-900 font-bold">{expectedWordCount} từ</strong>. Hãy bấm &quot;Nghe lại&quot; và tập trung gõ chính xác từng từ bạn nghe được.
+                    Đoạn này gồm <strong className="text-slate-900 dark:text-white font-bold">{expectedWordCount} từ</strong>. Hãy bấm &quot;Nghe lại&quot; và tập trung gõ chính xác từng từ bạn nghe được.
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -884,10 +884,10 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${
                         isLooping
                           ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                          : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600'}`} />
+                      <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
                       <span>Lặp câu{isLooping ? ': Bật' : ''}</span>
                     </button>
                   )}
@@ -896,7 +896,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                     onClick={onReplaySegment}
                     disabled={!isPlayerReady}
                     title="Nghe lại câu từ đầu (Ctrl + Space hoặc Alt + R)"
-                    className="px-3 py-1.5 bg-white hover:bg-slate-100 disabled:opacity-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                   >
                     Nghe lại
                   </button>
@@ -909,12 +909,12 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   <div className="flex items-center gap-2">
                     <label
                       htmlFor="dictation-input"
-                      className="block text-xs font-bold text-slate-700"
+                      className="block text-xs font-bold text-slate-700 dark:text-slate-300"
                     >
                       Câu trả lời của bạn:
                     </label>
                     {expectedWordCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 shadow-2xs">
                         💡 Gợi ý: {expectedWordCount} từ
                       </span>
                     )}
@@ -924,17 +924,17 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       <span
                         className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
                           userWordCount === expectedWordCount
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                             : userWordCount > expectedWordCount
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
+                            ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                         }`}
                       >
                         Đã gõ: {userWordCount} / {expectedWordCount} từ
                       </span>
                     )}
-                    <span className="text-[11px] text-slate-400 hidden sm:inline">
-                      Phím tắt: <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Enter</kbd> nộp bài • <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Ctrl+Space</kbd> nghe lại
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                      Phím tắt: <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-mono text-slate-700 dark:text-slate-300">Enter</kbd> nộp bài • <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-mono text-slate-700 dark:text-slate-300">Ctrl+Space</kbd> nghe lại
                     </span>
                   </div>
                 </div>
@@ -947,10 +947,10 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={`Gõ lại câu tiếng Anh bạn vừa nghe (${expectedWordCount} từ)... (Nhấn Enter để kiểm tra đáp án)`}
-                    className="w-full p-3.5 text-sm sm:text-base bg-white border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition outline-none text-slate-900 leading-relaxed disabled:bg-slate-100 placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="w-full p-4 text-base sm:text-lg font-medium bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700/80 rounded-2xl focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/20 transition outline-none text-slate-900 dark:text-white leading-relaxed disabled:bg-slate-100 dark:disabled:bg-slate-900 placeholder-slate-400 dark:placeholder-slate-500 tracking-wide"
                   />
                   {userInput.trim() && (
-                    <span className="absolute bottom-2.5 right-3 text-[11px] text-slate-400 font-mono">
+                    <span className="absolute bottom-2.5 right-3 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
                       {userWordCount} / {expectedWordCount} từ
                     </span>
                   )}
@@ -968,7 +968,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
               type="button"
               onClick={handleCheckAnswer}
               disabled={!userInput.trim()}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition active:scale-98 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition active:scale-98 flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
               <Check className="w-4 h-4" />
               <span>Kiểm tra đáp án</span>
@@ -979,7 +979,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
               type="button"
               onClick={handleRetry}
               disabled={!userInput && !scoreResult}
-              className="px-3 py-2 bg-white hover:bg-slate-50 disabled:opacity-40 text-slate-700 text-xs sm:text-sm font-medium rounded-xl border border-slate-200 transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Thử lại</span>
@@ -991,7 +991,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             <button
               type="button"
               onClick={handleToggleReveal}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium rounded-xl transition flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-medium rounded-xl transition flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
               {isRevealed ? (
                 <>
@@ -1008,42 +1008,42 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
         {/* Revealed Expected Transcript Box */}
         {isRevealed && (
-          <div className="p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-xl space-y-2.5 animate-fade-in">
+          <div className="p-4 bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80 rounded-xl space-y-2.5 animate-fade-in">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Bản dịch &amp; Transcript chính thức:
+              <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Bản dịch &amp; Transcript chính thức:
               </span>
-              <span className="text-[11px] text-indigo-700 font-medium">
+              <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
                 {lesson.transcriptSource}
               </span>
             </div>
-            <p className="text-sm font-medium text-slate-900 leading-relaxed select-text">
+            <p className="text-sm font-medium text-slate-900 dark:text-white leading-relaxed select-text">
               {currentSegment.text}
             </p>
 
             {/* Vietnamese Translation */}
-            <div className="border-t border-indigo-100 pt-2 space-y-1">
+            <div className="border-t border-indigo-100 dark:border-indigo-900/60 pt-2 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1">
+                <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wide flex items-center gap-1">
                   🇻🇳 Dịch nghĩa tiếng Việt:
                 </span>
                 {isTranslatingSegment && (
-                  <span className="text-[11px] text-indigo-600 flex items-center gap-1 font-medium">
+                  <span className="text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-medium">
                     <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch tiếng Việt...
                   </span>
                 )}
               </div>
               {segmentTranslation || currentSegment.translation ? (
-                <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed bg-white/80 p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs">
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed bg-white/80 dark:bg-slate-900/90 p-2.5 rounded-lg border border-indigo-100/80 dark:border-slate-800 shadow-2xs">
                   {segmentTranslation || currentSegment.translation}
                 </p>
               ) : isTranslatingSegment ? (
-                <p className="text-xs text-indigo-500 italic">Đang tải bản dịch tiếng Việt...</p>
+                <p className="text-xs text-indigo-500 dark:text-indigo-400 italic">Đang tải bản dịch tiếng Việt...</p>
               ) : (
                 <button
                   type="button"
                   onClick={handleManualTranslateSentence}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold cursor-pointer"
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline font-semibold cursor-pointer"
                 >
                   Dịch câu này sang tiếng Việt
                 </button>
@@ -1054,36 +1054,36 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
         {/* Word-Level Similarity Score & Detailed Results Summary */}
         {scoreResult && (
-          <div className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
+          <div className="mt-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 space-y-4 transition-colors">
             {/* Top Score Banner & Tier */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-4">
               <div className="flex items-center gap-3">
                 <div
                   className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shadow-xs ${
                     scoreResult.score >= 80
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                       : scoreResult.score >= 50
-                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                      : 'bg-rose-100 text-rose-800 border border-rose-200'
+                      ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                      : 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                   }`}
                 >
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-slate-900 tracking-tight">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                       {scoreResult.score}%
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       Độ tương đồng từ
                     </span>
                     {scoreResult.score >= 80 && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold">
                         Đạt chuẩn
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-700 font-medium mt-0.5">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mt-0.5">
                     {scoreResult.feedbackText}
                   </p>
                 </div>
@@ -1091,21 +1091,21 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
               {/* Stats badges */}
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg font-bold shadow-2xs">
+                <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-lg font-bold shadow-2xs">
                   Đúng: {scoreResult.correctCount}
                 </span>
                 {scoreResult.missingCount > 0 && (
-                  <span className="px-2.5 py-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-lg font-bold shadow-2xs">
+                  <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg font-bold shadow-2xs">
                     Sót: {scoreResult.missingCount}
                   </span>
                 )}
                 {scoreResult.incorrectCount > 0 && (
-                  <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-300 rounded-lg font-bold shadow-2xs">
+                  <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 rounded-lg font-bold shadow-2xs">
                     Sai: {scoreResult.incorrectCount}
                   </span>
                 )}
                 {scoreResult.extraCount > 0 && (
-                  <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-300 rounded-lg font-bold shadow-2xs">
+                  <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-lg font-bold shadow-2xs">
                     Thừa: {scoreResult.extraCount}
                   </span>
                 )}
@@ -1115,11 +1115,11 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             {/* Word Alignment Visual Breakdown */}
             <div className="space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-slate-800 block">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
                   Đối chiếu chi tiết từng từ (Word-by-word Alignment):
                 </span>
                 {/* Visual Legend */}
-                <div className="flex items-center gap-3 text-[11px] text-slate-600">
+                <div className="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-400">
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Đúng
                   </span>
@@ -1138,7 +1138,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
               <div
                 role="region"
                 aria-label="Kết quả đối chiếu từng từ"
-                className="flex flex-wrap gap-2 items-center bg-white p-3.5 rounded-xl border border-slate-200 min-h-14 shadow-2xs"
+                className="flex flex-wrap gap-2 items-center bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 min-h-14 shadow-2xs"
               >
                 {scoreResult.alignments.map((item) => {
                   if (item.status === 'correct') {
@@ -1149,7 +1149,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         onClick={() => setSelectedWordToBookmark(item.expectedWord || '')}
                         title="Từ đúng! Nhấp để lưu từ vựng vào sổ tay"
                         aria-label={`Từ đúng: ${item.expectedWord}`}
-                        className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                        className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-lg text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                       >
                         {item.expectedWord}
                       </button>
@@ -1160,17 +1160,17 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       <span
                         key={item.id}
                         aria-label={`Từ gõ sai: ${item.userWord}, từ đúng: ${item.expectedWord}`}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-300 rounded-lg text-xs shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-800 rounded-lg text-xs shadow-2xs"
                       >
-                        <span className="line-through text-rose-600 font-medium">
+                        <span className="line-through text-rose-600 dark:text-rose-400 font-medium">
                           {item.userWord}
                         </span>
-                        <span className="text-slate-400">→</span>
+                        <span className="text-slate-400 dark:text-slate-500">→</span>
                         <button
                           type="button"
                           onClick={() => setSelectedWordToBookmark(item.expectedWord || '')}
                           title="Từ mong đợi. Nhấp để lưu từ vựng vào sổ tay"
-                          className="font-bold text-rose-900 underline hover:text-indigo-700 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                          className="font-bold text-rose-900 dark:text-rose-200 underline hover:text-indigo-700 dark:hover:text-indigo-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                         >
                           {item.expectedWord}
                         </button>
@@ -1185,7 +1185,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         onClick={() => setSelectedWordToBookmark(item.expectedWord || '')}
                         title="Từ bị bỏ sót. Nhấp để lưu từ vựng"
                         aria-label={`Từ bị bỏ sót: ${item.expectedWord}`}
-                        className="px-2.5 py-1 border border-dashed border-slate-400 text-slate-700 bg-slate-50 rounded-lg text-xs font-medium hover:bg-slate-100 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                        className="px-2.5 py-1 border border-dashed border-slate-400 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                       >
                         [+ {item.expectedWord}]
                       </button>
@@ -1197,7 +1197,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         key={item.id}
                         title="Từ gõ thừa"
                         aria-label={`Từ gõ thừa: ${item.userWord}`}
-                        className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-300 line-through rounded-lg text-xs font-medium shadow-2xs"
+                        className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 line-through rounded-lg text-xs font-medium shadow-2xs"
                       >
                         {item.userWord}
                       </span>
@@ -1209,19 +1209,19 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
               {/* Word Bookmark helper banner with word translation, video example sentence, and translated sentence */}
               {selectedWordToBookmark && (
-                <div className="p-3.5 bg-gradient-to-r from-indigo-50 via-white to-indigo-50/60 border border-indigo-200 rounded-xl text-xs space-y-2.5 shadow-2xs animate-fade-in">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2">
+                <div className="p-3.5 bg-gradient-to-r from-indigo-50 dark:from-indigo-950/60 via-white dark:via-slate-900 to-indigo-50/60 dark:to-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs space-y-2.5 shadow-2xs animate-fade-in">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 dark:border-indigo-800/80 pb-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <BookmarkPlus className="w-4 h-4 text-indigo-600 shrink-0" />
-                      <span className="font-bold text-slate-900 text-sm">
+                      <BookmarkPlus className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      <span className="font-bold text-slate-900 dark:text-white text-sm">
                         &quot;{cleanWord(selectedWordToBookmark)}&quot;
                       </span>
                       {isTranslatingVocab && !wordTranslation ? (
-                        <span className="text-[11px] text-indigo-600 flex items-center gap-1 font-medium">
+                        <span className="text-[11px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-medium">
                           <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch từ...
                         </span>
                       ) : wordTranslation ? (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-xs">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold text-xs">
                           Nghĩa: {wordTranslation}
                         </span>
                       ) : null}
@@ -1231,7 +1231,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       <button
                         type="button"
                         onClick={() => setSelectedWordToBookmark(null)}
-                        className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1"
+                        className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 px-2 py-1"
                       >
                         Đóng
                       </button>
@@ -1247,21 +1247,21 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   </div>
 
                   {/* Video context example sentence and its translation */}
-                  <div className="bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/70 space-y-1 text-slate-700">
+                  <div className="bg-slate-50/80 dark:bg-slate-800/80 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700 space-y-1 text-slate-700 dark:text-slate-300">
                     <div className="flex items-start gap-1.5">
-                      <span className="font-bold text-indigo-900 text-[10px] uppercase shrink-0 mt-0.5">
+                      <span className="font-bold text-indigo-900 dark:text-indigo-300 text-[10px] uppercase shrink-0 mt-0.5">
                         Câu ví dụ từ video:
                       </span>
-                      <span className="font-medium text-slate-900 italic">
+                      <span className="font-medium text-slate-900 dark:text-white italic">
                         &quot;{currentSegment.text}&quot;
                       </span>
                     </div>
-                    <div className="flex items-start gap-1.5 text-slate-600">
-                      <span className="font-bold text-emerald-900 text-[10px] uppercase shrink-0 mt-0.5">
+                    <div className="flex items-start gap-1.5 text-slate-600 dark:text-slate-400">
+                      <span className="font-bold text-emerald-900 dark:text-emerald-300 text-[10px] uppercase shrink-0 mt-0.5">
                         Dịch nghĩa câu:
                       </span>
                       {isTranslatingVocab && !contextTranslation ? (
-                        <span className="text-slate-400 italic flex items-center gap-1">
+                        <span className="text-slate-400 dark:text-slate-500 italic flex items-center gap-1">
                           <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch câu ví dụ...
                         </span>
                       ) : (
@@ -1275,31 +1275,31 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
               )}
 
               {bookmarkSuccess && (
-                <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Đã lưu từ vựng vào mục &quot;Từ vựng&quot;!
                 </p>
               )}
             </div>
 
             {/* Results Summary Action Workflow: Retry & Next Sentence */}
-            <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleRetry}
-                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-800 text-xs sm:text-sm font-semibold rounded-xl border border-slate-300 shadow-2xs transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                  className="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                 >
-                  <RotateCcw className="w-4 h-4 text-slate-600" />
+                  <RotateCcw className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   <span>Thử lại câu này (Retry)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={onReplaySegment}
-                  className="px-3 py-2 bg-white hover:bg-slate-50 text-indigo-700 text-xs sm:text-sm font-medium rounded-xl border border-indigo-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                  className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-medium rounded-xl border border-indigo-200 dark:border-indigo-800 transition flex items-center gap-1.5 cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                   title="Nghe lại âm thanh phân đoạn để đối chiếu"
                 >
-                  <Volume2 className="w-4 h-4 text-indigo-600" />
+                  <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Nghe lại để kiểm tra</span>
                 </button>
               </div>
@@ -1321,8 +1321,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             </div>
 
             {/* Non-pronunciation disclaimer */}
-            <div className="flex items-start gap-1.5 text-[11px] text-slate-500 pt-1">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-400" />
+            <div className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-400 dark:text-slate-500" />
               <span>
                 Điểm số tương đồng phản ánh độ chuẩn xác khi gõ lại văn bản, không đo lường hay
                 đánh giá khả năng phát âm.

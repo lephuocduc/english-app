@@ -117,6 +117,24 @@ src/
 - Có schema validation và cơ chế fallback an toàn phòng trường hợp bộ nhớ bị lỗi hoặc chế độ ẩn danh hạn chế storage.
 - Không lưu thông tin nhạy cảm hay API keys trên trình duyệt.
 
+### 3.13. Bộ công cụ tăng cường sự tập trung cao độ (Focus Suite & UX/UI Enhancements)
+- **Chế độ tập trung Zen Mode (<kbd>Alt</kbd> + <kbd>Z</kbd>)**:
+  - Tự động ẩn thanh tiêu đề header, thanh import nhanh và các bảng mẹo vặt gây xao nhãng.
+  - Chuyển giao diện sang studio toàn màn hình tinh gọn với thanh thoát siêu mỏng ở góc trên.
+  - Nhấn <kbd>Alt</kbd> + <kbd>Z</kbd> hoặc <kbd>Esc</kbd> để bật/tắt nhanh bất kỳ lúc nào.
+- **Chế độ nghe mù (Blind Listening Mode - <kbd>Alt</kbd> + <kbd>B</kbd>)**:
+  - Kích hoạt lớp rèm mờ màu tối (dark glassmorphic curtain) che phủ trình phát YouTube kèm hoạt ảnh tai nghe và sóng âm thanh nhịp nhàng.
+  - Ngăn người học dựa dẫm vào hình ảnh hoặc khẩu hình miệng, kích thích tối đa năng lực phản xạ âm thanh và nhận diện ngữ âm chuẩn xác.
+- **Giao diện tối chuyên sâu (Deep Slate Dark Mode)**:
+  - Tích hợp bảng màu Dark Mode cao cấp (nền `#090d16` và slate siêu êm dịu), chống mỏi mắt khi luyện nghe chép chính tả thời gian dài.
+  - Đồng bộ tự động với tùy chọn cá nhân trong `localStorage`.
+- **Thanh phím tắt nổi rảnh tay (Floating Keyboard HUD)**:
+  - Dock điều khiển nổi nhỏ gọn đặt ở cạnh dưới màn hình, hiển thị trực quan các phím tắt cốt lõi: <kbd>Alt+R</kbd> (Nghe lại), <kbd>Alt+L</kbd> (Lặp lại), <kbd>Alt+B</kbd> (Nghe mù), <kbd>Alt+Z</kbd> (Tập trung), <kbd>Alt+A</kbd> (Đáp án), <kbd>Alt+←/→</kbd> (Chuyển câu).
+  - Giúp người học thao tác 100% bằng bàn phím mà không cần rời tay để dùng chuột.
+- **Tối ưu trải nghiệm gõ phím (Typing Ergonomics)**:
+  - Khung nhập văn bản rộng rãi hơn, cỡ chữ phóng lớn dễ đọc (`text-base sm:text-lg`).
+  - Viền phát sáng tập trung (`focus:ring-4 focus:ring-indigo-500/10`) giúp giữ vững tầm nhìn khi đang chép câu.
+
 ---
 
 ## 4. Hướng dẫn cài đặt & Khởi chạy
