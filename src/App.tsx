@@ -681,6 +681,38 @@ export function App() {
     [activeLesson, videosList]
   )
 
+  const handleUpdateVocabulary = (updatedItem: VocabularyItem) => {
+    const updated = storage.updateVocabulary(updatedItem)
+    setVocabularyList(updated)
+    apiClient
+      .saveVocabulary({
+        id: updatedItem.id,
+        word: updatedItem.word,
+        meaning: updatedItem.meaning,
+        contextSentence: updatedItem.contextSentence,
+        timestamp: updatedItem.timestamp,
+        videoId: updatedItem.videoId,
+        lessonTitle: updatedItem.lessonTitle,
+      })
+      .catch(() => {})
+  }
+
+  const handleAddVocabulary = (item: VocabularyItem) => {
+    const updated = storage.addVocabulary(item)
+    setVocabularyList(updated)
+    apiClient
+      .saveVocabulary({
+        id: item.id,
+        word: item.word,
+        meaning: item.meaning,
+        contextSentence: item.contextSentence,
+        timestamp: item.timestamp,
+        videoId: item.videoId,
+        lessonTitle: item.lessonTitle,
+      })
+      .catch(() => {})
+  }
+
   const handleRemoveVocabulary = (id: string) => {
     const toDelete = vocabularyList.find((v) => v.id === id)
     const updated = storage.removeVocabulary(id)
@@ -1161,7 +1193,11 @@ export function App() {
           <VocabularyView
             vocabularyList={vocabularyList}
             onRemoveVocabulary={handleRemoveVocabulary}
+            onUpdateVocabulary={handleUpdateVocabulary}
+            onAddVocabulary={handleAddVocabulary}
             onJumpToTimestamp={handleJumpToVocabTimestamp}
+            activeLessonTitle={activeLesson?.title}
+            activeVideoId={activeLesson?.videoId}
           />
         )}
 

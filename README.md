@@ -82,12 +82,23 @@ src/
 - **Nút điều khiển tiện lợi**: Nút Loop hiển thị trực quan cả trên thanh điều khiển YouTube Player và trong khung bài tập Dictation Studio.
 - **Phím tắt toàn cục**: Nhấn <kbd>Alt</kbd> + <kbd>L</kbd> để bật/tắt nhanh chế độ lặp câu bất cứ lúc nào.
 
-### 3.6. Dịch nghĩa tự động & Sổ tay từ vựng ngữ cảnh cao cấp
-- **Tự động dịch từ vựng & câu ví dụ**: Khi người học nhấp vào một từ vựng bất kỳ từ câu nghe, hệ thống tự động:
+### 3.6. Sổ tay từ vựng & Hệ thống Flashcard lặp lại ngắt quãng (Anki SM-2 Spaced Repetition)
+- **Tự động dịch từ vựng & câu ví dụ**: Khi người học nhấp vào một từ vựng bất kỳ từ câu nghe hoặc tự thêm từ mới:
   - Tra và dịch nghĩa riêng của từ đó sang tiếng Việt (`meaning`).
   - Trích xuất toàn bộ câu video hiện tại làm câu ví dụ ngữ cảnh (`contextSentence`).
   - Tự động dịch luôn câu ví dụ đó sang tiếng Việt (`contextSentenceTranslation`).
-- **Giao diện thẻ từ vựng trực quan**: Hỗ trợ phát âm giọng đọc bản xứ (Web Speech API), hiển thị song ngữ Anh - Việt cho cả từ vựng và câu ví dụ, hỗ trợ tìm kiếm từ vựng và nhảy nhanh đến timestamp video tương ứng.
+  - Phát âm chuẩn giọng bản xứ tích hợp (Web Speech API).
+- **Hệ thống Flashcard ôn tập lặp lại ngắt quãng (Anki SRS - SuperMemo SM-2)**:
+  - Tích hợp trọn vẹn thuật toán **SuperMemo SM-2** với 4 mức đánh giá chuẩn Anki:
+    - 🔴 **1. Again (Quên)**: Đặt lại chu kỳ về 1 ngày, giảm hệ số dễ (`easeFactor`).
+    - 🟠 **2. Hard (Khó)**: Tăng khoảng cách thận trọng, giảm nhẹ hệ số dễ.
+    - 🟢 **3. Good (Nhớ)**: Giãn cách ngày theo cấp số nhân (`interval * easeFactor`).
+    - 🔵 **4. Easy (Dễ)**: Thưởng thêm khoảng cách ôn tập dài và tăng hệ số dễ.
+  - **Dự báo trước khoảng cách ôn tập**: Hiển thị trực tiếp số ngày của chu kỳ tiếp theo trên từng nút bấm (vd: `1 ngày`, `3 ngày`, `7 ngày`, `1 tháng`).
+  - **Đánh dấu đã thuộc (Mastered)**: Người học có thể nhấn nút đánh dấu đã thuộc ngay trên danh sách hoặc phím tắt <kbd>M</kbd> trong Flashcard.
+  - **Chế độ Cloze Test (Ẩn từ trong câu ví dụ)**: Thử thách trí nhớ bằng cách tự động biến từ vựng trong câu ví dụ thành dạng `[ ... ]` (phím tắt <kbd>C</kbd>).
+  - **Bảng thống kê SRS 4 chỉ số**: Theo dõi *Tổng số từ*, *Cần ôn hôm nay (Due)*, *Đang học*, và *Đã thuộc* kèm các tab lọc tức thì.
+  - **Màn hình hoàn thành & Pháo hoa Confetti**: Tự động bắn pháo hoa chúc mừng khi hoàn thành phiên ôn tập và cho phép ôn lại nhanh các từ chưa nhớ.
 
 ### 3.7. Dịch câu sang tiếng Việt khi xem đáp án
 - Khi người học bấm nút **"Xem đáp án"** (<kbd>Alt</kbd> + <kbd>A</kbd>), ngoài câu tiếng Anh gốc, hệ thống tự động hiển thị bản dịch tiếng Việt tương ứng ngay bên dưới: `🇻🇳 Dịch nghĩa tiếng Việt: [Bản dịch]` giúp người học nắm bắt nội dung trọn vẹn.
@@ -241,16 +252,17 @@ Mọi endpoint đều được định kiểu và xác thực schema với **Zod
 
 ## 6. Kiểm thử tự động (Test Suite)
 
-Ứng dụng đi kèm bộ test toàn diện với **108 tests** (100% passing) bao gồm:
+Ứng dụng đi kèm bộ test toàn diện với **126 tests** (100% passing) bao gồm:
+- **Spaced Repetition & SM-2 Tests**: Kiểm tra thuật toán lặp lại ngắt quãng Anki SM-2, tính toán chu kỳ interval, cập nhật ease factor, đánh giá 4 mức Again/Hard/Good/Easy, lọc từ đến hạn ôn tập (due), chế độ cloze test câu ngữ cảnh.
 - **Scoring & Alignment Tests**: Đánh giá độ chính xác Levenshtein, căn chỉnh từ, phân loại từ đúng/sai/thiếu/thừa.
 - **YouTube Parser Tests**: Kiểm tra các dạng URL YouTube khác nhau.
 - **Storage & Cloud Sync Tests**: Kiểm tra độ an toàn dữ liệu trên localStorage, cơ chế tombstone ngăn ngừa hồi sinh từ vựng đã xóa.
-- **UI & Component Integration Tests**: Kiểm thử tương tác giao diện, luồng luyện tập và phím tắt.
+- **UI & Component Integration Tests**: Kiểm thử tương tác giao diện, Flashcard review, sổ từ vựng, luồng luyện tập và phím tắt.
 - **New Feature Tests**: Kiểm thử gợi ý số từ, đếm từ thời gian thực, bật/tắt chế độ lặp lại câu (Loop), dịch nghĩa từ vựng & câu ví dụ, dịch đáp án tiếng Việt, điều hướng đơn câu không nhảy cóc.
 - **Cloudflare D1 & Hono API Tests**: Kiểm thử toàn bộ CRUD endpoints, xác thực schema, kiểm tra phân quyền multi-user, ngăn chặn truy cập trái phép và xử lý lỗi hệ thống (sử dụng in-memory SQLite D1 emulator).
 
 ```bash
-# Chạy toàn bộ 108 tests (100% passing)
+# Chạy toàn bộ 126 tests (100% passing)
 npm test
 
 # Chạy linter kiểm tra mã nguồn (0 warning, 0 error)

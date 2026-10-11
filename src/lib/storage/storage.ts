@@ -231,6 +231,28 @@ export const storage = {
     return updated
   },
 
+  updateVocabulary(updatedItem: VocabularyItem): VocabularyItem[] {
+    const current = this.loadVocabulary()
+    const index = current.findIndex((item) => item.id === updatedItem.id)
+    let updated: VocabularyItem[]
+    if (index >= 0) {
+      updated = [...current]
+      updated[index] = { ...current[index], ...updatedItem }
+    } else {
+      updated = [updatedItem, ...current]
+    }
+    this.saveVocabulary(updated)
+    return updated
+  },
+
+  updateMultipleVocabulary(items: VocabularyItem[]): VocabularyItem[] {
+    const current = this.loadVocabulary()
+    const itemMap = new Map(items.map((it) => [it.id, it]))
+    const updated = current.map((it) => itemMap.get(it.id) || it)
+    this.saveVocabulary(updated)
+    return updated
+  },
+
   removeVocabulary(id: string): VocabularyItem[] {
     const current = this.loadVocabulary()
     const toDelete = current.find((item) => item.id === id)

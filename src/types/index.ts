@@ -86,6 +86,8 @@ export interface StudyPreferences {
   isFocusMode?: boolean
 }
 
+export type SRSRating = 1 | 2 | 3 | 4 // 1: Again, 2: Hard, 3: Good, 4: Easy
+
 export interface VocabularyItem {
   id: string
   word: string
@@ -96,6 +98,14 @@ export interface VocabularyItem {
   videoId: string
   lessonTitle: string
   savedAt: string
+
+  // SRS (Spaced Repetition / Anki SM-2) fields:
+  mastered?: boolean
+  interval?: number // Days until next review
+  easeFactor?: number // Ease factor multiplier (default 2.5, min 1.3)
+  repetitions?: number // Number of consecutive successful recall reviews
+  dueDate?: string // Due date for review in YYYY-MM-DD
+  lastReviewedAt?: string // Last review ISO date
 }
 
 export type NavTab = 'practice' | 'lessons' | 'vocabulary' | 'progress'
