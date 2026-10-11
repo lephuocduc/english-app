@@ -239,15 +239,7 @@ export class ApiClient {
     return res.success && res.data ? res.data : []
   }
 
-  async saveVocabulary(item: {
-    id?: string
-    word: string
-    meaning?: string
-    contextSentence?: string
-    timestamp?: number
-    videoId?: string
-    lessonTitle?: string
-  }): Promise<boolean> {
+  async saveVocabulary(item: Partial<VocabularyItem> & { word: string }): Promise<boolean> {
     const res = await this.request('/vocabulary', {
       method: 'POST',
       body: JSON.stringify(item),

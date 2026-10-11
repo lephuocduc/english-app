@@ -9,9 +9,16 @@ const saveVocabularySchema = z.object({
   word: z.string().min(1, 'Word is required').max(100).trim(),
   meaning: z.string().max(500).optional(),
   contextSentence: z.string().max(1000).default(''),
+  contextSentenceTranslation: z.string().max(1000).optional(),
   timestamp: z.number().min(0).default(0),
-  videoId: z.string().max(32).default(''),
+  videoId: z.string().max(64).default(''),
   lessonTitle: z.string().max(200).default(''),
+  mastered: z.boolean().default(false),
+  interval: z.number().min(0).default(0),
+  easeFactor: z.number().min(1.0).default(2.5),
+  repetitions: z.number().min(0).default(0),
+  dueDate: z.string().max(30).optional(),
+  lastReviewedAt: z.string().max(40).optional(),
 })
 
 interface VocabRow {
@@ -20,10 +27,17 @@ interface VocabRow {
   word: string
   meaning: string | null
   context_sentence: string | null
+  context_sentence_translation: string | null
   timestamp: number | null
   video_id: string | null
   lesson_title: string | null
   saved_at: string
+  mastered: number | null
+  interval: number | null
+  ease_factor: number | null
+  repetitions: number | null
+  due_date: string | null
+  last_reviewed_at: string | null
 }
 
 // GET / - List all saved vocabulary for the authenticated user
@@ -36,10 +50,17 @@ vocabularyRouter.get('/', async (c) => {
       .prepare(
         `SELECT id, word, meaning, 
                 context_sentence as contextSentence,
+                context_sentence_translation as contextSentenceTranslation,
                 timestamp,
                 video_id as videoId,
                 lesson_title as lessonTitle,
-                saved_at as savedAt
+                saved_at as savedAt,
+                mastered,
+                interval,
+                ease_factor as easeFactor,
+                repetitions,
+                due_date as dueDate,
+                last_reviewed_at as lastReviewedAt
          FROM saved_vocabulary 
          WHERE user_id = ? 
          ORDER BY saved_at DESC`
@@ -47,9 +68,17 @@ vocabularyRouter.get('/', async (c) => {
       .bind(userId)
       .all<VocabRow>()
 
+    const data = (results || []).map((row) => ({
+      ...row,
+      mastered: Boolean(row.mastered),
+      interval: Number(row.interval || 0),
+      repetitions: Number(row.repetitions || 0),
+      easeFactor: Number(row.ease_factor ?? 2.5),
+    }))
+
     return c.json({
       success: true,
-      data: results || [],
+      data,
     })
   } catch (err) {
     console.error('[API vocabulary:list error]', err)
@@ -57,7 +86,7 @@ vocabularyRouter.get('/', async (c) => {
   }
 })
 
-// POST / - Save a new vocabulary item
+// POST / - Save or update a vocabulary item with SRS Spaced Repetition progress
 vocabularyRouter.post('/', async (c) => {
   const userId = c.get('userId')
   const db = c.env.DB
@@ -85,11 +114,29 @@ vocabularyRouter.post('/', async (c) => {
   const vocabId = data.id || `vocab-${crypto.randomUUID()}`
 
   try {
-    // Parameterized insert
+    // Parameterized upsert
     await db
       .prepare(
-        `INSERT INTO saved_vocabulary (id, user_id, word, meaning, context_sentence, timestamp, video_id, lesson_title, saved_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        `INSERT INTO saved_vocabulary (
+          id, user_id, word, meaning, context_sentence, context_sentence_translation,
+          timestamp, video_id, lesson_title, saved_at,
+          mastered, interval, ease_factor, repetitions, due_date, last_reviewed_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          word = excluded.word,
+          meaning = COALESCE(excluded.meaning, saved_vocabulary.meaning),
+          context_sentence = excluded.context_sentence,
+          context_sentence_translation = COALESCE(excluded.context_sentence_translation, saved_vocabulary.context_sentence_translation),
+          timestamp = excluded.timestamp,
+          video_id = excluded.video_id,
+          lesson_title = excluded.lesson_title,
+          mastered = excluded.mastered,
+          interval = excluded.interval,
+          ease_factor = excluded.ease_factor,
+          repetitions = excluded.repetitions,
+          due_date = excluded.due_date,
+          last_reviewed_at = excluded.last_reviewed_at`
       )
       .bind(
         vocabId,
@@ -97,9 +144,16 @@ vocabularyRouter.post('/', async (c) => {
         data.word,
         data.meaning || null,
         data.contextSentence,
+        data.contextSentenceTranslation || null,
         data.timestamp,
         data.videoId,
-        data.lessonTitle
+        data.lessonTitle,
+        data.mastered ? 1 : 0,
+        data.interval,
+        data.easeFactor,
+        data.repetitions,
+        data.dueDate || null,
+        data.lastReviewedAt || null
       )
       .run()
 
@@ -111,10 +165,17 @@ vocabularyRouter.post('/', async (c) => {
           word: data.word,
           meaning: data.meaning,
           contextSentence: data.contextSentence,
+          contextSentenceTranslation: data.contextSentenceTranslation,
           timestamp: data.timestamp,
           videoId: data.videoId,
           lessonTitle: data.lessonTitle,
           savedAt: new Date().toISOString(),
+          mastered: data.mastered,
+          interval: data.interval,
+          easeFactor: data.easeFactor,
+          repetitions: data.repetitions,
+          dueDate: data.dueDate,
+          lastReviewedAt: data.lastReviewedAt,
         },
       },
       201

@@ -658,17 +658,7 @@ export function App() {
     setVocabularyList(updated)
 
     // Persist to Cloudflare D1
-    apiClient
-      .saveVocabulary({
-        id: newItem.id,
-        word: newItem.word,
-        meaning: newItem.meaning,
-        contextSentence: newItem.contextSentence,
-        timestamp: newItem.timestamp,
-        videoId: newItem.videoId,
-        lessonTitle: newItem.lessonTitle,
-      })
-      .catch(() => {})
+    apiClient.saveVocabulary(newItem).catch(() => {})
   }
 
   // Update a segment's Vietnamese translation in lesson
@@ -690,33 +680,13 @@ export function App() {
   const handleUpdateVocabulary = (updatedItem: VocabularyItem) => {
     const updated = storage.updateVocabulary(updatedItem)
     setVocabularyList(updated)
-    apiClient
-      .saveVocabulary({
-        id: updatedItem.id,
-        word: updatedItem.word,
-        meaning: updatedItem.meaning,
-        contextSentence: updatedItem.contextSentence,
-        timestamp: updatedItem.timestamp,
-        videoId: updatedItem.videoId,
-        lessonTitle: updatedItem.lessonTitle,
-      })
-      .catch(() => {})
+    apiClient.saveVocabulary(updatedItem).catch(() => {})
   }
 
   const handleAddVocabulary = (item: VocabularyItem) => {
     const updated = storage.addVocabulary(item)
     setVocabularyList(updated)
-    apiClient
-      .saveVocabulary({
-        id: item.id,
-        word: item.word,
-        meaning: item.meaning,
-        contextSentence: item.contextSentence,
-        timestamp: item.timestamp,
-        videoId: item.videoId,
-        lessonTitle: item.lessonTitle,
-      })
-      .catch(() => {})
+    apiClient.saveVocabulary(item).catch(() => {})
   }
 
   const handleRemoveVocabulary = (id: string) => {

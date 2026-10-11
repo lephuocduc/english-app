@@ -553,7 +553,14 @@ export const storage = {
         const cloudMatch = matchedKey ? vocabMap.get(matchedKey) : undefined
 
         if (cloudMatch) {
-          // Merge: Cloud fields + Local fields (Local SRS fields and edits take precedence!)
+          // If cloud has newer review date, use cloud SRS progress, otherwise local wins
+          const isCloudSrsNewer = Boolean(
+            cloudMatch.lastReviewedAt &&
+              (!v.lastReviewedAt || cloudMatch.lastReviewedAt > v.lastReviewedAt)
+          )
+          const srsSource = isCloudSrsNewer ? cloudMatch : v
+          const fallbackSrs = isCloudSrsNewer ? v : cloudMatch
+
           const targetKey = matchedKey || key
           const mergedItem: VocabularyItem = {
             ...cloudMatch,
@@ -567,15 +574,20 @@ export const storage = {
             id: v.id || cloudMatch.id,
             savedAt: v.savedAt || cloudMatch.savedAt || new Date().toISOString(),
 
-            // STRICT SRS RETENTION: Never wipe user review state!
-            mastered: v.mastered ?? cloudMatch.mastered ?? false,
-            interval: v.interval ?? cloudMatch.interval,
-            easeFactor: v.easeFactor ?? cloudMatch.easeFactor,
-            repetitions: v.repetitions ?? cloudMatch.repetitions,
-            dueDate: v.dueDate || cloudMatch.dueDate,
-            lastReviewedAt: v.lastReviewedAt || cloudMatch.lastReviewedAt,
+            // STRICT SRS SYNC: Whichever device had the most recent review takes precedence
+            mastered: srsSource.mastered ?? fallbackSrs.mastered ?? false,
+            interval: srsSource.interval ?? fallbackSrs.interval,
+            easeFactor: srsSource.easeFactor ?? fallbackSrs.easeFactor,
+            repetitions: srsSource.repetitions ?? fallbackSrs.repetitions,
+            dueDate: srsSource.dueDate || fallbackSrs.dueDate,
+            lastReviewedAt: srsSource.lastReviewedAt || fallbackSrs.lastReviewedAt,
           }
           vocabMap.set(targetKey, mergedItem)
+
+          // If local has newer progress or edits, sync up to cloud
+          if (!isCloudSrsNewer && v.lastReviewedAt) {
+            apiClient.saveVocabulary(mergedItem).catch(() => {})
+          }
         } else {
           // Word exists locally but not in cloud: keep it and sync to cloud
           vocabMap.set(key, v)

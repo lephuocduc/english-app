@@ -13,10 +13,12 @@ export function createTestD1Database(withSeed = false): D1Database {
   // Enable foreign keys
   sqlite.exec('PRAGMA foreign_keys = ON;')
 
-  // Run initial migration
-  const migrationPath = join(process.cwd(), 'migrations', '0001_initial.sql')
-  const migrationSql = readFileSync(migrationPath, 'utf8')
-  sqlite.exec(migrationSql)
+  // Run migrations
+  const migration1Path = join(process.cwd(), 'migrations', '0001_initial.sql')
+  sqlite.exec(readFileSync(migration1Path, 'utf8'))
+
+  const migration2Path = join(process.cwd(), 'migrations', '0002_add_srs_columns.sql')
+  sqlite.exec(readFileSync(migration2Path, 'utf8'))
 
   if (withSeed) {
     const seedPath = join(process.cwd(), 'migrations', 'seed.sql')
