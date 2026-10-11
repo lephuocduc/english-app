@@ -119,17 +119,23 @@ segmentsRouter.post('/lessons/:lessonId', async (c) => {
   }
 
   try {
-    // Verify lesson ownership
+    // Ensure parent lesson exists (auto-create if missing for seamless sync)
     const lesson = await db
       .prepare('SELECT user_id FROM lessons WHERE id = ?')
       .bind(lessonId)
       .first<{ user_id: string }>()
 
     if (!lesson) {
-      return c.json({ success: false, error: 'Lesson not found' }, 404)
-    }
-
-    if (lesson.user_id !== userId) {
+      const vid = lessonId.replace(/^video-/, '')
+      await db
+        .prepare(
+          `INSERT INTO lessons (id, user_id, video_id, title, description, language, level, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 'Imported Lesson', 'en', 'Intermediate', datetime('now'), datetime('now'))
+           ON CONFLICT(id) DO NOTHING`
+        )
+        .bind(lessonId, userId, vid, `YouTube: ${vid}`)
+        .run()
+    } else if (lesson.user_id !== userId) {
       return c.json({ success: false, error: 'Forbidden: You do not own this lesson' }, 403)
     }
 
@@ -141,7 +147,14 @@ segmentsRouter.post('/lessons/:lessonId', async (c) => {
       return db
         .prepare(
           `INSERT INTO transcript_segments (id, lesson_id, user_id, start_time, end_time, text, translation, hint, sequence_order, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+           ON CONFLICT(id) DO UPDATE SET
+             start_time = excluded.start_time,
+             end_time = excluded.end_time,
+             text = excluded.text,
+             translation = excluded.translation,
+             hint = excluded.hint,
+             sequence_order = excluded.sequence_order`
         )
         .bind(
           segId,

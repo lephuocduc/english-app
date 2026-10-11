@@ -37,6 +37,10 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
       description: 'Tạm dừng hoặc tiếp tục phát video (khi không ở trong ô nhập)',
     },
     {
+      keys: ['Alt', 'L'],
+      description: 'Bật/tắt tự động lặp lại phân đoạn câu (Loop)',
+    },
+    {
       keys: ['Alt', '←'],
       description: 'Chuyển về câu trước đó trong bài học',
     },

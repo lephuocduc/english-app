@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   VOCABULARY: 'listenflow_vocabulary_v1',
   ACTIVE_LESSON_ID: 'listenflow_active_lesson_id_v1',
   VIDEOS: 'listenflow_youtube_videos_v2',
+  DELETED_VOCABULARY: 'listenflow_deleted_vocab_v1',
 }
 
 const DEFAULT_PREFERENCES: StudyPreferences = {
@@ -111,10 +112,8 @@ function isYouTubeVideoList(val: unknown): val is YouTubeVideo[] {
     (item) =>
       item &&
       typeof item === 'object' &&
-      typeof item.id === 'string' &&
-      typeof item.videoId === 'string' &&
-      typeof item.title === 'string' &&
-      Array.isArray(item.sentences)
+      typeof (item as Partial<YouTubeVideo>).id === 'string' &&
+      typeof (item as Partial<YouTubeVideo>).videoId === 'string'
   )
 }
 
@@ -195,7 +194,30 @@ export const storage = {
     safeSetItem(STORAGE_KEYS.VOCABULARY, items)
   },
 
+  loadDeletedVocab(): Set<string> {
+    const stored = safeGetItem<string[]>(
+      STORAGE_KEYS.DELETED_VOCABULARY,
+      (v): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string')
+    )
+    return new Set(stored || [])
+  },
+
+  addDeletedVocabTombstone(id: string, word?: string): void {
+    const set = this.loadDeletedVocab()
+    if (id) set.add(id)
+    if (word) set.add(word.trim().toLowerCase())
+    safeSetItem(STORAGE_KEYS.DELETED_VOCABULARY, Array.from(set))
+  },
+
+  removeDeletedVocabTombstone(id: string, word?: string): void {
+    const set = this.loadDeletedVocab()
+    if (id) set.delete(id)
+    if (word) set.delete(word.trim().toLowerCase())
+    safeSetItem(STORAGE_KEYS.DELETED_VOCABULARY, Array.from(set))
+  },
+
   addVocabulary(item: VocabularyItem): VocabularyItem[] {
+    this.removeDeletedVocabTombstone(item.id, item.word)
     const current = this.loadVocabulary()
     // Avoid duplicate words in same lesson
     const filtered = current.filter(
@@ -208,8 +230,21 @@ export const storage = {
 
   removeVocabulary(id: string): VocabularyItem[] {
     const current = this.loadVocabulary()
+    const toDelete = current.find((item) => item.id === id)
     const updated = current.filter((item) => item.id !== id)
     this.saveVocabulary(updated)
+
+    // Save tombstone to prevent syncWithCloud from resurrecting it
+    this.addDeletedVocabTombstone(id, toDelete?.word)
+
+    // Mirror to Cloudflare D1 in background
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient.deleteVocabulary(id).catch(() => {})
+      if (toDelete?.word) {
+        apiClient.deleteVocabulary(toDelete.word).catch(() => {})
+      }
+    }
+
     return updated
   },
 
@@ -230,7 +265,13 @@ export const storage = {
   },
 
   loadVideos(): YouTubeVideo[] | null {
-    return safeGetItem(STORAGE_KEYS.VIDEOS, isYouTubeVideoList)
+    const loaded = safeGetItem(STORAGE_KEYS.VIDEOS, isYouTubeVideoList)
+    if (!loaded) return null
+    return loaded.map((item) => ({
+      ...item,
+      title: item.title || `YouTube: ${item.videoId}`,
+      sentences: Array.isArray(item.sentences) ? item.sentences : [],
+    }))
   },
 
   saveVideos(videos: YouTubeVideo[]): void {
@@ -271,6 +312,9 @@ export const storage = {
 
   deleteVideo(videoIdOrId: string): YouTubeVideo[] {
     const current = this.loadVideos() || []
+    const toDelete = current.find(
+      (v) => v.id === videoIdOrId || v.videoId === videoIdOrId
+    )
     const updated = current.filter(
       (v) => v.id !== videoIdOrId && v.videoId !== videoIdOrId
     )
@@ -279,6 +323,9 @@ export const storage = {
     // Mirror to Cloudflare D1 API in background
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
       apiClient.deleteLesson(videoIdOrId).catch(() => {})
+      if (toDelete && toDelete.id !== videoIdOrId) {
+        apiClient.deleteLesson(toDelete.id).catch(() => {})
+      }
     }
 
     return updated
@@ -320,32 +367,108 @@ export const storage = {
       ])
 
       const local = this.loadVideos() || []
-      const merged = [...cloudLessons]
+      const mergedMap = new Map<string, YouTubeVideo>()
+
+      // 1. Seed with cloud lessons
+      for (const cl of cloudLessons) {
+        mergedMap.set(cl.id, {
+          ...cl,
+          sentences: Array.isArray(cl.sentences) ? cl.sentences : [],
+        })
+      }
+
+      // 2. Merge local lessons, preserving better titles & richer sentences
       for (const l of local) {
-        if (!merged.some((c) => c.videoId === l.videoId || c.id === l.id)) {
-          merged.push(l)
-          // Upload local lesson to cloud
+        const existing =
+          mergedMap.get(l.id) ||
+          Array.from(mergedMap.values()).find((x) => x.videoId === l.videoId)
+
+        if (existing) {
+          const betterSentences =
+            l.sentences && l.sentences.length > (existing.sentences?.length || 0)
+              ? l.sentences
+              : existing.sentences || []
+          const betterTitle =
+            l.title &&
+            !l.title.startsWith('YouTube: ') &&
+            !l.title.startsWith('video-') &&
+            l.title !== 'Đang tải tiêu đề YouTube...'
+              ? l.title
+              : existing.title
+
+          const mergedItem: YouTubeVideo = {
+            ...existing,
+            ...l,
+            title: betterTitle,
+            sentences: betterSentences,
+          }
+          mergedMap.set(mergedItem.id, mergedItem)
+
+          // If local had sentences but cloud didn't, push to cloud
+          if (l.sentences && l.sentences.length > (existing.sentences?.length || 0)) {
+            apiClient
+              .createLesson({
+                id: mergedItem.id,
+                videoId: mergedItem.videoId,
+                title: mergedItem.title,
+                description: mergedItem.description,
+                language: mergedItem.language,
+                level: mergedItem.level,
+                sentences: betterSentences,
+              })
+              .catch(() => {})
+          }
+        } else {
+          const normalized: YouTubeVideo = {
+            ...l,
+            sentences: Array.isArray(l.sentences) ? l.sentences : [],
+          }
+          mergedMap.set(normalized.id, normalized)
           apiClient
             .createLesson({
-              id: l.id,
-              videoId: l.videoId,
-              title: l.title,
-              description: l.description,
-              language: l.language,
-              level: l.level,
-              sentences: l.sentences,
+              id: normalized.id,
+              videoId: normalized.videoId,
+              title: normalized.title,
+              description: normalized.description,
+              language: normalized.language,
+              level: normalized.level,
+              sentences: normalized.sentences,
             })
             .catch(() => {})
         }
       }
+
+      const merged = Array.from(mergedMap.values())
       this.saveVideos(merged)
 
       const localV = this.loadVocabulary() || []
-      const mergedV = [...cloudVocab]
+      const deletedTombstones = this.loadDeletedVocab()
+
+      // 1. Filter out any cloud vocabulary that has been deleted locally
+      const validCloudVocab = cloudVocab.filter(
+        (c) =>
+          !deletedTombstones.has(c.id) &&
+          !deletedTombstones.has(c.word.trim().toLowerCase())
+      )
+
+      // Background cleanup: ensure server deletes any tombstones
+      if (deletedTombstones.size > 0) {
+        for (const tombstone of deletedTombstones) {
+          apiClient.deleteVocabulary(tombstone).catch(() => {})
+        }
+      }
+
+      // 2. Merge local vocabulary with valid cloud vocabulary
+      const mergedV = [...validCloudVocab]
       for (const v of localV) {
-        if (!mergedV.some((c) => c.word.toLowerCase() === v.word.toLowerCase() && c.videoId === v.videoId)) {
-          mergedV.push(v)
-          apiClient.saveVocabulary(v).catch(() => {})
+        const isDeleted =
+          deletedTombstones.has(v.id) ||
+          deletedTombstones.has(v.word.trim().toLowerCase())
+        if (!isDeleted) {
+          if (!mergedV.some((c) => c.word.toLowerCase() === v.word.toLowerCase() && c.videoId === v.videoId)) {
+            mergedV.push(v)
+            apiClient.saveVocabulary(v).catch(() => {})
+          }
         }
       }
       this.saveVocabulary(mergedV)

@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  Repeat,
   Sparkles,
   BookmarkPlus,
   Volume2,
@@ -30,20 +31,30 @@ import { scoreDictation } from '../../lib/scoring/scorer'
 import { parseUniversalTranscript } from '../../lib/transcript/transcriptParser'
 import { TranscriptImportModal } from '../transcript/TranscriptImportModal'
 import { apiClient } from '../../lib/api/client'
+import { translateToVietnamese, cleanWord } from '../../lib/translation/translator'
 
 interface DictationStudioProps {
   lesson: Lesson
   activeSegmentIndex: number
   isPlayerReady: boolean
+  isLooping?: boolean
+  onToggleLoop?: () => void
   onSelectSegment: (index: number) => void
   onReplaySegment: () => void
   onSaveProgress: (progress: UserSentenceProgress) => void
   savedProgressMap: Record<string, UserSentenceProgress>
-  onBookmarkVocabulary?: (word: string, contextSentence: string, timestamp: number) => void
+  onBookmarkVocabulary?: (
+    word: string,
+    contextSentence: string,
+    timestamp: number,
+    meaning?: string,
+    contextSentenceTranslation?: string
+  ) => void
   onAddSegment?: (segment: { startTime: number; endTime: number; text: string; translation?: string }) => void
   onImportTranscript?: (segments: SentenceSegment[], sourceName?: string) => void
   onDeleteSegment?: (segmentId: string) => void
   onAutoFetchTranscript?: () => Promise<void>
+  onUpdateSegmentTranslation?: (segmentId: string, translation: string) => void
   isFetchingTranscript?: boolean
   getCurrentPlayerTime?: () => number
 }
@@ -52,6 +63,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   lesson,
   activeSegmentIndex,
   isPlayerReady,
+  isLooping = false,
+  onToggleLoop,
   onSelectSegment,
   onReplaySegment,
   onSaveProgress,
@@ -61,10 +74,11 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   onImportTranscript,
   onDeleteSegment,
   onAutoFetchTranscript,
+  onUpdateSegmentTranslation,
   isFetchingTranscript = false,
   getCurrentPlayerTime,
 }) => {
-  const currentSegment: SentenceSegment | undefined = lesson.sentences[activeSegmentIndex]
+  const currentSegment: SentenceSegment | undefined = lesson?.sentences?.[activeSegmentIndex]
   const saved = currentSegment ? savedProgressMap[currentSegment.id] : undefined
 
   const [userInput, setUserInput] = useState<string>(() => saved?.userInput || '')
@@ -78,6 +92,62 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   const [selectedWordToBookmark, setSelectedWordToBookmark] = useState<string | null>(null)
   const [bookmarkSuccess, setBookmarkSuccess] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Translation states for active sentence and vocabulary
+  const [segmentTranslation, setSegmentTranslation] = useState<string>(
+    () => currentSegment?.translation || ''
+  )
+  const [isTranslatingSegment, setIsTranslatingSegment] = useState(false)
+  const [wordTranslation, setWordTranslation] = useState<string>('')
+  const [contextTranslation, setContextTranslation] = useState<string>('')
+  const [isTranslatingVocab, setIsTranslatingVocab] = useState(false)
+
+  // Sync segment translation when active sentence changes
+  useEffect(() => {
+    setSegmentTranslation(currentSegment?.translation || '')
+    setIsTranslatingSegment(false)
+  }, [currentSegment?.id, currentSegment?.translation])
+
+  // Automatically fetch translation for selected word and its sentence from video
+  useEffect(() => {
+    if (!selectedWordToBookmark || !currentSegment) {
+      setWordTranslation('')
+      setContextTranslation('')
+      return
+    }
+
+    const cleaned = cleanWord(selectedWordToBookmark)
+    if (!cleaned) return
+
+    let isCurrent = true
+    setIsTranslatingVocab(true)
+
+    const knownSentenceTrans = currentSegment.translation || segmentTranslation
+    const sentencePromise = knownSentenceTrans
+      ? Promise.resolve(knownSentenceTrans)
+      : translateToVietnamese(currentSegment.text)
+
+    Promise.all([translateToVietnamese(cleaned), sentencePromise])
+      .then(([wTrans, sTrans]) => {
+        if (!isCurrent) return
+        setWordTranslation(wTrans || '')
+        setContextTranslation(sTrans || '')
+        if (sTrans && !segmentTranslation) {
+          setSegmentTranslation(sTrans)
+          if (onUpdateSegmentTranslation) {
+            onUpdateSegmentTranslation(currentSegment.id, sTrans)
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isCurrent) setIsTranslatingVocab(false)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [selectedWordToBookmark, currentSegment, segmentTranslation, onUpdateSegmentTranslation])
 
   // When switching to another sentence, reset the typing input to blank and focus
   useEffect(() => {
@@ -153,8 +223,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     }, 60)
   }
 
-  // Toggle revealing expected answer
-  const handleToggleReveal = () => {
+  // Toggle revealing expected answer - automatically translates to Vietnamese if needed
+  const handleToggleReveal = async () => {
     const nextRevealed = !isRevealed
     setIsRevealed(nextRevealed)
 
@@ -163,6 +233,42 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       if (prev) {
         onSaveProgress({ ...prev, isRevealed: nextRevealed })
       }
+
+      // Automatically translate sentence if revealing answer and no translation exists yet
+      if (nextRevealed && !segmentTranslation && !currentSegment.translation) {
+        setIsTranslatingSegment(true)
+        try {
+          const trans = await translateToVietnamese(currentSegment.text)
+          if (trans) {
+            setSegmentTranslation(trans)
+            if (onUpdateSegmentTranslation) {
+              onUpdateSegmentTranslation(currentSegment.id, trans)
+            }
+          }
+        } catch (err) {
+          console.warn('Auto translation error:', err)
+        } finally {
+          setIsTranslatingSegment(false)
+        }
+      }
+    }
+  }
+
+  const handleManualTranslateSentence = async () => {
+    if (!currentSegment) return
+    setIsTranslatingSegment(true)
+    try {
+      const trans = await translateToVietnamese(currentSegment.text)
+      if (trans) {
+        setSegmentTranslation(trans)
+        if (onUpdateSegmentTranslation) {
+          onUpdateSegmentTranslation(currentSegment.id, trans)
+        }
+      }
+    } catch (err) {
+      console.warn('Manual translation error:', err)
+    } finally {
+      setIsTranslatingSegment(false)
     }
   }
 
@@ -180,34 +286,28 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   }
 
   // Keyboard shortcut listener within typing area
+  // Note: Global shortcuts (Alt+ArrowLeft, Alt+ArrowRight, Alt+L, Alt+R, Ctrl+Space)
+  // bubble naturally to window in App.tsx to prevent duplicate double-step triggers.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter without Shift -> Submit answer
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleCheckAnswer()
     }
-    // Ctrl + Space or Alt + R -> Replay current sentence
-    if ((e.ctrlKey && e.code === 'Space') || (e.altKey && e.key.toLowerCase() === 'r')) {
-      e.preventDefault()
-      onReplaySegment()
-    }
-    // Alt + Left -> Previous sentence
-    if (e.altKey && e.key === 'ArrowLeft') {
-      e.preventDefault()
-      handlePrev()
-    }
-    // Alt + Right -> Next sentence
-    if (e.altKey && e.key === 'ArrowRight') {
-      e.preventDefault()
-      handleNext()
-    }
   }
 
   const handleSaveWord = (word: string) => {
     if (!currentSegment || !onBookmarkVocabulary) return
-    onBookmarkVocabulary(word, currentSegment.text, currentSegment.startTime)
+    const cleaned = cleanWord(word)
+    onBookmarkVocabulary(
+      cleaned,
+      currentSegment.text,
+      currentSegment.startTime,
+      wordTranslation.trim() || undefined,
+      contextTranslation.trim() || undefined
+    )
     setBookmarkSuccess(true)
-    setTimeout(() => setBookmarkSuccess(false), 2000)
+    setTimeout(() => setBookmarkSuccess(false), 2500)
   }
 
   const [showAddSegmentModal, setShowAddSegmentModal] = useState(false)
@@ -760,53 +860,105 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       {/* Active Segment Typing Studio */}
       <div className="p-4 sm:p-5 space-y-4">
         {/* Audio Prompt & Listen trigger */}
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Volume2 className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span>Hãy bấm &quot;Nghe lại câu&quot; và tập trung gõ chính xác từng từ bạn nghe được.</span>
-          </div>
-          <button
-            type="button"
-            onClick={onReplaySegment}
-            disabled={!isPlayerReady}
-            title="Nghe lại câu từ đầu (Ctrl + Space hoặc Alt + R)"
-            className="px-3 py-1.5 bg-white hover:bg-slate-100 disabled:opacity-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-          >
-            Nghe lại
-          </button>
-        </div>
+        {(() => {
+          const expectedWords = currentSegment ? currentSegment.text.trim().split(/\s+/).filter(Boolean) : []
+          const expectedWordCount = expectedWords.length
+          const userWords = userInput.trim().split(/\s+/).filter(Boolean)
+          const userWordCount = userWords.length
 
-        {/* Textarea Input Area */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label
-              htmlFor="dictation-input"
-              className="block text-xs font-semibold text-slate-700"
-            >
-              Câu trả lời của bạn:
-            </label>
-            <span className="text-[11px] text-slate-400">
-              Phím tắt: <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Enter</kbd> nộp bài • <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Ctrl+Space</kbd> nghe lại
-            </span>
-          </div>
-          <div className="relative">
-            <textarea
-              id="dictation-input"
-              ref={textareaRef}
-              rows={3}
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Gõ lại câu tiếng Anh bạn vừa nghe... (Nhấn Enter để kiểm tra đáp án)"
-              className="w-full p-3.5 text-sm sm:text-base bg-white border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition outline-none text-slate-900 leading-relaxed disabled:bg-slate-100 placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500"
-            />
-            {userInput.trim() && (
-              <span className="absolute bottom-2.5 right-3 text-[11px] text-slate-400 font-mono">
-                {userInput.trim().split(/\s+/).length} từ
-              </span>
-            )}
-          </div>
-        </div>
+          return (
+            <>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <Volume2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>
+                    Đoạn này gồm <strong className="text-slate-900 font-bold">{expectedWordCount} từ</strong>. Hãy bấm &quot;Nghe lại&quot; và tập trung gõ chính xác từng từ bạn nghe được.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onToggleLoop && (
+                    <button
+                      type="button"
+                      onClick={onToggleLoop}
+                      title={isLooping ? 'Tắt tự động lặp lại câu (Alt + L)' : 'Bật tự động lặp lại câu (Alt + L)'}
+                      className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                        isLooping
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600'}`} />
+                      <span>Lặp câu{isLooping ? ': Bật' : ''}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onReplaySegment}
+                    disabled={!isPlayerReady}
+                    title="Nghe lại câu từ đầu (Ctrl + Space hoặc Alt + R)"
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 disabled:opacity-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                  >
+                    Nghe lại
+                  </button>
+                </div>
+              </div>
+
+              {/* Textarea Input Area */}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="dictation-input"
+                      className="block text-xs font-bold text-slate-700"
+                    >
+                      Câu trả lời của bạn:
+                    </label>
+                    {expectedWordCount > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                        💡 Gợi ý: {expectedWordCount} từ
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {expectedWordCount > 0 && (
+                      <span
+                        className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
+                          userWordCount === expectedWordCount
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : userWordCount > expectedWordCount
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        Đã gõ: {userWordCount} / {expectedWordCount} từ
+                      </span>
+                    )}
+                    <span className="text-[11px] text-slate-400 hidden sm:inline">
+                      Phím tắt: <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Enter</kbd> nộp bài • <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Ctrl+Space</kbd> nghe lại
+                    </span>
+                  </div>
+                </div>
+                <div className="relative">
+                  <textarea
+                    id="dictation-input"
+                    ref={textareaRef}
+                    rows={3}
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={`Gõ lại câu tiếng Anh bạn vừa nghe (${expectedWordCount} từ)... (Nhấn Enter để kiểm tra đáp án)`}
+                    className="w-full p-3.5 text-sm sm:text-base bg-white border border-slate-300 rounded-xl focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition outline-none text-slate-900 leading-relaxed disabled:bg-slate-100 placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  />
+                  {userInput.trim() && (
+                    <span className="absolute bottom-2.5 right-3 text-[11px] text-slate-400 font-mono">
+                      {userWordCount} / {expectedWordCount} từ
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )
+        })()}
 
         {/* Action Buttons Row */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -856,11 +1008,10 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
         {/* Revealed Expected Transcript Box */}
         {isRevealed && (
-          <div className="p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-xl space-y-2 animate-fade-in">
+          <div className="p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-xl space-y-2.5 animate-fade-in">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Bản dịch &amp; Transcript
-                chính thức:
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Bản dịch &amp; Transcript chính thức:
               </span>
               <span className="text-[11px] text-indigo-700 font-medium">
                 {lesson.transcriptSource}
@@ -869,11 +1020,35 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             <p className="text-sm font-medium text-slate-900 leading-relaxed select-text">
               {currentSegment.text}
             </p>
-            {currentSegment.translation && (
-              <p className="text-xs text-slate-600 italic border-t border-indigo-100 pt-2">
-                Dịch nghĩa: {currentSegment.translation}
-              </p>
-            )}
+
+            {/* Vietnamese Translation */}
+            <div className="border-t border-indigo-100 pt-2 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1">
+                  🇻🇳 Dịch nghĩa tiếng Việt:
+                </span>
+                {isTranslatingSegment && (
+                  <span className="text-[11px] text-indigo-600 flex items-center gap-1 font-medium">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch tiếng Việt...
+                  </span>
+                )}
+              </div>
+              {segmentTranslation || currentSegment.translation ? (
+                <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed bg-white/80 p-2.5 rounded-lg border border-indigo-100/80 shadow-2xs">
+                  {segmentTranslation || currentSegment.translation}
+                </p>
+              ) : isTranslatingSegment ? (
+                <p className="text-xs text-indigo-500 italic">Đang tải bản dịch tiếng Việt...</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleManualTranslateSentence}
+                  className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold cursor-pointer"
+                >
+                  Dịch câu này sang tiếng Việt
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -1032,26 +1207,70 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                 })}
               </div>
 
-              {/* Word Bookmark helper banner */}
+              {/* Word Bookmark helper banner with word translation, video example sentence, and translated sentence */}
               {selectedWordToBookmark && (
-                <div className="flex items-center justify-between p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 animate-fade-in">
-                  <div className="flex items-center gap-2">
-                    <BookmarkPlus className="w-4 h-4 text-indigo-600" />
-                    <span>
-                      Lưu từ vựng:{' '}
-                      <strong className="font-semibold text-slate-900">
-                        &quot;{selectedWordToBookmark}&quot;
-                      </strong>{' '}
-                      vào sổ từ?
-                    </span>
+                <div className="p-3.5 bg-gradient-to-r from-indigo-50 via-white to-indigo-50/60 border border-indigo-200 rounded-xl text-xs space-y-2.5 shadow-2xs animate-fade-in">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <BookmarkPlus className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span className="font-bold text-slate-900 text-sm">
+                        &quot;{cleanWord(selectedWordToBookmark)}&quot;
+                      </span>
+                      {isTranslatingVocab && !wordTranslation ? (
+                        <span className="text-[11px] text-indigo-600 flex items-center gap-1 font-medium">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch từ...
+                        </span>
+                      ) : wordTranslation ? (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-xs">
+                          Nghĩa: {wordTranslation}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedWordToBookmark(null)}
+                        className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1"
+                      >
+                        Đóng
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveWord(selectedWordToBookmark)}
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      >
+                        <BookmarkPlus className="w-3.5 h-3.5" />
+                        <span>Lưu vào sổ từ</span>
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSaveWord(selectedWordToBookmark)}
-                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition cursor-pointer"
-                  >
-                    Lưu từ
-                  </button>
+
+                  {/* Video context example sentence and its translation */}
+                  <div className="bg-slate-50/80 p-2.5 rounded-lg border border-slate-200/70 space-y-1 text-slate-700">
+                    <div className="flex items-start gap-1.5">
+                      <span className="font-bold text-indigo-900 text-[10px] uppercase shrink-0 mt-0.5">
+                        Câu ví dụ từ video:
+                      </span>
+                      <span className="font-medium text-slate-900 italic">
+                        &quot;{currentSegment.text}&quot;
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-1.5 text-slate-600">
+                      <span className="font-bold text-emerald-900 text-[10px] uppercase shrink-0 mt-0.5">
+                        Dịch nghĩa câu:
+                      </span>
+                      {isTranslatingVocab && !contextTranslation ? (
+                        <span className="text-slate-400 italic flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Đang dịch câu ví dụ...
+                        </span>
+                      ) : (
+                        <span className="font-normal italic">
+                          &quot;{contextTranslation || segmentTranslation || currentSegment.translation || 'Chưa có bản dịch'}&quot;
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -122,6 +122,16 @@ export function useYouTubePlayer({
   const [isPlaying, setIsPlaying] = useState(false)
   const [playerError, setPlayerError] = useState<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
+  const [isLooping, setIsLooping] = useState<boolean>(false)
+  const isLoopingRef = useRef<boolean>(false)
+
+  useEffect(() => {
+    isLoopingRef.current = isLooping
+  }, [isLooping])
+
+  const toggleLoop = useCallback(() => {
+    setIsLooping((prev) => !prev)
+  }, [])
 
   // Track active segment boundary
   const segmentBoundsRef = useRef<{ start: number; end: number; isSegmentPlay: boolean } | null>(null)
@@ -171,13 +181,26 @@ export function useYouTubePlayer({
             }
           }
 
-          // Once settled in the target segment, stop cleanly when reaching endTime
+          // Once settled in the target segment, handle boundary
           if (hasSettledRef.current) {
             if (currentTime >= endTime - 0.02) {
-              player.pauseVideo()
-              stopSegmentWatcher()
-              if (onSegmentEnd) {
-                onSegmentEnd()
+              if (isLoopingRef.current) {
+                // Loop mode: automatically seek back to start and continue playing
+                player.seekTo(startTime, true)
+                hasSettledRef.current = false
+                try {
+                  if (typeof player.playVideo === 'function') {
+                    player.playVideo()
+                  }
+                } catch {
+                  // ignore
+                }
+              } else {
+                player.pauseVideo()
+                stopSegmentWatcher()
+                if (onSegmentEnd) {
+                  onSegmentEnd()
+                }
               }
             }
           }
@@ -298,7 +321,49 @@ export function useYouTubePlayer({
     }
   }, [])
 
-  // Initialize player when videoId or containerId changes
+  const [reloadKey, setReloadKey] = useState(0)
+  const reloadPlayer = useCallback(() => {
+    setReloadKey((k) => k + 1)
+  }, [])
+
+  // Listen to tab visibility & window focus to recover black/frozen player on tab switch
+  useEffect(() => {
+    const handleTabVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const container = document.getElementById(containerId)
+        const hasIframe = Boolean(
+          container?.querySelector('iframe') || (container && container.tagName === 'IFRAME')
+        )
+
+        // If the container exists in DOM but the iframe was lost during tab switch/re-render
+        if (!hasIframe && videoId) {
+          reloadPlayer()
+        } else if (playerRef.current) {
+          // Force a repaint on the iframe surface to unfreeze GPU black screen
+          try {
+            const iframe = playerRef.current.getIframe?.()
+            if (iframe) {
+              iframe.style.opacity = '0.99'
+              requestAnimationFrame(() => {
+                iframe.style.opacity = '1'
+              })
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleTabVisibility)
+    window.addEventListener('focus', handleTabVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleTabVisibility)
+      window.removeEventListener('focus', handleTabVisibility)
+    }
+  }, [containerId, videoId, reloadPlayer])
+
+  // Initialize player when videoId, containerId, or reloadKey changes
   useEffect(() => {
     let isCancelled = false
     stopSegmentWatcher()
@@ -427,13 +492,17 @@ export function useYouTubePlayer({
         playerRef.current = null
       }
     }
-  }, [videoId, containerId, initialSpeed, stopSegmentWatcher, onStateChange, onError, playSegment])
+  }, [videoId, containerId, initialSpeed, reloadKey, stopSegmentWatcher, onStateChange, onError, playSegment])
 
   return {
     isReady,
     isPlaying,
     playerError,
     playbackRate,
+    isLooping,
+    setIsLooping,
+    toggleLoop,
+    reloadPlayer,
     playSegment,
     pauseSegment,
     resumeSegment,

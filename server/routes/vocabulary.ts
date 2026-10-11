@@ -125,35 +125,51 @@ vocabularyRouter.post('/', async (c) => {
   }
 })
 
-// DELETE /:id - Delete a saved vocabulary item (verifying ownership)
+// DELETE /:id - Delete a saved vocabulary item (verifying ownership or word match)
 vocabularyRouter.delete('/:id', async (c) => {
   const userId = c.get('userId')
-  const vocabId = c.req.param('id')
+  const vocabIdOrWord = decodeURIComponent(c.req.param('id')).trim()
   const db = c.env.DB
 
   try {
-    const existing = await db
-      .prepare('SELECT user_id FROM saved_vocabulary WHERE id = ?')
-      .bind(vocabId)
-      .first<{ user_id: string }>()
+    // 1. Try finding by ID
+    const byId = await db
+      .prepare('SELECT id, user_id FROM saved_vocabulary WHERE id = ?')
+      .bind(vocabIdOrWord)
+      .first<{ id: string; user_id: string }>()
 
-    if (!existing) {
-      return c.json({ success: false, error: 'Vocabulary item not found' }, 404)
+    if (byId) {
+      if (byId.user_id !== userId) {
+        return c.json({ success: false, error: 'Forbidden: You do not own this vocabulary item' }, 403)
+      }
+      await db
+        .prepare('DELETE FROM saved_vocabulary WHERE id = ? AND user_id = ?')
+        .bind(byId.id, userId)
+        .run()
+      return c.json({
+        success: true,
+        message: 'Vocabulary item deleted successfully',
+      })
     }
 
-    if (existing.user_id !== userId) {
-      return c.json({ success: false, error: 'Forbidden: You do not own this vocabulary item' }, 403)
+    // 2. Try finding by Word for current user
+    const byWord = await db
+      .prepare('SELECT id, user_id FROM saved_vocabulary WHERE LOWER(word) = LOWER(?) AND user_id = ?')
+      .bind(vocabIdOrWord, userId)
+      .first<{ id: string; user_id: string }>()
+
+    if (byWord) {
+      await db
+        .prepare('DELETE FROM saved_vocabulary WHERE id = ? AND user_id = ?')
+        .bind(byWord.id, userId)
+        .run()
+      return c.json({
+        success: true,
+        message: 'Vocabulary item deleted successfully',
+      })
     }
 
-    await db
-      .prepare('DELETE FROM saved_vocabulary WHERE id = ? AND user_id = ?')
-      .bind(vocabId, userId)
-      .run()
-
-    return c.json({
-      success: true,
-      message: 'Vocabulary item deleted successfully',
-    })
+    return c.json({ success: false, error: 'Vocabulary item not found' }, 404)
   } catch (err) {
     console.error('[API vocabulary:delete error]', err)
     return c.json({ success: false, error: 'Failed to delete vocabulary word' }, 500)

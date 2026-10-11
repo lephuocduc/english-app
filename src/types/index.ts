@@ -88,6 +88,7 @@ export interface VocabularyItem {
   word: string
   meaning?: string
   contextSentence: string
+  contextSentenceTranslation?: string
   timestamp: number
   videoId: string
   lessonTitle: string

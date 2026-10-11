@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { storage } from '../lib/storage/storage'
 import type { UserSentenceProgress } from '../types'
 
@@ -106,4 +106,50 @@ describe('Local Storage Persistence', () => {
     expect(storage.loadVideos()).toHaveLength(1)
     expect(storage.loadVideos()?.[0].id).toBe('video-456')
   })
+
+  it('syncWithCloud does not resurrect deleted vocabulary words from cloud', async () => {
+    const { apiClient } = await import('../lib/api/client')
+    const listLessonsSpy = vi.spyOn(apiClient, 'listLessons').mockResolvedValue([])
+    const listVocabSpy = vi.spyOn(apiClient, 'listVocabulary').mockResolvedValue([
+      {
+        id: 'v-deleted',
+        word: 'perseverance',
+        meaning: 'Sự kiên trì',
+        contextSentence: 'With perseverance you succeed',
+        timestamp: 10,
+        videoId: 'abc',
+        lessonTitle: 'Test Lesson',
+        savedAt: new Date().toISOString(),
+      },
+    ])
+    const deleteVocabSpy = vi.spyOn(apiClient, 'deleteVocabulary').mockResolvedValue(true)
+
+    // Add and then remove the word
+    storage.addVocabulary({
+      id: 'v-deleted',
+      word: 'perseverance',
+      contextSentence: 'With perseverance you succeed',
+      timestamp: 10,
+      videoId: 'abc',
+      lessonTitle: 'Test Lesson',
+      savedAt: new Date().toISOString(),
+    })
+    expect(storage.loadVocabulary()).toHaveLength(1)
+
+    // User deletes the word
+    storage.removeVocabulary('v-deleted')
+    expect(storage.loadVocabulary()).toHaveLength(0)
+
+    // Now page syncs with cloud
+    await storage.syncWithCloud()
+
+    // Vocabulary must STILL be empty - NOT resurrected from cloud!
+    expect(storage.loadVocabulary()).toHaveLength(0)
+    expect(deleteVocabSpy).toHaveBeenCalledWith('v-deleted')
+
+    listLessonsSpy.mockRestore()
+    listVocabSpy.mockRestore()
+    deleteVocabSpy.mockRestore()
+  })
 })
+

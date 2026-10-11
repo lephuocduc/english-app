@@ -73,18 +73,46 @@ src/
 - Thang điểm chuẩn xác từ **0 đến 100%**.
 - Ghi chú minh bạch: *Điểm tương đồng từ ngữ đánh giá độ chính xác khi chép lại, không đo lường khả năng phát âm*.
 
-### 3.4. Quản lý phân đoạn câu linh hoạt trên video YouTube
+### 3.4. Gợi ý số lượng từ & Bộ đếm tiến độ gõ thời gian thực
+- **Gợi ý số từ trong phân đoạn**: Phân tích câu nghe hiện tại và hiển thị gợi ý thông minh `💡 Gợi ý: X từ` kèm mô tả rõ ràng. Placeholder ô nhập văn bản tự động hiển thị số lượng từ mục tiêu.
+- **Bộ đếm tiến độ thời gian thực**: Liên tục cập nhật theo thời gian thực khi người học gõ phím dạng `Đã gõ: X / Y từ`, giúp người học ước lượng được mức độ hoàn chỉnh của câu trước khi kiểm tra đáp án.
+
+### 3.5. Chế độ lặp lại phân đoạn câu (Loop Mode)
+- **Cơ chế lặp vô tận (Looping)**: Khi bật chế độ Loop, mỗi khi video phát đến cuối câu (`endTime`), player tự động tua ngược lại mốc bắt đầu (`startTime`) và tiếp tục phát mượt mà, giúp người học nghe đi nghe lại câu khó mà không phải bấm tay.
+- **Nút điều khiển tiện lợi**: Nút Loop hiển thị trực quan cả trên thanh điều khiển YouTube Player và trong khung bài tập Dictation Studio.
+- **Phím tắt toàn cục**: Nhấn <kbd>Alt</kbd> + <kbd>L</kbd> để bật/tắt nhanh chế độ lặp câu bất cứ lúc nào.
+
+### 3.6. Dịch nghĩa tự động & Sổ tay từ vựng ngữ cảnh cao cấp
+- **Tự động dịch từ vựng & câu ví dụ**: Khi người học nhấp vào một từ vựng bất kỳ từ câu nghe, hệ thống tự động:
+  - Tra và dịch nghĩa riêng của từ đó sang tiếng Việt (`meaning`).
+  - Trích xuất toàn bộ câu video hiện tại làm câu ví dụ ngữ cảnh (`contextSentence`).
+  - Tự động dịch luôn câu ví dụ đó sang tiếng Việt (`contextSentenceTranslation`).
+- **Giao diện thẻ từ vựng trực quan**: Hỗ trợ phát âm giọng đọc bản xứ (Web Speech API), hiển thị song ngữ Anh - Việt cho cả từ vựng và câu ví dụ, hỗ trợ tìm kiếm từ vựng và nhảy nhanh đến timestamp video tương ứng.
+
+### 3.7. Dịch câu sang tiếng Việt khi xem đáp án
+- Khi người học bấm nút **"Xem đáp án"** (<kbd>Alt</kbd> + <kbd>A</kbd>), ngoài câu tiếng Anh gốc, hệ thống tự động hiển thị bản dịch tiếng Việt tương ứng ngay bên dưới: `🇻🇳 Dịch nghĩa tiếng Việt: [Bản dịch]` giúp người học nắm bắt nội dung trọn vẹn.
+
+### 3.8. Tối ưu hóa trình phát video YouTube & Khắc phục màn hình đen
+- **Duy trì DOM IFrame ổn định**: Khung player YouTube được duy trì liên tục trong cây DOM bằng CSS khi chuyển đổi giữa các tab ứng dụng ("Luyện tập", "Video của tôi", "Từ vựng") thay vì bị hủy và tái tạo.
+- **Tự động phục hồi khi chuyển tab trình duyệt**: Lắng nghe sự kiện `visibilitychange` và `focus` của trình duyệt, tự động kích hoạt GPU repaint và kiểm tra khôi phục IFrame nếu Chromium giải phóng bộ nhớ đồ họa nền.
+- **Nút làm mới thủ công**: Cung cấp nút "Làm mới khung hình video" giúp người dùng sửa nhanh khung phát video chỉ với 1 click.
+
+### 3.9. Điều hướng câu chuẩn xác (Single Step Navigation)
+- Hợp nhất các phím tắt <kbd>Alt</kbd> + <kbd>→</kbd> (câu tiếp theo) và <kbd>Alt</kbd> + <kbd>←</kbd> (câu trước đó) về bộ lắng nghe toàn cục ở root ứng dụng, loại bỏ hoàn toàn lỗi duplicate event bubbling khiến câu bị nhảy cóc 2 đoạn.
+- Tích hợp cờ chặn `e.repeat` khi giữ phím lâu, đảm bảo mỗi lần nhấn phím chuyển chính xác từng câu một.
+
+### 3.10. Quản lý phân đoạn câu linh hoạt trên video YouTube
 - Hỗ trợ thêm các mốc phân đoạn câu trực tiếp cho mọi video YouTube (`onAddSegment`):
   - Lấy mốc thời gian bắt đầu & kết thúc trực tiếp từ vị trí phát của YouTube Player chỉ với 1 click.
   - Nhập câu tiếng Anh mẫu và bản dịch tùy chọn.
   - Phân đoạn được lưu trữ bền vững vào `localStorage` cho từng video.
 - Chế độ **Sổ tay luyện nghe tự do (Freeform Dictation)** cho phép người học vừa nghe video vừa gõ ghi chú ngay cả khi chưa cắt câu.
 
-### 3.5. Sổ tay từ vựng ngữ cảnh (Vocabulary Bank)
-- Người học có thể nhấp trực tiếp vào bất kỳ từ nào trên bảng đối chiếu để lưu vào sổ từ kèm câu ngữ cảnh và mốc thời gian.
-- Tính năng nhảy nhanh đến đúng mốc thời gian của từ để nghe lại trong video.
+### 3.11. Đồng bộ hóa xóa từ vựng hai chiều (Local & Cloud Tombstones)
+- Xóa từ vựng đồng bộ tức thì lên Cloudflare D1 cơ sở dữ liệu đám mây.
+- Quản lý danh sách ghi nhớ từ đã xóa (Deleted Tombstones) trong `localStorage`. Khi người học tải lại trang web (F5 / reload), hệ thống ngăn chặn cơ chế Cloud Sync hồi sinh các từ vựng đã bị xóa trước đó.
 
-### 3.6. Lưu trữ cục bộ an toàn (Local-First Persistence)
+### 3.12. Lưu trữ cục bộ an toàn (Local-First Persistence)
 - Tự động lưu tiến độ làm bài, điểm số câu, lịch sử gõ chữ, từ vựng và tùy chọn cá nhân vào `localStorage`.
 - Có schema validation và cơ chế fallback an toàn phòng trường hợp bộ nhớ bị lỗi hoặc chế độ ẩn danh hạn chế storage.
 - Không lưu thông tin nhạy cảm hay API keys trên trình duyệt.
@@ -195,15 +223,16 @@ Mọi endpoint đều được định kiểu và xác thực schema với **Zod
 
 ## 6. Kiểm thử tự động (Test Suite)
 
-Ứng dụng đi kèm bộ test toàn diện bao gồm:
+Ứng dụng đi kèm bộ test toàn diện với **108 tests** (100% passing) bao gồm:
 - **Scoring & Alignment Tests**: Đánh giá độ chính xác Levenshtein, căn chỉnh từ, phân loại từ đúng/sai/thiếu/thừa.
 - **YouTube Parser Tests**: Kiểm tra các dạng URL YouTube khác nhau.
-- **Storage & Fallback Tests**: Kiểm tra độ an toàn dữ liệu trên localStorage.
+- **Storage & Cloud Sync Tests**: Kiểm tra độ an toàn dữ liệu trên localStorage, cơ chế tombstone ngăn ngừa hồi sinh từ vựng đã xóa.
 - **UI & Component Integration Tests**: Kiểm thử tương tác giao diện, luồng luyện tập và phím tắt.
+- **New Feature Tests**: Kiểm thử gợi ý số từ, đếm từ thời gian thực, bật/tắt chế độ lặp lại câu (Loop), dịch nghĩa từ vựng & câu ví dụ, dịch đáp án tiếng Việt, điều hướng đơn câu không nhảy cóc.
 - **Cloudflare D1 & Hono API Tests**: Kiểm thử toàn bộ CRUD endpoints, xác thực schema, kiểm tra phân quyền multi-user, ngăn chặn truy cập trái phép và xử lý lỗi hệ thống (sử dụng in-memory SQLite D1 emulator).
 
 ```bash
-# Chạy toàn bộ 79 tests (100% passing)
+# Chạy toàn bộ 108 tests (100% passing)
 npm test
 
 # Chạy linter kiểm tra mã nguồn (0 warning, 0 error)

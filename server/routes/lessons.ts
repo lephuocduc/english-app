@@ -73,9 +73,63 @@ lessonsRouter.get('/', async (c) => {
       .bind(userId)
       .all<LessonRow>()
 
+    const lessonRows = results || []
+    if (lessonRows.length === 0) {
+      return c.json({
+        success: true,
+        data: [],
+      })
+    }
+
+    // Fetch all segments for this user's lessons to return full Lesson objects
+    const { results: segments } = await db
+      .prepare(
+        `SELECT id, lesson_id as lessonId, start_time as startTime, end_time as endTime, text, translation, hint 
+         FROM transcript_segments 
+         WHERE user_id = ? 
+         ORDER BY sequence_order ASC, start_time ASC`
+      )
+      .bind(userId)
+      .all<SegmentRow & { lessonId: string }>()
+
+    const segmentsByLesson: Record<string, {
+      id: string
+      startTime: number
+      endTime: number
+      text: string
+      translation?: string
+      hint?: string
+    }[]> = {}
+
+    for (const s of (segments || [])) {
+      if (!segmentsByLesson[s.lessonId]) {
+        segmentsByLesson[s.lessonId] = []
+      }
+      segmentsByLesson[s.lessonId].push({
+        id: s.id,
+        startTime: s.startTime !== undefined ? s.startTime : (s as unknown as { start_time: number }).start_time,
+        endTime: s.endTime !== undefined ? s.endTime : (s as unknown as { end_time: number }).end_time,
+        text: s.text,
+        translation: s.translation || undefined,
+        hint: s.hint || undefined,
+      })
+    }
+
+    const data = lessonRows.map((lesson) => ({
+      id: lesson.id,
+      videoId: (lesson as unknown as { videoId?: string; video_id?: string }).videoId || (lesson as unknown as { video_id?: string }).video_id || '',
+      title: lesson.title,
+      description: lesson.description || '',
+      language: lesson.language,
+      level: lesson.level || 'Intermediate',
+      createdAt: (lesson as unknown as { createdAt?: string; created_at?: string }).createdAt || (lesson as unknown as { created_at?: string }).created_at || '',
+      updatedAt: (lesson as unknown as { updatedAt?: string; updated_at?: string }).updatedAt || (lesson as unknown as { updated_at?: string }).updated_at || '',
+      sentences: segmentsByLesson[lesson.id] || [],
+    }))
+
     return c.json({
       success: true,
-      data: results || [],
+      data,
     })
   } catch (err) {
     console.error('[API lessons:list error]', err)
@@ -175,11 +229,17 @@ lessonsRouter.post('/', async (c) => {
   const lessonId = data.id || `lesson-${crypto.randomUUID()}`
 
   try {
-    // Parameterized query to insert lesson
+    // Parameterized query to insert or update lesson (idempotent upsert)
     await db
       .prepare(
         `INSERT INTO lessons (id, user_id, video_id, title, description, language, level, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           description = COALESCE(excluded.description, lessons.description),
+           language = excluded.language,
+           level = excluded.level,
+           updated_at = datetime('now')`
       )
       .bind(
         lessonId,
@@ -199,7 +259,14 @@ lessonsRouter.post('/', async (c) => {
         return db
           .prepare(
             `INSERT INTO transcript_segments (id, lesson_id, user_id, start_time, end_time, text, translation, hint, sequence_order, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+             ON CONFLICT(id) DO UPDATE SET
+               start_time = excluded.start_time,
+               end_time = excluded.end_time,
+               text = excluded.text,
+               translation = excluded.translation,
+               hint = excluded.hint,
+               sequence_order = excluded.sequence_order`
           )
           .bind(
             segId,

@@ -2,9 +2,66 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it, beforeEach } from 'vitest'
 import App from '../App'
 
+import { storage } from '../lib/storage/storage'
+
+const testVideo = {
+  id: 'video-UF8uR6Z6KLc',
+  title: 'Steve Jobs: Connecting the Dots (Stanford 2005)',
+  videoId: 'UF8uR6Z6KLc',
+  language: 'English (US)',
+  transcriptSource: 'YouTube Video Transcript',
+  isVerified: true,
+  level: 'Intermediate' as const,
+  description: 'Bài phát biểu nổi tiếng của Steve Jobs tại Stanford',
+  sentences: [
+    {
+      id: 'seg-1',
+      startTime: 24,
+      endTime: 30,
+      text: 'I am honored to be with you today at your commencement from one of the finest universities in the world.',
+      translation: 'Tôi rất vinh dự được có mặt cùng các bạn hôm nay tại lễ tốt nghiệp từ một trong những trường đại học tốt nhất trên thế giới.',
+      hint: 'honored, commencement, finest universities',
+    },
+    {
+      id: 'seg-2',
+      startTime: 30,
+      endTime: 36,
+      text: "I never graduated from college. Truth be told, this is the closest I've ever gotten to a college graduation.",
+      translation: 'Tôi chưa từng tốt nghiệp đại học.',
+      hint: 'graduated, truth be told, graduation',
+    },
+    {
+      id: 'seg-3',
+      startTime: 37,
+      endTime: 44,
+      text: "Today I want to tell you three stories from my life. That's it. No big deal. Just three stories.",
+      translation: 'Hôm nay tôi muốn kể cho các bạn nghe ba câu chuyện.',
+      hint: 'three stories, no big deal',
+    },
+    {
+      id: 'seg-4',
+      startTime: 44,
+      endTime: 50,
+      text: 'The first story is about connecting the dots.',
+      translation: 'Câu chuyện đầu tiên là về việc kết nối các dấu chấm.',
+      hint: 'connecting the dots',
+    },
+    {
+      id: 'seg-5',
+      startTime: 51,
+      endTime: 58,
+      text: 'I dropped out of Reed College after the first six months.',
+      translation: 'Tôi bỏ học tại trường Cao đẳng Reed sau sáu tháng đầu.',
+      hint: 'dropped out, stayed around',
+    },
+  ],
+}
+
 describe('ListenFlow Integration & UI Tests', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    storage.saveVideos([testVideo])
+    storage.saveActiveLessonId(testVideo.id)
 
     // Mock YouTube IFrame API
     window.YT = {
@@ -145,7 +202,7 @@ describe('ListenFlow Integration & UI Tests', () => {
 
     expect(screen.getByText(/Danh sách video đã lưu/i)).toBeInTheDocument()
     expect(
-      screen.getByText('Steve Jobs: Connecting the Dots (Stanford 2005)')
+      screen.getAllByText('Steve Jobs: Connecting the Dots (Stanford 2005)')[0]
     ).toBeInTheDocument()
   })
 
@@ -156,7 +213,7 @@ describe('ListenFlow Integration & UI Tests', () => {
     const videosTabBtn = screen.getAllByText('Video của tôi')[0]
     fireEvent.click(videosTabBtn)
 
-    const urlInput = screen.getByPlaceholderText(/Dán link YouTube/)
+    const urlInput = screen.getByPlaceholderText(/Dán link YouTube \(ví dụ:/i)
     fireEvent.change(urlInput, { target: { value: 'https://vimeo.com/999999' } })
 
     const submitBtn = screen.getByRole('button', { name: /Nạp video vào player/i })

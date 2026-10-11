@@ -4,13 +4,68 @@ import { useYouTubePlayer, loadYouTubeIframeApi } from '../features/youtube/useY
 import { DictationStudio } from '../features/dictation/DictationStudio'
 import { SentenceList } from '../features/dictation/SentenceList'
 import { YouTubePlayerView } from '../features/youtube/YouTubePlayerView'
-import { SAMPLE_LESSONS } from '../data/sampleLessons'
+import { storage } from '../lib/storage/storage'
 import App from '../App'
+
+const mockLesson = {
+  id: 'video-UF8uR6Z6KLc',
+  title: 'Steve Jobs: Connecting the Dots (Stanford 2005)',
+  videoId: 'UF8uR6Z6KLc',
+  language: 'English (US)',
+  transcriptSource: 'YouTube Video Transcript',
+  isVerified: true,
+  level: 'Intermediate' as const,
+  description: 'Steve Jobs Speech',
+  sentences: [
+    {
+      id: 'seg-1',
+      startTime: 24,
+      endTime: 30,
+      text: 'I am honored to be with you today at your commencement from one of the finest universities in the world.',
+      translation: 'Tôi rất vinh dự được có mặt cùng các bạn hôm nay tại lễ tốt nghiệp từ một trong những trường đại học tốt nhất trên thế giới.',
+      hint: 'honored, commencement, finest universities',
+    },
+    {
+      id: 'seg-2',
+      startTime: 30,
+      endTime: 36,
+      text: "I never graduated from college. Truth be told, this is the closest I've ever gotten to a college graduation.",
+      translation: 'Tôi chưa từng tốt nghiệp đại học.',
+      hint: 'graduated, truth be told, graduation',
+    },
+    {
+      id: 'seg-3',
+      startTime: 37,
+      endTime: 44,
+      text: "Today I want to tell you three stories from my life. That's it. No big deal. Just three stories.",
+      translation: 'Hôm nay tôi muốn kể cho các bạn nghe ba câu chuyện.',
+      hint: 'three stories, no big deal',
+    },
+    {
+      id: 'seg-4',
+      startTime: 44,
+      endTime: 50,
+      text: 'The first story is about connecting the dots.',
+      translation: 'Câu chuyện đầu tiên là về việc kết nối các dấu chấm.',
+      hint: 'connecting the dots',
+    },
+    {
+      id: 'seg-5',
+      startTime: 51,
+      endTime: 58,
+      text: 'I dropped out of Reed College after the first six months.',
+      translation: 'Tôi bỏ học tại trường Cao đẳng Reed sau sáu tháng đầu.',
+      hint: 'dropped out, stayed around',
+    },
+  ],
+}
 
 describe('ListenFlow Improvement Requirements', () => {
   beforeEach(() => {
     vi.useRealTimers()
     window.localStorage.clear()
+    storage.saveVideos([mockLesson])
+    storage.saveActiveLessonId(mockLesson.id)
     document.body.innerHTML = ''
 
     // Mock YouTube IFrame API
@@ -322,7 +377,7 @@ describe('ListenFlow Improvement Requirements', () => {
   })
 
   describe('2. Word-level answer alignment highlighting (correct, missing, incorrect, extra)', () => {
-    const lesson = SAMPLE_LESSONS[0]
+    const lesson = mockLesson
 
     it('renders alignment breakdown with correct, missing, incorrect, extra words and visual legend', () => {
       render(
@@ -374,7 +429,7 @@ describe('ListenFlow Improvement Requirements', () => {
   })
 
   describe('3. Results summary and retry workflow', () => {
-    const lesson = SAMPLE_LESSONS[0]
+    const lesson = mockLesson
 
     it('displays results summary card, and retry workflow clears input, replays audio, and focuses textarea', () => {
       const onReplaySegment = vi.fn()
@@ -452,7 +507,7 @@ describe('ListenFlow Improvement Requirements', () => {
 
   describe('4. Active sentence clear visual feedback and navigation controls', () => {
     it('SentenceList displays active indicator, duration, and playing pulse when isPlaying', () => {
-      const sentences = SAMPLE_LESSONS[0].sentences
+      const sentences = mockLesson.sentences
 
       render(
         <SentenceList
@@ -485,7 +540,7 @@ describe('ListenFlow Improvement Requirements', () => {
           isPlaying={false}
           playerError={null}
           currentSpeed={1.0}
-          activeSegment={SAMPLE_LESSONS[0].sentences[1]}
+          activeSegment={mockLesson.sentences[1]}
           onPlaySegment={onPlaySegment}
           onTogglePlayPause={onTogglePlayPause}
           onChangeSpeed={onChangeSpeed}

@@ -7,6 +7,7 @@ import {
   Sparkles,
   ExternalLink,
   BookMarked,
+  Volume2,
 } from 'lucide-react'
 import type { VocabularyItem } from '../../types'
 
@@ -29,10 +30,21 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
     return `${mins}:${rem < 10 ? '0' : ''}${rem}`
   }
 
+  const handleSpeak = (word: string) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(word)
+      u.lang = 'en-US'
+      window.speechSynthesis.speak(u)
+    }
+  }
+
   const filteredWords = vocabularyList.filter(
     (item) =>
       item.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.contextSentence.toLowerCase().includes(searchQuery.toLowerCase())
+      (item.meaning && item.meaning.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      item.contextSentence.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.contextSentenceTranslation &&
+        item.contextSentenceTranslation.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   return (
@@ -48,7 +60,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             Từ vựng đã lưu trong bài học
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            Các từ vựng bạn đã đánh dấu từ phần đối chiếu chính tả kèm câu ngữ cảnh thực tế.
+            Từ vựng kèm dịch nghĩa riêng và câu ví dụ từ video kèm bản dịch tiếng Việt thực tế.
           </p>
         </div>
 
@@ -60,7 +72,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm từ vựng..."
+              placeholder="Tìm theo từ, nghĩa hoặc ví dụ..."
               className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-slate-800"
             />
           </div>
@@ -79,12 +91,12 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
               Trong khi luyện nghe tại màn hình <strong className="text-indigo-600">Luyện tập</strong>,
-              sau khi kiểm tra đáp án, bạn chỉ cần bấm vào bất kỳ từ nào trong bảng đối chiếu để lưu lại cùng câu ngữ cảnh.
+              sau khi kiểm tra đáp án, bạn chỉ cần bấm vào bất kỳ từ nào để lưu kèm nghĩa tiếng Việt và câu ví dụ từ video.
             </p>
           </div>
           <div className="inline-flex items-center gap-1.5 text-xs text-indigo-600 font-semibold bg-indigo-50/80 px-3.5 py-1.5 rounded-lg border border-indigo-100">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Mẹo: Lưu từ vựng kèm ngữ cảnh giúp ghi nhớ lâu hơn x3 lần</span>
+            <span>Mẹo: Lưu từ vựng kèm ngữ cảnh video giúp ghi nhớ lâu hơn x3 lần</span>
           </div>
         </div>
       ) : filteredWords.length === 0 ? (
@@ -98,11 +110,21 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               key={item.id}
               className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-indigo-200 hover:shadow-sm transition flex flex-col justify-between space-y-3"
             >
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="text-base font-bold text-indigo-950 capitalize">
-                    {item.word}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-bold text-indigo-950 capitalize">
+                      {item.word}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => handleSpeak(item.word)}
+                      title="Phát âm từ"
+                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => onRemoveVocabulary(item.id)}
@@ -113,11 +135,30 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   </button>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-700 leading-relaxed">
-                  <span className="font-semibold text-slate-500 block text-[10px] uppercase mb-0.5">
-                    Ngữ cảnh trong video:
-                  </span>
-                  &quot;{item.contextSentence}&quot;
+                {/* Meaning tag */}
+                {item.meaning && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold">
+                    <span>Nghĩa:</span>
+                    <strong className="font-bold">{item.meaning}</strong>
+                  </div>
+                )}
+
+                {/* Context sentence from video and translation */}
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs text-slate-700 leading-relaxed space-y-2">
+                  <div>
+                    <span className="font-bold text-slate-500 block text-[10px] uppercase tracking-wide mb-0.5">
+                      Ví dụ từ video:
+                    </span>
+                    <p className="font-medium text-slate-800">&quot;{item.contextSentence}&quot;</p>
+                  </div>
+                  {item.contextSentenceTranslation && (
+                    <div className="border-t border-slate-200/70 pt-1.5">
+                      <span className="font-semibold text-emerald-800 block text-[10px] uppercase tracking-wide mb-0.5">
+                        Dịch nghĩa câu:
+                      </span>
+                      <p className="text-slate-600 italic">&quot;{item.contextSentenceTranslation}&quot;</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -3,8 +3,29 @@ import { describe, expect, it, vi } from 'vitest'
 import { DictationStudio } from '../features/dictation/DictationStudio'
 import { SAMPLE_LESSONS } from '../data/sampleLessons'
 
+const mockSampleLesson = {
+  id: 'lesson-commencement',
+  title: 'Steve Jobs Stanford Commencement Address',
+  videoId: 'UF8uR6Z6KLc',
+  transcriptSource: 'YouTube Official',
+  sentences: [
+    {
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 10,
+      text: 'I am honored to be with you today at your commencement from one of the finest universities in the world.',
+    },
+    {
+      id: 'seg-2',
+      startTime: 11,
+      endTime: 20,
+      text: 'Truth be told, I never graduated from college.',
+    },
+  ],
+}
+
 describe('DictationStudio Component', () => {
-  const lesson = SAMPLE_LESSONS[0]
+  const lesson = SAMPLE_LESSONS[0] || mockSampleLesson
 
   it('renders typing studio and handles answer submission', () => {
     const onSaveProgress = vi.fn()
