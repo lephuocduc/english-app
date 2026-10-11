@@ -47,20 +47,20 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
       />
     )
 
-    expect(screen.getByText('Tổng số từ')).toBeInTheDocument()
-    expect(screen.getByText('Cần ôn hôm nay')).toBeInTheDocument()
-    expect(screen.queryByText('Đang học')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Đã thuộc')[0]).toBeInTheDocument()
+    expect(screen.getByText('Total Words')).toBeInTheDocument()
+    expect(screen.getByText('Due Today')).toBeInTheDocument()
+    expect(screen.queryByText('Learning')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Mastered')[0]).toBeInTheDocument()
 
-    // Button Ôn Flashcard (x) strictly displays count of words due today (1 word due)
-    expect(screen.getByRole('button', { name: /Ôn Flashcard \(1\)/i })).toBeInTheDocument()
+    // Button Review Flashcards (x) strictly displays count of words due today (1 word due)
+    expect(screen.getByRole('button', { name: /Review Flashcards \(1\)/i })).toBeInTheDocument()
 
     // Words displayed
     expect(screen.getByText('resilient')).toBeInTheDocument()
     expect(screen.getByText('curiosity')).toBeInTheDocument()
   })
 
-  it('displays Ôn Flashcard (0) when all words are mastered or not due yet', () => {
+  it('displays Review Flashcards (0) when all words are mastered or not due yet', () => {
     const allMastered = mockVocabList.map((item) => ({ ...item, mastered: true }))
     render(
       <VocabularyView
@@ -69,7 +69,7 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
       />
     )
 
-    expect(screen.getByRole('button', { name: /Ôn Flashcard \(0\)/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Review Flashcards \(0\)/i })).toBeInTheDocument()
   })
 
   it('filters vocabulary cards by tab (All, Due, Mastered)', () => {
@@ -85,21 +85,21 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
     expect(screen.getByText('curiosity')).toBeInTheDocument()
 
     // Filter by Mastered tab
-    const masteredTab = screen.getByRole('button', { name: /Đã thuộc/i })
+    const masteredTab = screen.getByRole('button', { name: /Mastered/i })
     fireEvent.click(masteredTab)
 
     expect(screen.getByText('curiosity')).toBeInTheDocument()
     expect(screen.queryByText('resilient')).not.toBeInTheDocument()
 
     // Filter by Due tab
-    const dueTab = screen.getByRole('button', { name: /Cần ôn/i })
+    const dueTab = screen.getByRole('button', { name: /Due/i })
     fireEvent.click(dueTab)
 
     expect(screen.getByText('resilient')).toBeInTheDocument()
     expect(screen.queryByText('curiosity')).not.toBeInTheDocument()
 
     // Learning tab is removed
-    expect(screen.queryByRole('button', { name: /Đang học/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Learning/i })).not.toBeInTheDocument()
   })
 
   it('does not display manual toggle mastered button on cards (mastery managed via SM-2 review)', () => {
@@ -112,8 +112,8 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
       />
     )
 
-    expect(screen.queryByTitle('Đánh dấu đã thuộc từ này')).not.toBeInTheDocument()
-    expect(screen.queryByTitle('Bỏ đánh dấu đã thuộc')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Mark as mastered')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Unmark mastered')).not.toBeInTheDocument()
   })
 
   it('searches and filters words by query string', () => {
@@ -124,7 +124,7 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
       />
     )
 
-    const searchInput = screen.getByPlaceholderText(/Tìm theo từ, nghĩa hoặc ví dụ/i)
+    const searchInput = screen.getByPlaceholderText(/Search/i)
     fireEvent.change(searchInput, { target: { value: 'kiên cường' } })
 
     expect(screen.getByText('resilient')).toBeInTheDocument()
@@ -147,7 +147,7 @@ describe('FlashcardReviewModal Component', () => {
     )
 
     // Modal title
-    expect(screen.getByText(/Ôn tập Flashcard/i)).toBeInTheDocument()
+    expect(screen.getByText(/Flashcard Review/i)).toBeInTheDocument()
     // Front side shows English word
     expect(screen.getByText('resilient')).toBeInTheDocument()
 
@@ -155,17 +155,17 @@ describe('FlashcardReviewModal Component', () => {
     expect(screen.queryByText('kiên cường, có khả năng phục hồi')).not.toBeInTheDocument()
 
     // Flip card button
-    const flipBtn = screen.getByRole('button', { name: /Lật thẻ xem đáp án/i })
+    const flipBtn = screen.getByRole('button', { name: /Flip Card/i })
     fireEvent.click(flipBtn)
 
     // Back side shows Vietnamese meaning
     expect(screen.getByText('kiên cường, có khả năng phục hồi')).toBeInTheDocument()
 
     // Anki SM-2 buttons available
-    const againBtn = screen.getByText(/1\. Quên \(Again\)/i)
-    const hardBtn = screen.getByText(/2\. Khó \(Hard\)/i)
-    const goodBtn = screen.getByText(/3\. Nhớ \(Good\)/i)
-    const easyBtn = screen.getByText(/4\. Dễ \(Easy\)/i)
+    const againBtn = screen.getByText(/1\. Again/i)
+    const hardBtn = screen.getByText(/2\. Hard/i)
+    const goodBtn = screen.getByText(/3\. Good/i)
+    const easyBtn = screen.getByText(/4\. Easy/i)
 
     expect(againBtn).toBeInTheDocument()
     expect(hardBtn).toBeInTheDocument()
@@ -199,19 +199,19 @@ describe('FlashcardReviewModal Component', () => {
     )
 
     // Flip card
-    fireEvent.click(screen.getByRole('button', { name: /Lật thẻ xem đáp án/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Flip Card/i }))
 
     // Rate Good
-    fireEvent.click(screen.getByText(/3\. Nhớ \(Good\)/i))
+    fireEvent.click(screen.getByText(/3\. Good/i))
 
     // Completion screen shows celebration message
     expect(
-      screen.getByText(/Hoàn thành phiên ôn tập hôm nay!/i)
+      screen.getByText(/Session completed!/i)
     ).toBeInTheDocument()
-    expect(screen.getByText(/Quay về sổ từ vựng/i)).toBeInTheDocument()
+    expect(screen.getByText(/Back to Vocabulary/i)).toBeInTheDocument()
 
     // Exit
-    fireEvent.click(screen.getByText(/Quay về sổ từ vựng/i))
+    fireEvent.click(screen.getByText(/Back to Vocabulary/i))
     expect(onClose).toHaveBeenCalled()
   })
 })
@@ -229,15 +229,15 @@ describe('AddVocabularyModal Component', () => {
       />
     )
 
-    expect(screen.getByText('Thêm từ vựng mới vào sổ tay')).toBeInTheDocument()
+    expect(screen.getByText('Add New Vocabulary Word')).toBeInTheDocument()
 
-    const wordInput = screen.getByPlaceholderText(/Ví dụ: determine, breakthrough/i)
-    const meaningInput = screen.getByPlaceholderText(/Ví dụ: xác định, đột phá/i)
+    const wordInput = screen.getByPlaceholderText(/e\.g\. determine, breakthrough/i)
+    const meaningInput = screen.getByPlaceholderText(/e\.g\. xác định, đột phá/i)
 
     fireEvent.change(wordInput, { target: { value: 'innovation' } })
     fireEvent.change(meaningInput, { target: { value: 'sự đổi mới sáng tạo' } })
 
-    const submitBtn = screen.getByRole('button', { name: /Lưu từ vựng/i })
+    const submitBtn = screen.getByRole('button', { name: /Save Vocabulary/i })
     fireEvent.click(submitBtn)
 
     expect(onAddVocabulary).toHaveBeenCalledTimes(1)

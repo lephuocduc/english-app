@@ -25,48 +25,48 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
   const shortcuts = [
     {
       keys: ['Enter'],
-      description: 'Kiểm tra đáp án câu trả lời trong ô gõ chữ',
+      description: 'Submit and check your typed answer',
     },
     {
       keys: ['Ctrl', 'Space'],
       orKeys: ['Alt', 'R'],
-      description: 'Nghe lại phân đoạn câu hiện tại từ đầu mốc thời gian',
+      description: 'Replay current sentence segment from start',
     },
     {
       keys: ['Alt', 'Z'],
-      description: 'Bật / tắt Chế độ tập trung cao độ (Zen Mode)',
+      description: 'Toggle Focus / Zen Mode',
     },
     {
       keys: ['Alt', 'B'],
-      description: 'Bật / tắt Rèm che video (Chế độ nghe mù - Blind Listening)',
+      description: 'Toggle video curtain (Blind Listening Mode)',
     },
     {
       keys: ['Alt', 'A'],
-      description: 'Hiện / ẩn đáp án và bản dịch câu hiện tại',
+      description: 'Show / hide answer transcript & translation',
     },
     {
       keys: ['Alt', 'L'],
-      description: 'Bật/tắt tự động lặp lại phân đoạn câu (Loop)',
+      description: 'Toggle sentence segment auto-loop playback',
     },
     {
       keys: ['Alt', '←'],
-      description: 'Chuyển về câu trước đó trong bài học',
+      description: 'Go to previous sentence in lesson',
     },
     {
       keys: ['Alt', '→'],
-      description: 'Chuyển sang câu kế tiếp',
+      description: 'Go to next sentence',
     },
     {
       keys: ['Space'],
-      description: 'Tạm dừng hoặc tiếp tục phát video (khi không ở trong ô nhập)',
+      description: 'Play / Pause video (outside text input)',
     },
     {
       keys: ['?'],
-      description: 'Bật/tắt hộp thoại danh sách phím tắt',
+      description: 'Toggle keyboard shortcuts guide',
     },
     {
       keys: ['Esc'],
-      description: 'Đóng hộp thoại này / Thoát chế độ tập trung',
+      description: 'Close this dialog / Exit Focus mode',
     },
   ]
 
@@ -85,17 +85,17 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
             </div>
             <div>
               <h3 id="shortcuts-modal-title" className="text-sm font-bold text-slate-900 dark:text-white">
-                Phím tắt học tập nhanh
+                Keyboard Shortcuts
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Tối ưu hóa tốc độ nghe và chép hoàn toàn bằng bàn phím
+                Accelerate dictation workflows entirely with your keyboard
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng hộp thoại phím tắt"
+            aria-label="Close shortcuts dialog"
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
           >
             <X className="w-4 h-4" />
@@ -144,9 +144,9 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition"
+            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
           >
-            Đã hiểu
+            Got it
           </button>
         </div>
       </div>

@@ -137,10 +137,10 @@ export function getIntervalPreviewText(
   now: Date = new Date()
 ): string {
   const result = calculateNextReview(item, rating, now)
-  if (result.interval === 1) return '1 ngày'
-  if (result.interval < 30) return `${result.interval} ngày`
+  if (result.interval === 1) return '1 day'
+  if (result.interval < 30) return `${result.interval} days`
   const months = Math.round((result.interval / 30) * 10) / 10
-  return `${months} tháng`
+  return `${months} ${months === 1 ? 'month' : 'months'}`
 }
 
 /**

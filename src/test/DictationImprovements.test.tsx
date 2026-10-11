@@ -398,24 +398,24 @@ describe('ListenFlow Improvement Requirements', () => {
       // - Incorrect: "pleased" (for "honored")
       // - Extra: "extraWord" (inserted at the end)
       // - Missing: the rest of the sentence
-      const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+      const input = screen.getByPlaceholderText(/Type what you hear/i)
       fireEvent.change(input, {
         target: {
           value: 'I am pleased to be with you today at your commencement extraWord',
         },
       })
 
-      const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+      const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
       fireEvent.click(checkBtn)
 
       // Check alignment region
-      expect(screen.getByRole('region', { name: /Kết quả đối chiếu từng từ/i })).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: /Word alignment comparison results/i })).toBeInTheDocument()
 
       // Visual Legend
-      expect(screen.getByText('Đúng')).toBeInTheDocument()
-      expect(screen.getByText('Sai')).toBeInTheDocument()
-      expect(screen.getByText('Sót')).toBeInTheDocument()
-      expect(screen.getByText('Thừa')).toBeInTheDocument()
+      expect(screen.getByText('Correct')).toBeInTheDocument()
+      expect(screen.getByText('Incorrect')).toBeInTheDocument()
+      expect(screen.getByText('Missing')).toBeInTheDocument()
+      expect(screen.getByText('Extra')).toBeInTheDocument()
 
       // Check badges exist
       expect(screen.getByText('I')).toBeInTheDocument()
@@ -445,20 +445,20 @@ describe('ListenFlow Improvement Requirements', () => {
         />
       )
 
-      const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/) as HTMLTextAreaElement
+      const input = screen.getByPlaceholderText(/Type what you hear/i) as HTMLTextAreaElement
       fireEvent.change(input, {
         target: { value: 'I am honored to be' },
       })
 
-      const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+      const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
       fireEvent.click(checkBtn)
 
       // Results summary card appears
-      expect(screen.getByText(/Độ tương đồng từ/i)).toBeInTheDocument()
-      expect(screen.getByText(/Đối chiếu chi tiết từng từ/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Word Similarity/i)[0]).toBeInTheDocument()
+      expect(screen.getByText(/Detailed word alignment/i)).toBeInTheDocument()
 
       // Retry button is available
-      const retryBtn = screen.getByRole('button', { name: /Thử lại câu này/i })
+      const retryBtn = screen.getAllByRole('button', { name: /Retry/i })[0]
       expect(retryBtn).toBeInTheDocument()
 
       fireEvent.click(retryBtn)
@@ -468,7 +468,7 @@ describe('ListenFlow Improvement Requirements', () => {
       // Audio replay triggered
       expect(onReplaySegment).toHaveBeenCalled()
       // Score summary closed
-      expect(screen.queryByText(/Đối chiếu chi tiết từng từ/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Detailed word alignment/i)).not.toBeInTheDocument()
     })
 
     it('displays honest custom video message and freeform scratchpad for videos without verified transcripts', () => {
@@ -476,8 +476,8 @@ describe('ListenFlow Improvement Requirements', () => {
         id: 'custom-abc12345678',
         title: 'Custom User Video',
         videoId: 'abc12345678',
-        language: 'Tự chọn (Custom)',
-        transcriptSource: 'Không có phụ đề mẫu xác minh (Video tùy chỉnh)',
+        language: 'Custom',
+        transcriptSource: 'Unverified transcript (Custom video)',
         isVerified: false,
         level: 'Intermediate' as const,
         description: 'Test custom video',
@@ -497,10 +497,10 @@ describe('ListenFlow Improvement Requirements', () => {
       )
 
       expect(
-        screen.getByText(/Luyện nghe theo phân đoạn câu YouTube/i)
+        screen.getByText(/YouTube Sentence Dictation/i)
       ).toBeInTheDocument()
       expect(
-        screen.getByPlaceholderText(/Gõ lại những gì bạn nghe được khi xem video trên YouTube player/i)
+        screen.getByPlaceholderText(/Type what you hear/i)
       ).toBeInTheDocument()
     })
   })
@@ -519,8 +519,8 @@ describe('ListenFlow Improvement Requirements', () => {
         />
       )
 
-      // Active item should show "Đang phát" badge
-      expect(screen.getByText('Đang phát')).toBeInTheDocument()
+      // Active item should show "Playing" badge
+      expect(screen.getByText('Playing')).toBeInTheDocument()
       // Shows duration (sj-1: 30 - 24 = 6.0s)
       expect(screen.getAllByText(/\(6\.0s\)/)[0]).toBeInTheDocument()
     })
@@ -552,26 +552,26 @@ describe('ListenFlow Improvement Requirements', () => {
       )
 
       // Repeat button
-      const repeatBtn = screen.getByRole('button', { name: /Nghe lại phân đoạn câu hiện tại/i })
+      const repeatBtn = screen.getByRole('button', { name: /Replay current sentence/i })
       fireEvent.click(repeatBtn)
       expect(onPlaySegment).toHaveBeenCalled()
 
       // Toggle play/pause (Resume)
-      const resumeBtn = screen.getByRole('button', { name: /Tiếp tục phát video/i })
+      const resumeBtn = screen.getByRole('button', { name: /Resume video/i })
       fireEvent.click(resumeBtn)
       expect(onTogglePlayPause).toHaveBeenCalled()
 
       // Previous and Next buttons
-      const prevBtn = screen.getByRole('button', { name: /Phát câu trước/i })
+      const prevBtn = screen.getByRole('button', { name: /Previous sentence/i })
       fireEvent.click(prevBtn)
       expect(onPreviousSegment).toHaveBeenCalled()
 
-      const nextBtn = screen.getByRole('button', { name: /Phát câu tiếp theo/i })
+      const nextBtn = screen.getByRole('button', { name: /Next sentence/i })
       fireEvent.click(nextBtn)
       expect(onNextSegment).toHaveBeenCalled()
 
       // Speed selection
-      const speed075Btn = screen.getByRole('button', { name: /Tốc độ phát 0\.75x/i })
+      const speed075Btn = screen.getByRole('button', { name: /Playback speed 0\.75x/i })
       fireEvent.click(speed075Btn)
       expect(onChangeSpeed).toHaveBeenCalledWith(0.75)
     })
@@ -594,21 +594,21 @@ describe('ListenFlow Improvement Requirements', () => {
       fireEvent.keyDown(document.body, { ctrlKey: true, code: 'Space' })
       fireEvent.keyDown(document.body, { altKey: true, key: 'r' })
 
-      expect(screen.getByText(/Câu 1 \/ 5/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 1 of 5/i)).toBeInTheDocument()
     })
 
     it('navigates sentences with Alt+ArrowRight and Alt+ArrowLeft', () => {
       render(<App />)
 
-      expect(screen.getByText(/Câu 1 \/ 5/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 1 of 5/i)).toBeInTheDocument()
 
       // Navigate to sentence 2
       fireEvent.keyDown(window, { altKey: true, key: 'ArrowRight' })
-      expect(screen.getByText(/Câu 2 \/ 5/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 2 of 5/i)).toBeInTheDocument()
 
       // Navigate back to sentence 1
       fireEvent.keyDown(window, { altKey: true, key: 'ArrowLeft' })
-      expect(screen.getByText(/Câu 1 \/ 5/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 1 of 5/i)).toBeInTheDocument()
     })
   })
 
@@ -626,7 +626,7 @@ describe('ListenFlow Improvement Requirements', () => {
       // Simulate network / CDN load error
       script?.dispatchEvent(new Event('error'))
 
-      await expect(loadPromise).rejects.toThrow('Lỗi tải YouTube IFrame API script')
+      await expect(loadPromise).rejects.toThrow('Failed to load YouTube IFrame API script')
     })
 
     it('loadYouTubeIframeApi rejects when timeout expires without API ready', async () => {
@@ -639,7 +639,7 @@ describe('ListenFlow Improvement Requirements', () => {
       const loadPromise = loadYouTubeIframeApi(500)
       vi.advanceTimersByTime(600)
 
-      await expect(loadPromise).rejects.toThrow('Thời gian tải YouTube IFrame API đã quá hạn')
+      await expect(loadPromise).rejects.toThrow('YouTube IFrame API load timed out')
     })
 
     it('sets user-facing playerError when loadYouTubeIframeApi fails', async () => {
@@ -669,9 +669,9 @@ describe('ListenFlow Improvement Requirements', () => {
         await Promise.resolve()
       })
 
-      expect(result.current.playerError).toContain('Không thể tải thư viện YouTube IFrame API')
+      expect(result.current.playerError).toContain('Failed to load YouTube IFrame API')
       expect(onErrorMock).toHaveBeenCalledWith(
-        expect.stringContaining('Không thể tải thư viện YouTube IFrame API')
+        expect.stringContaining('Failed to load YouTube IFrame API')
       )
     })
   })

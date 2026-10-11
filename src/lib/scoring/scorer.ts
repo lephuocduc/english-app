@@ -76,7 +76,7 @@ export function scoreDictation(expectedText: string, userInput: string): ScoreRe
       incorrectCount: 0,
       extraCount: 0,
       alignments: [],
-      feedbackText: 'Không có nội dung đối chiếu.',
+      feedbackText: 'No content to compare.',
     }
   }
 
@@ -97,7 +97,7 @@ export function scoreDictation(expectedText: string, userInput: string): ScoreRe
       incorrectCount: 0,
       extraCount: m,
       alignments,
-      feedbackText: 'Đoạn này không có transcript mong đợi.',
+      feedbackText: 'No expected transcript for this segment.',
     }
   }
 
@@ -118,7 +118,7 @@ export function scoreDictation(expectedText: string, userInput: string): ScoreRe
       incorrectCount: 0,
       extraCount: 0,
       alignments,
-      feedbackText: 'Bạn chưa nhập câu trả lời.',
+      feedbackText: 'You have not entered an answer yet.',
     }
   }
 
@@ -212,13 +212,13 @@ export function scoreDictation(expectedText: string, userInput: string): ScoreRe
 
   let feedbackText = ''
   if (score === 100) {
-    feedbackText = 'Xuất sắc! Bạn đã nghe và gõ chính xác 100%!'
+    feedbackText = 'Excellent! You listened and typed 100% correctly!'
   } else if (score >= 80) {
-    feedbackText = 'Rất tốt! Chỉ một vài lỗi nhỏ, hãy đối chiếu các từ chưa chính xác.'
+    feedbackText = 'Great job! Only a few minor errors, check the mismatched words.'
   } else if (score >= 50) {
-    feedbackText = 'Khá ổn! Hãy nghe lại phân đoạn này để nhận diện rõ các từ bị sót hoặc gõ nhầm.'
+    feedbackText = 'Good effort! Replay this segment to catch missing or misspelled words.'
   } else {
-    feedbackText = 'Cần cố gắng thêm. Hãy giảm tốc độ và nghe lại từng cụm từ nhỏ.'
+    feedbackText = 'Keep practicing! Slow down and listen to smaller word chunks.'
   }
 
   return {

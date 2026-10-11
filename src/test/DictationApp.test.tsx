@@ -98,10 +98,10 @@ describe('ListenFlow Integration & UI Tests', () => {
 
     expect(screen.getAllByText('ListenFlow')[0]).toBeInTheDocument()
     // Check navigation buttons
-    expect(screen.getAllByText('Luyện tập')[0]).toBeInTheDocument()
-    expect(screen.getAllByText('Video của tôi')[0]).toBeInTheDocument()
-    expect(screen.getAllByText('Từ vựng')[0]).toBeInTheDocument()
-    expect(screen.getAllByText('Tiến độ')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Practice')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('My Videos')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Vocabulary')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Progress')[0]).toBeInTheDocument()
   })
 
   it('renders practice studio with YouTube player container and active YouTube video', () => {
@@ -111,21 +111,21 @@ describe('ListenFlow Integration & UI Tests', () => {
       screen.getByText('Steve Jobs: Connecting the Dots (Stanford 2005)')
     ).toBeInTheDocument()
     expect(screen.getByText(/YouTube ID: UF8uR6Z6KLc/i)).toBeInTheDocument()
-    expect(screen.getByText(/Câu 1 \/ 5/)).toBeInTheDocument()
+    expect(screen.getByText(/Sentence 1 of 5/)).toBeInTheDocument()
     expect(
-      screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+      screen.getByPlaceholderText(/Type what you hear/i)
     ).toBeInTheDocument()
   })
 
   it('reveals and hides the expected transcript answer when clicking the toggle button', () => {
     render(<App />)
 
-    const revealBtn = screen.getByRole('button', { name: /Xem đáp án/i })
+    const revealBtn = screen.getByRole('button', { name: /Show Answer/i })
     expect(revealBtn).toBeInTheDocument()
 
     // Click to reveal
     fireEvent.click(revealBtn)
-    expect(screen.getByText(/Bản dịch & Transcript chính thức/i)).toBeInTheDocument()
+    expect(screen.getByText(/Official Transcript/i)).toBeInTheDocument()
     expect(
       screen.getByText(
         'I am honored to be with you today at your commencement from one of the finest universities in the world.'
@@ -133,15 +133,15 @@ describe('ListenFlow Integration & UI Tests', () => {
     ).toBeInTheDocument()
 
     // Click to hide
-    const hideBtn = screen.getByRole('button', { name: /Ẩn đáp án/i })
+    const hideBtn = screen.getByRole('button', { name: /Hide Answer/i })
     fireEvent.click(hideBtn)
-    expect(screen.queryByText(/Bản dịch & Transcript chính thức/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Official Transcript/i)).not.toBeInTheDocument()
   })
 
   it('submits answer and displays 100% score for exact match', () => {
     render(<App />)
 
-    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+    const input = screen.getByPlaceholderText(/Type what you hear/i)
     fireEvent.change(input, {
       target: {
         value:
@@ -149,58 +149,58 @@ describe('ListenFlow Integration & UI Tests', () => {
       },
     })
 
-    const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+    const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
     fireEvent.click(checkBtn)
 
     expect(screen.getAllByText('100%')[0]).toBeInTheDocument()
     expect(
-      screen.getByText(/Xuất sắc! Bạn đã nghe và gõ chính xác 100%!/i)
+      screen.getByText(/Excellent! You listened and typed 100% correctly!/i)
     ).toBeInTheDocument()
-    expect(screen.getByText('Đúng: 20')).toBeInTheDocument()
+    expect(screen.getByText('Correct: 20')).toBeInTheDocument()
   })
 
   it('submits partial answer and shows word breakdown with missing words', () => {
     render(<App />)
 
-    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+    const input = screen.getByPlaceholderText(/Type what you hear/i)
     fireEvent.change(input, {
       target: {
         value: 'I am honored to be with you today',
       },
     })
 
-    const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+    const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
     fireEvent.click(checkBtn)
 
-    expect(screen.getByText(/Độ tương đồng từ/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sót:/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Word Similarity/i)[0]).toBeInTheDocument()
+    expect(screen.getByText(/Missing:/i)).toBeInTheDocument()
   })
 
   it('navigates between sentence segments and updates active segment index', () => {
     render(<App />)
 
-    expect(screen.getByText(/Câu 1 \/ 5/)).toBeInTheDocument()
+    expect(screen.getByText(/Sentence 1 of 5/)).toBeInTheDocument()
 
     // Click next sentence button
-    const nextBtn = screen.getByTitle('Câu tiếp theo')
+    const nextBtn = screen.getByTitle('Next sentence')
     fireEvent.click(nextBtn)
 
-    expect(screen.getByText(/Câu 2 \/ 5/)).toBeInTheDocument()
+    expect(screen.getByText(/Sentence 2 of 5/)).toBeInTheDocument()
 
     // Click previous sentence button
-    const prevBtn = screen.getByTitle('Câu trước')
+    const prevBtn = screen.getByTitle('Previous sentence')
     fireEvent.click(prevBtn)
 
-    expect(screen.getByText(/Câu 1 \/ 5/)).toBeInTheDocument()
+    expect(screen.getByText(/Sentence 1 of 5/)).toBeInTheDocument()
   })
 
   it('switches to My Videos tab and displays saved YouTube videos', () => {
     render(<App />)
 
-    const videosTabBtn = screen.getAllByText('Video của tôi')[0]
+    const videosTabBtn = screen.getAllByText('My Videos')[0]
     fireEvent.click(videosTabBtn)
 
-    expect(screen.getByText(/Danh sách video đã lưu/i)).toBeInTheDocument()
+    expect(screen.getByText(/Saved Videos/i)).toBeInTheDocument()
     expect(
       screen.getAllByText('Steve Jobs: Connecting the Dots (Stanford 2005)')[0]
     ).toBeInTheDocument()
@@ -210,29 +210,29 @@ describe('ListenFlow Integration & UI Tests', () => {
     render(<App />)
 
     // Switch to My Videos tab where import form is located
-    const videosTabBtn = screen.getAllByText('Video của tôi')[0]
+    const videosTabBtn = screen.getAllByText('My Videos')[0]
     fireEvent.click(videosTabBtn)
 
-    const urlInput = screen.getByPlaceholderText(/Dán link YouTube \(ví dụ:/i)
+    const urlInput = screen.getByPlaceholderText(/Paste YouTube link/i)
     fireEvent.change(urlInput, { target: { value: 'https://vimeo.com/999999' } })
 
-    const submitBtn = screen.getByRole('button', { name: /Nạp video vào player/i })
+    const submitBtn = screen.getByRole('button', { name: /Load Video into Player/i })
     fireEvent.click(submitBtn)
 
     expect(
-      screen.getByText(/Đường link không phải từ YouTube/i)
+      screen.getByText(/The provided link is not from YouTube/i)
     ).toBeInTheDocument()
   })
 
   it('allows importing a valid YouTube URL from the quick URL bar and displays it', () => {
     render(<App />)
 
-    const quickInput = screen.getByPlaceholderText(/Dán link YouTube bất kỳ/)
+    const quickInput = screen.getByPlaceholderText(/Paste any YouTube link/)
     fireEvent.change(quickInput, {
       target: { value: 'https://www.youtube.com/watch?v=arj7oStGLkU' },
     })
 
-    const submitBtn = screen.getByRole('button', { name: /Nạp video/i })
+    const submitBtn = screen.getByRole('button', { name: /Load Video/i })
     fireEvent.click(submitBtn)
 
     expect(screen.getByText(/YouTube ID: arj7oStGLkU/i)).toBeInTheDocument()
@@ -241,38 +241,38 @@ describe('ListenFlow Integration & UI Tests', () => {
   it('navigates to Vocabulary tab and shows empty state', () => {
     render(<App />)
 
-    const vocabTabBtn = screen.getAllByText('Từ vựng')[0]
+    const vocabTabBtn = screen.getAllByText('Vocabulary')[0]
     fireEvent.click(vocabTabBtn)
 
-    expect(screen.getByText('Chưa có từ vựng nào trong sổ tay')).toBeInTheDocument()
+    expect(screen.getByText(/No vocabulary in your notebook yet/i)).toBeInTheDocument()
   })
 
   it('navigates to Progress tab and displays statistics overview', () => {
     render(<App />)
 
-    const progressTabBtn = screen.getAllByText('Tiến độ')[0]
+    const progressTabBtn = screen.getAllByText('Progress')[0]
     fireEvent.click(progressTabBtn)
 
-    expect(screen.getByText('Tiến độ & Kết quả rèn luyện')).toBeInTheDocument()
-    expect(screen.getByText('Câu đã luyện tập')).toBeInTheDocument()
-    expect(screen.getByText('Điểm TB tương đồng')).toBeInTheDocument()
+    expect(screen.getByText('Progress & Training Results')).toBeInTheDocument()
+    expect(screen.getByText('Sentences Practiced')).toBeInTheDocument()
+    expect(screen.getByText('Avg Word Similarity')).toBeInTheDocument()
   })
 
   it('opens and closes keyboard shortcuts modal', () => {
     render(<App />)
 
-    const shortcutsBtn = screen.getByTitle('Xem danh sách phím tắt hữu ích')
+    const shortcutsBtn = screen.getByTitle('Keyboard shortcuts')
     fireEvent.click(shortcutsBtn)
 
-    expect(screen.getByText('Phím tắt học tập nhanh')).toBeInTheDocument()
+    expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
     expect(
-      screen.getByText('Kiểm tra đáp án câu trả lời trong ô gõ chữ')
+      screen.getByText('Submit and check your typed answer')
     ).toBeInTheDocument()
 
-    const closeBtn = screen.getByRole('button', { name: /Đã hiểu/i })
+    const closeBtn = screen.getByRole('button', { name: /Got it/i })
     fireEvent.click(closeBtn)
 
-    expect(screen.queryByText('Phím tắt học tập nhanh')).not.toBeInTheDocument()
+    expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument()
   })
 
   it('displays due vocabulary count in Navbar tab badge rather than total vocabulary count', () => {
@@ -324,7 +324,7 @@ describe('ListenFlow Integration & UI Tests', () => {
     render(<App />)
 
     // Navbar should display badge with count 1 (due words), NOT 3 (total words)
-    const vocabNavBtn = screen.getAllByRole('button', { name: /Từ vựng/i })[0]
+    const vocabNavBtn = screen.getAllByRole('button', { name: /Vocabulary/i })[0]
     expect(within(vocabNavBtn).getByText('1')).toBeInTheDocument()
     expect(within(vocabNavBtn).queryByText('3')).not.toBeInTheDocument()
   })

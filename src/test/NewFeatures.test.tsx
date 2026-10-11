@@ -51,19 +51,19 @@ describe('User Requested Features Tests', () => {
       )
 
       // Expected word count for "Stay hungry, stay foolish." is 4 words
-      expect(screen.getByText(/Gợi ý: 4 từ/i)).toBeInTheDocument()
-      expect(screen.getByText(/Đoạn này gồm/i)).toBeInTheDocument()
+      expect(screen.getByText(/Hint: 4 words/i)).toBeInTheDocument()
+      expect(screen.getByText(/This sentence has/i)).toBeInTheDocument()
 
-      const textarea = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe \(4 từ\)/i)
+      const textarea = screen.getByPlaceholderText(/Type what you hear \(4 words\)/i)
       expect(textarea).toBeInTheDocument()
 
       // Type 2 words
       fireEvent.change(textarea, { target: { value: 'Stay hungry' } })
-      expect(screen.getByText(/Đã gõ: 2 \/ 4 từ/i)).toBeInTheDocument()
+      expect(screen.getByText(/Typed: 2 \/ 4 words/i)).toBeInTheDocument()
 
       // Type 4 words
       fireEvent.change(textarea, { target: { value: 'Stay hungry, stay foolish.' } })
-      expect(screen.getByText(/Đã gõ: 4 \/ 4 từ/i)).toBeInTheDocument()
+      expect(screen.getByText(/Typed: 4 \/ 4 words/i)).toBeInTheDocument()
     })
   })
 
@@ -88,9 +88,9 @@ describe('User Requested Features Tests', () => {
         />
       )
 
-      const loopButton = screen.getByRole('button', { name: /Tự động lặp lại câu/i })
+      const loopButton = screen.getByRole('button', { name: /Toggle sentence loop/i })
       expect(loopButton).toBeInTheDocument()
-      expect(screen.getByText(/Lặp câu/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/Loop/i)[0]).toBeInTheDocument()
 
       fireEvent.click(loopButton)
       expect(onToggleLoop).toHaveBeenCalledTimes(1)
@@ -113,8 +113,7 @@ describe('User Requested Features Tests', () => {
         />
       )
 
-      expect(screen.getByText(/Lặp câu \(Bật\)/i)).toBeInTheDocument()
-      expect(screen.getByText(/Loop/i)).toBeInTheDocument()
+      expect(screen.getByText(/Loop \(On\)/i)).toBeInTheDocument()
     })
 
     it('renders loop toggle button in DictationStudio prompt area', () => {
@@ -134,7 +133,7 @@ describe('User Requested Features Tests', () => {
         />
       )
 
-      const loopBtn = screen.getByRole('button', { name: /Lặp câu: Bật/i })
+      const loopBtn = screen.getByRole('button', { name: /Loop: On/i })
       expect(loopBtn).toBeInTheDocument()
       fireEvent.click(loopBtn)
       expect(onToggleLoop).toHaveBeenCalledTimes(1)
@@ -183,7 +182,7 @@ describe('User Requested Features Tests', () => {
   })
 
   describe('4. Vietnamese translation on reveal answer', () => {
-    it('displays official or translated Vietnamese text when user clicks "Xem đáp án"', () => {
+    it('displays official or translated Vietnamese text when user clicks "Show Answer"', () => {
       render(
         <DictationStudio
           lesson={mockLesson}
@@ -196,15 +195,15 @@ describe('User Requested Features Tests', () => {
         />
       )
 
-      // Click "Xem đáp án"
-      const revealBtn = screen.getByRole('button', { name: /Xem đáp án/i })
+      // Click "Show Answer"
+      const revealBtn = screen.getByRole('button', { name: /Show Answer/i })
       fireEvent.click(revealBtn)
 
       // Expected English transcript
       expect(screen.getByText(/Stay hungry, stay foolish/i)).toBeInTheDocument()
 
       // Expected Vietnamese translation
-      expect(screen.getByText(/Dịch nghĩa tiếng Việt:/i)).toBeInTheDocument()
+      expect(screen.getByText(/Vietnamese Translation:/i)).toBeInTheDocument()
       expect(screen.getByText(/Hãy cứ khao khát, hãy cứ dại khờ/i)).toBeInTheDocument()
     })
   })
@@ -228,31 +227,31 @@ describe('User Requested Features Tests', () => {
 
       render(<App />)
 
-      // Initial sentence: Câu 1 / 3
-      expect(screen.getByText(/Câu 1 \/ 3/i)).toBeInTheDocument()
+      // Initial sentence: Sentence 1 of 3
+      expect(screen.getByText(/Sentence 1 of 3/i)).toBeInTheDocument()
 
-      const textarea = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/i)
+      const textarea = screen.getByPlaceholderText(/Type what you hear/i)
       textarea.focus()
 
       // Press Alt + ArrowRight while focused inside the textarea
       fireEvent.keyDown(textarea, { altKey: true, key: 'ArrowRight' })
 
-      // MUST advance to Câu 2 / 3, NOT jump to Câu 3 / 3!
-      expect(screen.getByText(/Câu 2 \/ 3/i)).toBeInTheDocument()
+      // MUST advance to Sentence 2 of 3, NOT jump to Sentence 3 of 3!
+      expect(screen.getByText(/Sentence 2 of 3/i)).toBeInTheDocument()
 
       // Press Alt + ArrowRight again
       fireEvent.keyDown(textarea, { altKey: true, key: 'ArrowRight' })
-      expect(screen.getByText(/Câu 3 \/ 3/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 3 of 3/i)).toBeInTheDocument()
 
       // Press Alt + ArrowLeft
       fireEvent.keyDown(textarea, { altKey: true, key: 'ArrowLeft' })
 
-      // MUST go back to Câu 2 / 3, NOT jump to Câu 1 / 3!
-      expect(screen.getByText(/Câu 2 \/ 3/i)).toBeInTheDocument()
+      // MUST go back to Sentence 2 of 3, NOT jump to Sentence 1 of 3!
+      expect(screen.getByText(/Sentence 2 of 3/i)).toBeInTheDocument()
 
       // Press Alt + ArrowLeft again
       fireEvent.keyDown(textarea, { altKey: true, key: 'ArrowLeft' })
-      expect(screen.getByText(/Câu 1 \/ 3/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 1 of 3/i)).toBeInTheDocument()
     })
 
     it('ignores key repeat when holding Alt + ArrowRight', () => {
@@ -261,15 +260,15 @@ describe('User Requested Features Tests', () => {
 
       render(<App />)
 
-      expect(screen.getByText(/Câu 1 \/ 3/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sentence 1 of 3/i)).toBeInTheDocument()
 
-      const textarea = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/i)
+      const textarea = screen.getByPlaceholderText(/Type what you hear/i)
 
       // Key repeat event
       fireEvent.keyDown(textarea, { altKey: true, key: 'ArrowRight', repeat: true })
 
-      // Still on Câu 1 / 3 because repeat was ignored!
-      expect(screen.getByText(/Câu 1 \/ 3/i)).toBeInTheDocument()
+      // Still on Sentence 1 of 3 because repeat was ignored!
+      expect(screen.getByText(/Sentence 1 of 3/i)).toBeInTheDocument()
     })
   })
 })

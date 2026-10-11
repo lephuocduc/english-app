@@ -41,7 +41,7 @@ describe('DictationStudio Component', () => {
       />
     )
 
-    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+    const input = screen.getByPlaceholderText(/Type what you hear/i)
     fireEvent.change(input, {
       target: {
         value:
@@ -49,13 +49,13 @@ describe('DictationStudio Component', () => {
       },
     })
 
-    const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+    const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
     expect(checkBtn).not.toBeDisabled()
 
     fireEvent.click(checkBtn)
 
     expect(screen.getByText('100%')).toBeInTheDocument()
-    expect(screen.getByText('Đúng: 20')).toBeInTheDocument()
+    expect(screen.getByText('Correct: 20')).toBeInTheDocument()
     expect(onSaveProgress).toHaveBeenCalledWith(
       expect.objectContaining({
         score: 100,
@@ -78,18 +78,18 @@ describe('DictationStudio Component', () => {
       />
     )
 
-    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/)
+    const input = screen.getByPlaceholderText(/Type what you hear/i)
     fireEvent.change(input, {
       target: {
         value: 'I am honored to be with you today',
       },
     })
 
-    const checkBtn = screen.getByRole('button', { name: /Kiểm tra đáp án/i })
+    const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
     fireEvent.click(checkBtn)
 
-    expect(screen.getByText(/Độ tương đồng từ/i)).toBeInTheDocument()
-    expect(screen.getByText(/Sót: 12/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Word Similarity/i)[0]).toBeInTheDocument()
+    expect(screen.getByText(/Missing: 12/)).toBeInTheDocument()
     expect(onSaveProgress).toHaveBeenCalled()
   })
 
@@ -110,14 +110,14 @@ describe('DictationStudio Component', () => {
       />
     )
 
-    expect(screen.getByText(/Luyện nghe theo phân đoạn câu YouTube/i)).toBeInTheDocument()
-    const addBtn = screen.getByRole('button', { name: /Thêm phân đoạn câu/i })
+    expect(screen.getByText(/YouTube Sentence Dictation/i)).toBeInTheDocument()
+    const addBtn = screen.getByRole('button', { name: /Add Custom Segment/i })
     fireEvent.click(addBtn)
 
-    const textInput = screen.getByPlaceholderText(/Ví dụ: Today I want to tell you/i)
+    const textInput = screen.getByPlaceholderText(/e\.g\. Today I want to tell you/i)
     fireEvent.change(textInput, { target: { value: 'Hello world' } })
 
-    const saveBtn = screen.getByRole('button', { name: /Lưu phân đoạn/i })
+    const saveBtn = screen.getByRole('button', { name: /Save Segment/i })
     fireEvent.click(saveBtn)
 
     expect(onAddSegment).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe('DictationStudio Component', () => {
       />
     )
 
-    const input = screen.getByPlaceholderText(/Gõ lại câu tiếng Anh bạn vừa nghe/) as HTMLTextAreaElement
+    const input = screen.getByPlaceholderText(/Type what you hear/i) as HTMLTextAreaElement
     fireEvent.change(input, {
       target: { value: 'My answer for first sentence' },
     })

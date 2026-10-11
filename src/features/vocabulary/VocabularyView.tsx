@@ -102,13 +102,13 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
         <div className="space-y-1.5 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
             <Bookmark className="w-3.5 h-3.5" />
-            <span>Sổ từ vựng &amp; Flashcard Anki ({vocabularyList.length} từ)</span>
+            <span>Vocabulary &amp; Flashcards ({vocabularyList.length} words)</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Sổ từ vựng &amp; Ôn tập Spaced Repetition
+            Vocabulary &amp; Spaced Repetition Review
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Lưu từ vựng kèm ngữ cảnh video, phát âm bản xứ, đánh dấu đã thuộc và ôn tập lặp lại ngắt quãng theo thuật toán SuperMemo SM-2.
+            Save words with video context, native pronunciation, mastery status, and spaced repetition review via the SuperMemo SM-2 algorithm.
           </p>
         </div>
 
@@ -119,10 +119,10 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               type="button"
               onClick={() => startReviewSession()}
               className="flex-1 md:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-              title={dueItems.length > 0 ? `Bắt đầu ôn tập ${dueItems.length} từ đến hạn hôm nay` : 'Ôn tập Flashcard'}
+              title={dueItems.length > 0 ? `Start reviewing ${dueItems.length} words due today` : 'Flashcard Review'}
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Ôn Flashcard ({dueItems.length})</span>
+              <span>Review Flashcards ({dueItems.length})</span>
             </button>
           )}
 
@@ -133,7 +133,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200/80 dark:border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
-              <span>Thêm từ</span>
+              <span>Add Word</span>
             </button>
           )}
         </div>
@@ -153,7 +153,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Tổng số từ
+                Total Words
               </span>
               <BookOpen className="w-4 h-4 text-indigo-500" />
             </div>
@@ -173,7 +173,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                Cần ôn hôm nay
+                Due Today
               </span>
               <Clock className="w-4 h-4 text-amber-500" />
             </div>
@@ -200,7 +200,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                Đã thuộc
+                Mastered
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             </div>
@@ -225,7 +225,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Tất cả ({srsStats.total})
+              All ({srsStats.total})
             </button>
             <button
               type="button"
@@ -236,7 +236,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <span>Cần ôn</span>
+              <span>Due</span>
               {srsStats.due > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 font-bold">
                   {srsStats.due}
@@ -252,7 +252,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Đã thuộc ({srsStats.mastered})
+              Mastered ({srsStats.mastered})
             </button>
           </div>
 
@@ -263,7 +263,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo từ, nghĩa hoặc ví dụ..."
+              placeholder="Search by word, meaning, or sentence..."
               className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400"
             />
           </div>
@@ -278,11 +278,11 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
           </div>
           <div className="space-y-1.5">
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-              Chưa có từ vựng nào trong sổ tay
+              No vocabulary in your notebook yet
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Trong khi luyện nghe tại màn hình <strong className="text-indigo-600 dark:text-indigo-400">Luyện tập</strong>,
-              sau khi kiểm tra đáp án, bạn chỉ cần bấm vào bất kỳ từ nào để lưu kèm nghĩa tiếng Việt và câu ví dụ từ video.
+              While practicing in <strong className="text-indigo-600 dark:text-indigo-400">Practice</strong>,
+              after checking your answer, simply click any word to save it with its translation and context sentence from the video.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
@@ -293,18 +293,18 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Thêm từ vựng đầu tiên</span>
+                <span>Add First Word</span>
               </button>
             )}
           </div>
           <div className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50/80 dark:bg-indigo-950/60 px-3.5 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Mẹo: Lưu từ vựng kèm ngữ cảnh video giúp ghi nhớ lâu hơn x3 lần</span>
+            <span>Tip: Saving words with video context improves retention by 3x</span>
           </div>
         </div>
       ) : filteredWords.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-          Không tìm thấy từ vựng nào trong mục này{searchQuery ? ` phù hợp với "${searchQuery}"` : ''}.
+          No vocabulary found in this section{searchQuery ? ` matching "${searchQuery}"` : ''}.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -325,7 +325,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                       <button
                         type="button"
                         onClick={() => speakWord(item.word)}
-                        title="Phát âm từ"
+                        title="Pronounce word"
                         className="p-1 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded transition cursor-pointer"
                       >
                         <Volume2 className="w-3.5 h-3.5" />
@@ -337,7 +337,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                       <button
                         type="button"
                         onClick={() => onRemoveVocabulary(item.id)}
-                        title="Xóa từ khỏi sổ từ"
+                        title="Delete word"
                         className="p-1 text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -350,7 +350,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     {/* Meaning tag */}
                     {item.meaning && (
                       <div className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-semibold">
-                        <span>Nghĩa:</span>
+                        <span>Meaning:</span>
                         <strong className="font-bold">{item.meaning}</strong>
                       </div>
                     )}
@@ -358,19 +358,19 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     {/* Mastered Badge */}
                     {item.mastered ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded-lg text-[10px] font-bold">
-                        <Check className="w-2.5 h-2.5" /> Đã thuộc
+                        <Check className="w-2.5 h-2.5" /> Mastered
                       </span>
                     ) : due ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-300/60 dark:border-amber-800">
-                        <Clock className="w-2.5 h-2.5" /> Đến hạn ôn
+                        <Clock className="w-2.5 h-2.5" /> Due today
                       </span>
                     ) : item.interval ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-[10px] font-semibold">
-                        Ôn lại sau {item.interval} ngày
+                        Review in {item.interval} day(s)
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-semibold">
-                        Từ mới
+                        New word
                       </span>
                     )}
                   </div>
@@ -379,7 +379,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-100 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-2">
                     <div>
                       <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px] uppercase tracking-wide mb-0.5">
-                        Ví dụ từ video:
+                        Context from video:
                       </span>
                       <p className="font-medium text-slate-800 dark:text-slate-200">
                         &quot;{item.contextSentence}&quot;
@@ -388,7 +388,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     {item.contextSentenceTranslation && (
                       <div className="border-t border-slate-200/70 dark:border-slate-700 pt-1.5">
                         <span className="font-semibold text-emerald-800 dark:text-emerald-300 block text-[10px] uppercase tracking-wide mb-0.5">
-                          Dịch nghĩa câu:
+                          Sentence meaning:
                         </span>
                         <p className="text-slate-600 dark:text-slate-400 italic">
                           &quot;{item.contextSentenceTranslation}&quot;
@@ -410,9 +410,9 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                       type="button"
                       onClick={() => startReviewSession([item])}
                       className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-                      title="Ôn thẻ này bằng Flashcard"
+                      title="Review card in Flashcard"
                     >
-                      Lật thẻ
+                      Flip Card
                     </button>
 
                     {onJumpToTimestamp && (
@@ -421,7 +421,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                         onClick={() => onJumpToTimestamp(item.videoId, item.timestamp)}
                         className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold cursor-pointer"
                       >
-                        <span>Nghe lại</span>
+                        <span>Replay</span>
                         <ExternalLink className="w-3 h-3" />
                       </button>
                     )}

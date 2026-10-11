@@ -36,13 +36,13 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
         <div className="space-y-2 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Thư viện Video YouTube</span>
+            <span>YouTube Video Library</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Video YouTube luyện nghe &amp; chép chính tả
+            YouTube Dictation &amp; Listening Videos
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Dán đường link bất kỳ từ YouTube để tạo video học tập, thêm các mốc phân đoạn câu và bắt đầu luyện tập phản xạ nghe chính tả.
+            Paste any YouTube link to study, add sentence timestamps, and train listening reflexes with instant transcription scoring.
           </p>
         </div>
       </div>
@@ -51,7 +51,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
           <Plus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          <span>Thêm video YouTube mới</span>
+          <span>Add New YouTube Video</span>
         </div>
         <YouTubeImportForm onImportVideo={onImportCustomVideo} />
       </div>
@@ -61,7 +61,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Headphones className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <span>Danh sách video đã lưu ({lessons.length})</span>
+            <span>Saved Videos ({lessons.length})</span>
           </h3>
         </div>
 
@@ -71,10 +71,10 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
               <Headphones className="w-6 h-6" />
             </div>
             <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
-              Chưa có video YouTube nào trong thư viện
+              No YouTube videos in your library yet
             </h4>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Hãy dán đường link YouTube ở khung phía trên để bắt đầu thêm video và luyện nghe.
+              Paste a YouTube link above to add your first video and start practicing.
             </p>
           </div>
         ) : (
@@ -117,7 +117,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                         href={`https://www.youtube.com/watch?v=${lesson.videoId}`}
                         target="_blank"
                         rel="noreferrer"
-                        title="Mở video trên YouTube"
+                        title="Open video on YouTube"
                         className="p-1 hover:text-indigo-300 transition"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -133,7 +133,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
                         <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {total > 0 ? `${total} phân đoạn câu` : 'Chưa có phân đoạn'}
+                          {total > 0 ? `${total} sentence segments` : 'No segments yet'}
                         </span>
                       </div>
                     </div>
@@ -142,7 +142,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                     {total > 0 && (
                       <div className="pt-2">
                         <div className="flex justify-between text-[11px] text-slate-500 font-medium mb-1">
-                          <span>Tiến độ hoàn thành</span>
+                          <span>Completion progress</span>
                           <span className="font-semibold text-slate-700">{percent}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -160,13 +160,13 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            if (window.confirm(`Bạn có chắc muốn xóa video "${lesson.title}" khỏi thư viện?`)) {
+                            if (window.confirm(`Are you sure you want to delete "${lesson.title}" from your library?`)) {
                               onDeleteVideo(lesson.id)
                             }
                           }}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Xóa video khỏi thư viện"
-                          aria-label="Xóa video"
+                          title="Delete video from library"
+                          aria-label="Delete video"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -175,7 +175,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       <div className="ml-auto flex items-center gap-2">
                         {percent === 100 && total > 0 && (
                           <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Hoàn thành
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Completed
                           </span>
                         )}
 
@@ -188,7 +188,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
-                          <span>{isActive ? 'Đang luyện tập' : 'Luyện tập'}</span>
+                          <span>{isActive ? 'Practicing' : 'Practice'}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       </div>

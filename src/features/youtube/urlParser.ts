@@ -18,7 +18,7 @@ export function parseYouTubeUrl(input: string): YouTubeUrlParseResult {
   if (!input || !input.trim()) {
     return {
       isValid: false,
-      error: 'Vui lòng dán đường link YouTube hợp lệ.',
+      error: 'Please enter a valid YouTube link.',
     }
   }
 
@@ -45,7 +45,7 @@ export function parseYouTubeUrl(input: string): YouTubeUrlParseResult {
   } catch {
     return {
       isValid: false,
-      error: 'Địa chỉ URL không hợp lệ hoặc sai định dạng.',
+      error: 'Invalid or malformed URL.',
     }
   }
 
@@ -63,7 +63,7 @@ export function parseYouTubeUrl(input: string): YouTubeUrlParseResult {
   if (!isYouTubeHost) {
     return {
       isValid: false,
-      error: 'Đường link không phải từ YouTube (chỉ hỗ trợ youtube.com hoặc youtu.be).',
+      error: 'The provided link is not from YouTube (only youtube.com and youtu.be are supported).',
     }
   }
 
@@ -105,7 +105,7 @@ export function parseYouTubeUrl(input: string): YouTubeUrlParseResult {
   if (!extractedId || !VIDEO_ID_REGEX.test(extractedId)) {
     return {
       isValid: false,
-      error: 'Không tìm thấy mã video (Video ID 11 ký tự) hợp lệ trong đường link.',
+      error: 'Could not find a valid 11-character video ID in the YouTube link.',
     }
   }
 

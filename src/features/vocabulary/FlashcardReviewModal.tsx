@@ -226,15 +226,15 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                 id="flashcard-modal-title"
                 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"
               >
-                <span>Ôn tập Flashcard (Anki SRS)</span>
+                <span>Flashcard Review (Anki SRS)</span>
                 {currentCard?.mastered && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
-                    Đã thuộc
+                    Mastered
                   </span>
                 )}
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Lặp lại ngắt quãng theo thuật toán SuperMemo SM-2
+                Spaced repetition via SuperMemo SM-2 algorithm
               </p>
             </div>
           </div>
@@ -244,7 +244,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
             <button
               type="button"
               onClick={() => setAutoSpeak((prev) => !prev)}
-              title={autoSpeak ? 'Tự động phát âm: Đang BẬT' : 'Tự động phát âm: Đang TẮT'}
+              title={autoSpeak ? 'Auto-pronounce: ON' : 'Auto-pronounce: OFF'}
               className={`p-1.5 rounded-lg border transition cursor-pointer text-xs flex items-center gap-1 ${
                 autoSpeak
                   ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
@@ -252,14 +252,14 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
               }`}
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline text-[11px] font-medium">Tự phát âm</span>
+              <span className="hidden sm:inline text-[11px] font-medium">Auto-play</span>
             </button>
 
             {/* Cloze test toggle */}
             <button
               type="button"
               onClick={() => setIsCloze((prev) => !prev)}
-              title={isCloze ? 'Chế độ Cloze test: Đang BẬT' : 'Chế độ Cloze test: Đang TẮT'}
+              title={isCloze ? 'Cloze test: ON' : 'Cloze test: OFF'}
               className={`p-1.5 rounded-lg border transition cursor-pointer text-xs flex items-center gap-1 ${
                 isCloze
                   ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
@@ -267,14 +267,14 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
               }`}
             >
               {isCloze ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline text-[11px] font-medium">Ẩn từ ví dụ (C)</span>
+              <span className="hidden sm:inline text-[11px] font-medium">Cloze mode (C)</span>
             </button>
 
             {/* Close button */}
             <button
               type="button"
               onClick={onClose}
-              aria-label="Đóng màn hình Flashcard"
+              aria-label="Close Flashcard modal"
               className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -286,7 +286,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
         {!isComplete && queue.length > 0 && (
           <div className="px-5 pt-3 pb-1 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-4">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
-              Thẻ {currentIndex + 1} / {queue.length}
+              Card {currentIndex + 1} of {queue.length}
             </span>
             <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
               <div
@@ -310,29 +310,29 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
               </div>
               <div className="space-y-1.5">
                 <h4 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  Hoàn thành phiên ôn tập hôm nay! 🎉
+                  Session completed! 🎉
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Bạn đã hoàn thành việc ôn luyện {stats.totalReviewed} lượt từ vựng theo chu kỳ Spaced Repetition.
+                  You reviewed {stats.totalReviewed} vocabulary cards in this Spaced Repetition session.
                 </p>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-2 text-center p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
                 <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 block">Quên</span>
+                  <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 block">Again</span>
                   <span className="text-lg font-mono font-extrabold text-slate-800 dark:text-slate-100">{stats.again}</span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 block">Khó</span>
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 block">Hard</span>
                   <span className="text-lg font-mono font-extrabold text-slate-800 dark:text-slate-100">{stats.hard}</span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">Nhớ</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">Good</span>
                   <span className="text-lg font-mono font-extrabold text-slate-800 dark:text-slate-100">{stats.good}</span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 block">Dễ</span>
+                  <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 block">Easy</span>
                   <span className="text-lg font-mono font-extrabold text-slate-800 dark:text-slate-100">{stats.easy}</span>
                 </div>
               </div>
@@ -345,7 +345,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                     className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Ôn lại các từ chưa nhớ ({missedItems.length})</span>
+                    <span>Review missed cards ({missedItems.length})</span>
                   </button>
                 )}
                 <button
@@ -354,7 +354,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                   className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>Quay về sổ từ vựng</span>
+                  <span>Back to Vocabulary</span>
                 </button>
               </div>
             </div>
@@ -374,7 +374,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                   {currentCard.mastered && (
                     <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-[11px] font-semibold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>Đã thuộc</span>
+                      <span>Mastered</span>
                     </span>
                   )}
                 </div>
@@ -391,8 +391,8 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                         e.stopPropagation()
                         speakWord(currentCard.word)
                       }}
-                      title="Phát âm từ (R)"
-                      aria-label="Phát âm từ"
+                      title="Pronounce word (R)"
+                      aria-label="Pronounce word"
                       className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-full transition cursor-pointer active:scale-95"
                     >
                       <Volume2 className="w-5 h-5" />
@@ -403,7 +403,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                   {currentCard.contextSentence && (
                     <div className="max-w-lg mx-auto bg-white/70 dark:bg-slate-800/60 p-3 sm:p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                        Câu ngữ cảnh video:
+                        Context from video:
                       </span>
                       <p className="italic">
                         &quot;
@@ -432,11 +432,11 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                     </div>
                   ) : (
                     <div className="pt-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
-                      <span>Nhấp vào thẻ hoặc bấm </span>
+                      <span>Click card or press </span>
                       <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-[11px] font-mono">
                         Space
                       </kbd>
-                      <span> để lật xem đáp án</span>
+                      <span> to flip</span>
                     </div>
                   )}
                 </div>
@@ -459,7 +459,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       }}
                       className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
                     >
-                      <span>Nghe video</span>
+                      <span>Play video</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   )}
@@ -470,8 +470,8 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
               {isFlipped ? (
                 <div className="space-y-2 animate-fade-in">
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 font-medium">
-                    <span>Đánh giá mức độ nhớ của bạn:</span>
-                    <span className="font-mono text-[11px]">Phím tắt: 1 - 2 - 3 - 4</span>
+                    <span>Rate your recall:</span>
+                    <span className="font-mono text-[11px]">Shortcuts: 1 - 2 - 3 - 4</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
@@ -482,7 +482,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300 transition active:scale-95 cursor-pointer text-left flex flex-col justify-between group"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm">1. Quên (Again)</span>
+                        <span className="font-bold text-xs sm:text-sm">1. Again</span>
                         <kbd className="px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 text-[10px] font-mono">
                           1
                         </kbd>
@@ -499,7 +499,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/70 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer text-left flex flex-col justify-between group"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm">2. Khó (Hard)</span>
+                        <span className="font-bold text-xs sm:text-sm">2. Hard</span>
                         <kbd className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-mono">
                           2
                         </kbd>
@@ -516,7 +516,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300 transition active:scale-95 cursor-pointer text-left flex flex-col justify-between group shadow-2xs"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm">3. Nhớ (Good)</span>
+                        <span className="font-bold text-xs sm:text-sm">3. Good</span>
                         <kbd className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono">
                           3
                         </kbd>
@@ -533,7 +533,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/70 border border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-300 transition active:scale-95 cursor-pointer text-left flex flex-col justify-between group"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm">4. Dễ (Easy)</span>
+                        <span className="font-bold text-xs sm:text-sm">4. Easy</span>
                         <kbd className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-mono">
                           4
                         </kbd>
@@ -551,7 +551,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                     onClick={handleFlip}
                     className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Lật thẻ xem đáp án</span>
+                    <span>Flip Card</span>
                     <kbd className="px-2 py-0.5 bg-indigo-500/80 rounded text-xs font-mono">
                       Space
                     </kbd>

@@ -64,13 +64,13 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
       const res = await storage.syncWithCloud()
       setSyncResult({
         success: true,
-        message: `Đồng bộ thành công! (${res.lessonsCount} bài học, ${res.vocabCount} từ vựng, ${res.progressCount} tiến độ câu)`,
+        message: `Sync completed! (${res.lessonsCount} lessons, ${res.vocabCount} vocabulary, ${res.progressCount} sentence progress)`,
       })
       if (onSyncComplete) onSyncComplete()
     } catch {
       setSyncResult({
         success: false,
-        message: 'Lỗi trong quá trình đồng bộ với Cloudflare D1. Vui lòng thử lại.',
+        message: 'Failed to sync with Cloudflare D1. Please try again.',
       })
     } finally {
       setIsSyncing(false)
@@ -128,13 +128,13 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
         }
         setSyncResult({
           success: true,
-          message: 'Khôi phục dữ liệu từ tệp sao lưu thành công!',
+          message: 'Data restored successfully from backup file!',
         })
         if (onSyncComplete) onSyncComplete()
       } catch {
         setSyncResult({
           success: false,
-          message: 'Tệp JSON không hợp lệ hoặc bị lỗi cấu trúc.',
+          message: 'Invalid JSON file format or corrupted structure.',
         })
       }
     }
@@ -164,10 +164,10 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
                 id="cloud-sync-title"
                 className="text-lg font-bold text-slate-900"
               >
-                Đồng bộ Cloudflare D1
+                Cloudflare D1 Sync
               </h3>
               <p className="text-xs text-slate-500">
-                Lưu trữ đám mây &amp; đồng bộ tiến độ đa thiết bị
+                Cloud persistence &amp; multi-device progress sync
               </p>
             </div>
           </div>
@@ -199,19 +199,19 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
               {healthStatus === 'checking' && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  Đang kiểm tra...
+                  Checking...
                 </span>
               )}
               {healthStatus === 'connected' && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">
                   <CheckCircle2 className="w-3 h-3" />
-                  Đã kết nối
+                  Connected
                 </span>
               )}
               {healthStatus === 'error' && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-full">
                   <AlertCircle className="w-3 h-3" />
-                  Không thể kết nối
+                  Disconnected
                 </span>
               )}
             </div>
@@ -224,10 +224,10 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
             </div>
             <div className="space-y-1">
               <h4 className="text-xs font-bold text-slate-900">
-                Chế độ cá nhân (Tự động đồng bộ xuyên suốt)
+                Cloud-First Mode (Automatic cross-device sync)
               </h4>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Ứng dụng tự động kết nối trực tiếp vào kho dữ liệu Cloudflare D1 của riêng bạn. Khi bạn mở trang web này trên máy tính, điện thoại hay trình duyệt khác, toàn bộ bài học, tiến độ và từ vựng sẽ tự động đồng bộ mà không cần sao chép hay nhập bất kỳ mã nào.
+                The application connects directly to your dedicated Cloudflare D1 database. When opening this website on your computer, phone, or different browsers, all lessons, progress, and vocabulary synchronize automatically.
               </p>
             </div>
           </div>
@@ -261,7 +261,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
               <RefreshCw
                 className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`}
               />
-              <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ ngay với Cloudflare D1'}</span>
+              <span>{isSyncing ? 'Syncing...' : 'Sync Now with Cloudflare D1'}</span>
             </button>
 
             {/* Offline backup options */}
@@ -272,11 +272,11 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
                 className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Xuất file JSON</span>
+                <span>Export JSON</span>
               </button>
               <label className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
                 <Upload className="w-3.5 h-3.5 text-slate-500" />
-                <span>Nhập file JSON</span>
+                <span>Import JSON</span>
                 <input
                   type="file"
                   accept=".json"

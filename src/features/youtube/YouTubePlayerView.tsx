@@ -78,7 +78,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
         {!isReady && !playerError && (
           <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center text-slate-300 gap-3 z-10">
             <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-            <p className="text-sm font-medium">Đang tải trình phát YouTube IFrame...</p>
+            <p className="text-sm font-medium">Loading YouTube IFrame player...</p>
           </div>
         )}
 
@@ -95,11 +95,11 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold mb-2">
               <span className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400'}`} />
-              <span>Chế độ Nghe mù (Blind Listening)</span>
+              <span>Blind Listening Mode</span>
             </div>
 
             <p className="text-xs text-slate-300 max-w-sm mb-3.5 leading-relaxed">
-              Hình ảnh đã được che lại để bạn tập trung hoàn toàn vào thính giác, loại bỏ sự chú ý khỏi khẩu hình miệng và phụ đề.
+              Video is hidden so you can focus entirely on listening, eliminating distraction from lip movements or captions.
             </p>
 
             {onToggleBlindListening && (
@@ -107,10 +107,10 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 type="button"
                 onClick={onToggleBlindListening}
                 className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-medium text-slate-200 transition cursor-pointer flex items-center gap-1.5 active:scale-95"
-                title="Tắt rèm che video (Alt + B)"
+                title="Uncover video (Alt + B)"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>Xem lại video (Alt + B)</span>
+                <span>Show Video (Alt + B)</span>
               </button>
             )}
           </div>
@@ -121,7 +121,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
           <div className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-6 text-center text-rose-300 z-20">
             <AlertTriangle className="w-12 h-12 text-rose-400 mb-2" />
             <h4 className="text-base font-semibold text-rose-200 mb-1">
-              Không thể phát video này
+              Unable to play this video
             </h4>
             <p className="text-sm text-slate-300 max-w-md mb-4">{playerError}</p>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -132,7 +132,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Tải lại video</span>
+                  <span>Reload video</span>
                 </button>
               )}
               <a
@@ -141,7 +141,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium rounded-lg border border-slate-700 transition"
               >
-                Mở trực tiếp trên YouTube <ExternalLink className="w-3.5 h-3.5" />
+                Open on YouTube <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
             <span className="truncate">
               {activeSegment ? (
                 <>
-                  <span className="text-slate-500 dark:text-slate-400">Phân đoạn:</span>{' '}
+                  <span className="text-slate-500 dark:text-slate-400">Segment:</span>{' '}
                   <strong className="text-slate-900 dark:text-white font-mono">
                     {formatTime(activeSegment.startTime)} - {formatTime(activeSegment.endTime)}
                   </strong>{' '}
@@ -167,12 +167,12 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                   </span>
                 </>
               ) : (
-                'Chưa chọn phân đoạn'
+                'No segment selected'
               )}
             </span>
             {isPlaying && (
               <span className="shrink-0 inline-flex items-center text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60 animate-pulse whitespace-nowrap">
-                Đang phát
+                Playing
               </span>
             )}
             {isLooping && (
@@ -182,7 +182,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
             )}
             {isBlindListening && (
               <span className="shrink-0 hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded border border-violet-200/60 dark:border-violet-800/60 whitespace-nowrap">
-                <EyeOff className="w-2.5 h-2.5" /> Nghe mù
+                <EyeOff className="w-2.5 h-2.5" /> Blind Mode
               </span>
             )}
           </div>
@@ -195,23 +195,23 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                   type="button"
                   onClick={onPreviousSegment}
                   disabled={!hasPreviousSegment}
-                  title="Phát câu trước (Alt + ←)"
-                  aria-label="Phát câu trước"
+                  title="Previous sentence (Alt + ←)"
+                  aria-label="Previous sentence"
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               )}
               <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 px-1 select-none whitespace-nowrap">
-                Chuyển câu
+                Navigate
               </span>
               {onNextSegment && (
                 <button
                   type="button"
                   onClick={onNextSegment}
                   disabled={!hasNextSegment}
-                  title="Phát câu tiếp theo (Alt + →)"
-                  aria-label="Phát câu tiếp theo"
+                  title="Next sentence (Alt + →)"
+                  aria-label="Next sentence"
                   className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -230,12 +230,12 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               type="button"
               onClick={onPlaySegment}
               disabled={!isReady || !activeSegment}
-              title="Nghe lại phân đoạn câu hiện tại từ đầu (Ctrl + Space hoặc Alt + R)"
-              aria-label="Nghe lại phân đoạn câu hiện tại"
+              title="Replay current sentence from start (Ctrl + Space or Alt + R)"
+              aria-label="Replay current sentence"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
             >
               <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-              <span>Nghe lại câu</span>
+              <span>Replay Sentence</span>
             </button>
 
             {/* Toggle play/pause (Pause / Resume) */}
@@ -243,8 +243,8 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               type="button"
               onClick={onTogglePlayPause}
               disabled={!isReady}
-              title={isPlaying ? 'Tạm dừng phát (Space)' : 'Tiếp tục phát (Space)'}
-              aria-label={isPlaying ? 'Tạm dừng video' : 'Tiếp tục phát video'}
+              title={isPlaying ? 'Pause playback (Space)' : 'Resume playback (Space)'}
+              aria-label={isPlaying ? 'Pause video' : 'Resume video'}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition active:scale-95 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap ${
                 isPlaying
                   ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200 border-amber-200/80 dark:border-amber-800'
@@ -254,12 +254,12 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               {isPlaying ? (
                 <>
                   <Pause className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Tạm dừng</span>
+                  <span>Pause</span>
                 </>
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
-                  <span>Tiếp tục</span>
+                  <span>Resume</span>
                 </>
               )}
             </button>
@@ -272,8 +272,8 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               <button
                 type="button"
                 onClick={onToggleLoop}
-                title={isLooping ? 'Tắt lặp lại câu (Alt + L)' : 'Bật tự động lặp lại câu (Alt + L)'}
-                aria-label="Tự động lặp lại câu"
+                title={isLooping ? 'Disable sentence loop (Alt + L)' : 'Enable sentence loop (Alt + L)'}
+                aria-label="Toggle sentence loop"
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
                   isLooping
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
@@ -281,7 +281,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 }`}
               >
                 <Repeat className={`w-3.5 h-3.5 shrink-0 ${isLooping ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span>Lặp câu{isLooping ? ' (Bật)' : ''}</span>
+                <span>Loop{isLooping ? ' (On)' : ''}</span>
               </button>
             )}
 
@@ -290,8 +290,8 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               <button
                 type="button"
                 onClick={onToggleBlindListening}
-                title={isBlindListening ? 'Tắt chế độ nghe mù (Alt + B)' : 'Bật chế độ nghe mù - che hình ảnh để tập trung nghe (Alt + B)'}
-                aria-label="Chế độ nghe mù"
+                title={isBlindListening ? 'Disable blind listening (Alt + B)' : 'Enable blind listening - hides video to focus on audio (Alt + B)'}
+                aria-label="Blind listening mode"
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
                   isBlindListening
                     ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
@@ -299,7 +299,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 }`}
               >
                 <EyeOff className={`w-3.5 h-3.5 shrink-0 ${isBlindListening ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span>Nghe mù</span>
+                <span>Blind Mode</span>
               </button>
             )}
 
@@ -311,8 +311,8 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                   type="button"
                   onClick={() => onChangeSpeed(s)}
                   disabled={!isReady}
-                  title={`Đặt tốc độ phát ${s}x`}
-                  aria-label={`Tốc độ phát ${s}x`}
+                  title={`Set playback speed to ${s}x`}
+                  aria-label={`Playback speed ${s}x`}
                   className={`px-1.5 py-1 text-[11px] font-mono font-bold rounded-lg transition ${
                     currentSpeed === s
                       ? 'bg-indigo-600 text-white shadow-2xs'
@@ -329,8 +329,8 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               <button
                 type="button"
                 onClick={onReloadPlayer}
-                title="Làm mới khung hình video (khắc phục lỗi màn hình đen khi chuyển tab)"
-                aria-label="Làm mới khung hình video"
+                title="Refresh video frame (fixes black screen after tab switch)"
+                aria-label="Refresh video frame"
                 className="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs transition cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />

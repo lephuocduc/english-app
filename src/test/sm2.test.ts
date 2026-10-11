@@ -104,9 +104,9 @@ describe('SM-2 Spaced Repetition Engine', () => {
 
   it('generates accurate interval preview text for buttons', () => {
     const now = new Date('2026-10-11T12:00:00Z')
-    expect(getIntervalPreviewText(baseMockWord, 1, now)).toBe('1 ngày')
-    expect(getIntervalPreviewText(baseMockWord, 3, now)).toBe('1 ngày')
-    expect(getIntervalPreviewText(baseMockWord, 4, now)).toBe('4 ngày')
+    expect(getIntervalPreviewText(baseMockWord, 1, now)).toBe('1 day')
+    expect(getIntervalPreviewText(baseMockWord, 3, now)).toBe('1 day')
+    expect(getIntervalPreviewText(baseMockWord, 4, now)).toBe('4 days')
   })
 
   it('identifies due words correctly', () => {

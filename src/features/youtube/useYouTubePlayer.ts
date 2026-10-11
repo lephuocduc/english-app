@@ -84,7 +84,7 @@ export function loadYouTubeIframeApi(timeoutMs = 10000): Promise<void> {
       tag.async = true
       tag.onerror = () => {
         cleanup()
-        reject(new Error('Lỗi tải YouTube IFrame API script'))
+        reject(new Error('Failed to load YouTube IFrame API script'))
       }
       document.body.appendChild(tag)
     } else {
@@ -92,7 +92,7 @@ export function loadYouTubeIframeApi(timeoutMs = 10000): Promise<void> {
         'error',
         () => {
           cleanup()
-          reject(new Error('Lỗi tải YouTube IFrame API script'))
+          reject(new Error('Failed to load YouTube IFrame API script'))
         },
         { once: true }
       )
@@ -102,7 +102,7 @@ export function loadYouTubeIframeApi(timeoutMs = 10000): Promise<void> {
       if (window.YT && window.YT.Player) {
         resolve()
       } else {
-        reject(new Error('Thời gian tải YouTube IFrame API đã quá hạn'))
+        reject(new Error('YouTube IFrame API load timed out'))
       }
     }, timeoutMs)
   })
@@ -446,16 +446,16 @@ export function useYouTubePlayer({
             onError: (event: any) => {
               if (isCancelled) return
               const code = event.data
-              let msg = 'Đã xảy ra lỗi khi phát video YouTube.'
+              let msg = 'An error occurred while playing the YouTube video.'
 
               if (code === 2) {
-                msg = 'Tham số video không hợp lệ (mã video có thể bị lỗi cú pháp).'
+                msg = 'Invalid video parameter (video ID syntax error).'
               } else if (code === 5) {
-                msg = 'Trình phát HTML5 gặp sự cố kết nối với YouTube.'
+                msg = 'HTML5 player encountered an error with YouTube.'
               } else if (code === 100) {
-                msg = 'Không tìm thấy video này (video có thể đã bị xóa hoặc đặt chế độ riêng tư).'
+                msg = 'Video not found (it may be deleted or private).'
               } else if (code === 101 || code === 150) {
-                msg = 'Chủ sở hữu video đã vô hiệu hóa tính năng nhúng phát video trên website bên ngoài.'
+                msg = 'The video owner has disabled embedded playback on external websites.'
               }
 
               setPlayerError(msg)
@@ -469,12 +469,12 @@ export function useYouTubePlayer({
         })
       } catch (err) {
         console.error('Failed to create YT.Player:', err)
-        setPlayerError('Không thể khởi tạo trình phát YouTube IFrame.')
+        setPlayerError('Failed to initialize YouTube IFrame player.')
       }
     }).catch((err) => {
       if (isCancelled) return
       const msg =
-        'Không thể tải thư viện YouTube IFrame API. Vui lòng kiểm tra kết nối mạng hoặc tắt tiện ích chặn nội dung.'
+        'Failed to load YouTube IFrame API. Please check your network connection or disable ad blockers.'
       console.warn('[ListenFlow Player]', err)
       setPlayerError(msg)
       if (onError) onError(msg)

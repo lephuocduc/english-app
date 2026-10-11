@@ -67,13 +67,13 @@ describe('YouTube URL Parser', () => {
   it('rejects non-YouTube domain (e.g., Vimeo, Facebook, Google)', () => {
     const result = parseYouTubeUrl('https://vimeo.com/12345678')
     expect(result.isValid).toBe(false)
-    expect(result.error).toContain('không phải từ YouTube')
+    expect(result.error).toContain('not from YouTube')
   })
 
   it('rejects invalid or too short video ID in YouTube link', () => {
     const result = parseYouTubeUrl('https://www.youtube.com/watch?v=too_short')
     expect(result.isValid).toBe(false)
-    expect(result.error).toContain('11 ký tự')
+    expect(result.error).toContain('11-character')
   })
 
   it('rejects invalid URL characters / malformed input', () => {

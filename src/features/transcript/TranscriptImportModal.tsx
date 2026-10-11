@@ -75,11 +75,11 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
       } else {
         setAutoError(
           res.error ||
-            'Video này không có phụ đề sẵn trên YouTube. Bạn có thể chuyển sang tab "Dán transcript" để dán phụ đề tự chuẩn bị.'
+            'This video does not have subtitles available on YouTube. You can switch to "Paste / Upload Subtitles" to import your own.'
         )
       }
     } catch (err) {
-      setAutoError(err instanceof Error ? err.message : 'Lỗi kết nối khi tải phụ đề.')
+      setAutoError(err instanceof Error ? err.message : 'Connection error while fetching subtitles.')
     } finally {
       setIsAutoLoading(false)
     }
@@ -104,14 +104,14 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
           : result.format === 'srt'
           ? 'SubRip Subtitle (.srt)'
           : result.format === 'youtube_panel'
-          ? 'YouTube Transcript Panel (Sao chép từ YouTube)'
-          : 'Đoạn văn bản thường (Tự động ngắt câu)'
+          ? 'YouTube Transcript Panel (Copied from YouTube)'
+          : 'Plain text (Auto sentence split)'
       )
       setParseError(null)
     } else {
       setParsedSegments([])
       setParseFormat('')
-      setParseError(result.error || 'Chưa nhận diện được cấu trúc phụ đề hợp lệ.')
+      setParseError(result.error || 'Could not recognize a valid subtitle structure.')
     }
   }
 
@@ -147,7 +147,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
     if (autoResult && autoResult.sentences.length > 0) {
       onSaveTranscript(
         autoResult.sentences,
-        autoResult.isAuto ? 'YouTube (Phụ đề tự động)' : 'YouTube (Phụ đề chính thức)'
+        autoResult.isAuto ? 'YouTube (Auto-generated)' : 'YouTube (Official captions)'
       )
       onClose()
     }
@@ -156,7 +156,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
   // Apply pasted segments
   const handleApplyPasted = () => {
     if (parsedSegments.length > 0) {
-      onSaveTranscript(parsedSegments, `Người dùng nhập (${parseFormat || 'Tự nhập'})`)
+      onSaveTranscript(parsedSegments, `Custom import (${parseFormat || 'Manual'})`)
       onClose()
     }
   }
@@ -183,7 +183,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             </div>
             <div>
               <h3 id="transcript-modal-title" className="text-base sm:text-lg font-bold text-slate-900">
-                Tải / Nhập Transcript cho Video
+                Import Subtitles &amp; Transcript
               </h3>
               <p className="text-xs text-slate-500 truncate max-w-[280px] sm:max-w-md">
                 {lessonTitle}
@@ -194,7 +194,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             type="button"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-            aria-label="Đóng"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -212,7 +212,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             }`}
           >
             <Sparkles className="w-4 h-4 text-indigo-500" />
-            Tự động tải từ YouTube
+            Auto-fetch from YouTube
           </button>
           <button
             type="button"
@@ -224,7 +224,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             }`}
           >
             <FileText className="w-4 h-4 text-sky-500" />
-            Dán / Tải lên phụ đề (SRT, VTT, Copy YouTube)
+            Paste / Upload Subtitles (SRT, VTT, YouTube Copy)
           </button>
         </div>
 
@@ -234,25 +234,25 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-indigo-900">
                 <Sparkles className="w-4 h-4 text-indigo-600" />
-                Lấy phụ đề trực tiếp từ YouTube Video ID: <code className="font-mono bg-white px-1.5 py-0.5 rounded text-indigo-800 border border-indigo-200">{videoId}</code>
+                Extract subtitles directly from YouTube Video ID: <code className="font-mono bg-white px-1.5 py-0.5 rounded text-indigo-800 border border-indigo-200">{videoId}</code>
               </div>
               <p className="text-xs text-indigo-700/90 leading-relaxed">
-                Hệ thống sẽ tự động trích xuất các phân đoạn câu chính thức hoặc phụ đề tự động (ASR) từ YouTube kèm mốc thời gian phát chuẩn xác.
+                Automatically extracts official captions or auto-generated (ASR) subtitles with timestamped sentences.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex-1">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Ngôn ngữ phụ đề ưu tiên:
+                  Preferred subtitle language:
                 </label>
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
                   className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-medium"
                 >
-                  <option value="en">Tiếng Anh (English)</option>
-                  <option value="vi">Tiếng Việt (Vietnamese)</option>
+                  <option value="en">English</option>
+                  <option value="vi">Vietnamese</option>
                 </select>
               </div>
 
@@ -266,12 +266,12 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                   {isAutoLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang tải phụ đề...</span>
+                      <span>Fetching subtitles...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Bắt đầu tải phụ đề YouTube</span>
+                      <span>Fetch YouTube Subtitles</span>
                     </>
                   )}
                 </button>
@@ -285,8 +285,8 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                 <div className="space-y-2 flex-1">
                   <h5 className="text-xs font-bold text-amber-900">
                     {autoError.includes('429')
-                      ? 'YouTube đang tạm thời giới hạn tải tự động từ IP của bạn (HTTP 429)'
-                      : 'Không tìm thấy phụ đề tự động'}
+                      ? 'YouTube rate limited automatic fetches (HTTP 429)'
+                      : 'No automated subtitles found'}
                   </h5>
                   <p className="text-xs text-amber-700 leading-relaxed">{autoError}</p>
                   <div>
@@ -296,7 +296,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                       className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
                     >
                       <Clipboard className="w-3.5 h-3.5" />
-                      <span>Chuyển sang Dán transcript từ YouTube (5 giây)</span>
+                      <span>Switch to Paste YouTube Transcript (5s)</span>
                     </button>
                   </div>
                 </div>
@@ -309,7 +309,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Đã tải thành công {autoResult.sentences.length} câu phụ đề!
+                    Successfully loaded {autoResult.sentences.length} sentences!
                   </div>
                   <span className="text-[11px] font-semibold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200">
                     {autoResult.isAuto ? 'Auto-generated' : 'Official captions'}
@@ -327,7 +327,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                   ))}
                   {autoResult.sentences.length > 10 && (
                     <div className="text-[11px] text-center text-slate-500 py-1 font-medium">
-                      ... và {autoResult.sentences.length - 10} câu tiếp theo
+                      ... and {autoResult.sentences.length - 10} more sentences
                     </div>
                   )}
                 </div>
@@ -338,7 +338,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                   className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  Áp dụng {autoResult.sentences.length} câu vào bài học ngay
+                  Apply {autoResult.sentences.length} sentences to lesson
                 </button>
               </div>
             )}
@@ -355,10 +355,10 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                   type="button"
                   onClick={handlePasteFromClipboard}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-2xs transition cursor-pointer"
-                  title="Dán văn bản đang copy trong clipboard"
+                  title="Paste text from clipboard"
                 >
                   <Clipboard className="w-3.5 h-3.5" />
-                  <span>Dán từ Clipboard (1 chạm)</span>
+                  <span>Paste from Clipboard (1-click)</span>
                 </button>
                 <a
                   href={`https://www.youtube.com/watch?v=${videoId}`}
@@ -367,12 +367,12 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Mở YouTube để copy</span>
+                  <span>Open YouTube to copy</span>
                 </a>
               </div>
               <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">
                 <Upload className="w-3.5 h-3.5 text-slate-500" />
-                <span>Tải tệp .srt / .vtt</span>
+                <span>Upload .srt / .vtt</span>
                 <input
                   type="file"
                   accept=".srt,.vtt,.txt"
@@ -386,20 +386,20 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             <div className="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-1.5 text-xs text-indigo-950">
               <div className="font-bold text-indigo-900 flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span>Cách copy transcript trên YouTube trong 5 giây (Không lo bị giới hạn 429):</span>
+                <span>How to copy transcript from YouTube in 5 seconds (bypass 429 limits):</span>
               </div>
               <ol className="list-decimal list-inside space-y-1 text-slate-600 text-[11px] sm:text-xs leading-relaxed">
                 <li>
-                  Bấm <strong className="text-slate-800">&quot;Mở YouTube để copy&quot;</strong> ở trên.
+                  Click <strong className="text-slate-800">&quot;Open YouTube to copy&quot;</strong> above.
                 </li>
                 <li>
-                  Dưới phần mô tả video, bấm <strong className="text-slate-800">&quot;... Thêm&quot;</strong> &gt; chọn <strong className="text-slate-800">&quot;Hiện bản chép lời&quot; (Show transcript)</strong>.
+                  Under video description, click <strong className="text-slate-800">&quot;... More&quot;</strong> &gt; select <strong className="text-slate-800">&quot;Show transcript&quot;</strong>.
                 </li>
                 <li>
-                  Bôi đen toàn bộ bảng transcript rồi nhấn <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700">Ctrl + C</kbd> (hoặc kéo chuột copy).
+                  Select all transcript lines and press <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700">Ctrl + C</kbd> (or drag to copy).
                 </li>
                 <li>
-                  Quay lại đây bấm nút <strong className="text-indigo-700">&quot;Dán từ Clipboard (1 chạm)&quot;</strong>!
+                  Return here and click <strong className="text-indigo-700">&quot;Paste from Clipboard (1-click)&quot;</strong>!
                 </li>
               </ol>
             </div>
@@ -408,7 +408,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
               rows={5}
               value={pastedText}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder={`Hoặc dán thủ công transcript hoặc tệp phụ đề vào đây:
+              placeholder={`Or paste transcript or subtitle file here:
 
 0:05 Hello everyone
 0:09 Welcome back to our channel`}
@@ -420,10 +420,10 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between text-xs animate-fade-in">
                 <div className="flex items-center gap-2 text-indigo-900 font-semibold">
                   <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-                  Đã nhận diện: <span className="font-bold">{parsedSegments.length} câu</span> ({parseFormat})
+                  Detected: <span className="font-bold">{parsedSegments.length} sentences</span> ({parseFormat})
                 </div>
                 <span className="text-[11px] text-indigo-600 bg-white px-2 py-0.5 rounded border border-indigo-100 font-mono">
-                  Đoạn cuối: {formatSeconds(parsedSegments[parsedSegments.length - 1].endTime)}
+                  End time: {formatSeconds(parsedSegments[parsedSegments.length - 1].endTime)}
                 </span>
               </div>
             )}
@@ -438,10 +438,10 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
             {/* Quick Tips */}
             <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1 text-[11px] text-slate-500">
               <div className="font-bold text-slate-700 flex items-center gap-1">
-                <HelpCircle className="w-3.5 h-3.5" /> Mẹo sao chép nhanh từ YouTube:
+                <HelpCircle className="w-3.5 h-3.5" /> Quick tip for YouTube transcript:
               </div>
               <p>
-                Trên YouTube, mở video &gt; bấm nút &quot;...&quot; (hoặc &quot;Hiện bản chép lời&quot; / &quot;Show transcript&quot;) dưới phần mô tả &gt; bôi đen toàn bộ văn bản và dán vào ô trên. Hệ thống sẽ tự động ghép thời gian và câu chuẩn xác!
+                On YouTube, open video &gt; click &quot;... More&quot; (or &quot;Show transcript&quot;) under description &gt; select all lines and paste into the box above. Timestamps and sentences will be aligned automatically!
               </p>
             </div>
 
@@ -452,7 +452,7 @@ export const TranscriptImportModal: React.FC<TranscriptImportModalProps> = ({
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Lưu {parsedSegments.length} câu vào bài học
+              Save {parsedSegments.length} sentences to lesson
             </button>
           </div>
         )}

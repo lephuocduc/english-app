@@ -15,7 +15,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
   isOpen,
   onClose,
   onAddVocabulary,
-  activeLessonTitle = 'Từ vựng tự thêm',
+  activeLessonTitle = 'Custom Vocabulary',
   activeVideoId = '',
 }) => {
   const [word, setWord] = useState('')
@@ -94,17 +94,17 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
             </div>
             <div>
               <h3 id="add-vocab-modal-title" className="text-sm font-bold text-slate-900 dark:text-white">
-                Thêm từ vựng mới vào sổ tay
+                Add New Vocabulary Word
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Lưu từ kèm nghĩa và ví dụ để ôn tập với Flashcard Anki
+                Save words with meaning and example sentence for Flashcard review
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng"
+            aria-label="Close"
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
           >
             <X className="w-4 h-4" />
@@ -114,7 +114,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Từ tiếng Anh (Word): <span className="text-rose-500">*</span>
+              English Word: <span className="text-rose-500">*</span>
             </label>
             <div className="flex gap-2">
               <input
@@ -123,14 +123,14 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 onBlur={handleAutoTranslate}
-                placeholder="Ví dụ: determine, breakthrough, persistent..."
+                placeholder="e.g. determine, breakthrough, persistent..."
                 className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
               />
               <button
                 type="button"
                 onClick={handleAutoTranslate}
                 disabled={isTranslating || !word.trim()}
-                title="Tự động dịch nghĩa từ"
+                title="Auto-translate word"
                 className="px-3 py-2 text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl hover:bg-indigo-100 transition cursor-pointer flex items-center gap-1 shrink-0 disabled:opacity-50"
               >
                 {isTranslating ? (
@@ -138,46 +138,46 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                <span>Dịch</span>
+                <span>Translate</span>
               </button>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Nghĩa tiếng Việt (Meaning):
+              Vietnamese Meaning:
             </label>
             <input
               type="text"
               value={meaning}
               onChange={(e) => setMeaning(e.target.value)}
-              placeholder="Ví dụ: xác định, đột phá, kiên trì..."
+              placeholder="e.g. xác định, đột phá, kiên trì..."
               className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Câu ví dụ tiếng Anh (Example sentence):
+              Example English Sentence:
             </label>
             <textarea
               rows={2}
               value={contextSentence}
               onChange={(e) => setContextSentence(e.target.value)}
-              placeholder="Ví dụ: She made a major breakthrough in scientific research."
+              placeholder="e.g. She made a major breakthrough in scientific research."
               className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Dịch nghĩa câu ví dụ (Sentence translation):
+              Sentence Vietnamese Translation:
             </label>
             <input
               type="text"
               value={contextSentenceTranslation}
               onChange={(e) => setContextSentenceTranslation(e.target.value)}
-              placeholder="Ví dụ: Cô ấy đã tạo ra một bước đột phá lớn trong nghiên cứu khoa học."
+              placeholder="e.g. Cô ấy đã tạo ra một bước đột phá lớn trong nghiên cứu khoa học."
               className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -188,7 +188,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
@@ -196,7 +196,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Lưu từ vựng</span>
+              <span>Save Vocabulary</span>
             </button>
           </div>
         </form>

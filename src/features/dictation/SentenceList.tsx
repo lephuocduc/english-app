@@ -58,30 +58,30 @@ export const SentenceList: React.FC<SentenceListProps> = ({
       <div className="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex items-center justify-between">
         <div>
           <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-            Danh sách câu luyện tập
+            Practice Sentences
           </h4>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Chọn câu bất kỳ để nghe và chép chính tả
+            Select any sentence to listen and transcribe
           </p>
         </div>
         <span className="text-xs font-semibold px-2 py-0.5 bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
-          {sentences.length} câu
+          {sentences.length} segments
         </span>
       </div>
 
       {sentences.length === 0 ? (
         <div className="p-6 text-center space-y-1.5 text-slate-500 dark:text-slate-400">
           <Clock className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto" />
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Chưa có phân đoạn câu nào</p>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">No sentence segments yet</p>
           <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            Tự động tải từ YouTube hoặc dán transcript ở khung bên cạnh để bắt đầu luyện tập.
+            Auto-fetch from YouTube or paste a transcript in the studio to start practicing.
           </p>
         </div>
       ) : (
         <div
           ref={containerRef}
           role="region"
-          aria-label="Danh sách các câu luyện nghe"
+          aria-label="List of practice sentences"
           className="max-h-[360px] lg:max-h-[520px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 p-1.5 space-y-1 focus:outline-none"
         >
         {sentences.map((seg, idx) => {
@@ -139,7 +139,7 @@ export const SentenceList: React.FC<SentenceListProps> = ({
                     {isActive && isPlaying && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded animate-pulse">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                        Đang phát
+                        Playing
                       </span>
                     )}
 
@@ -169,10 +169,10 @@ export const SentenceList: React.FC<SentenceListProps> = ({
                     seg.text
                   ) : progress?.userInput ? (
                     <span className="italic text-slate-500 dark:text-slate-400">
-                      Gõ: &quot;{progress.userInput}&quot;
+                      Typed: &quot;{progress.userInput}&quot;
                     </span>
                   ) : (
-                    <span className="text-slate-400 dark:text-slate-500">••• Bấm để bắt đầu nghe câu này •••</span>
+                    <span className="text-slate-400 dark:text-slate-500">••• Click to listen to this sentence •••</span>
                   )}
                 </p>
               </div>

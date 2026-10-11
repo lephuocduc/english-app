@@ -38,23 +38,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'practice',
-      label: 'Luyện tập',
+      label: 'Practice',
       icon: <Headphones className="w-4 h-4" />,
     },
     {
       id: 'lessons',
-      label: 'Video của tôi',
+      label: 'My Videos',
       icon: <BookOpen className="w-4 h-4" />,
     },
     {
       id: 'vocabulary',
-      label: 'Từ vựng',
+      label: 'Vocabulary',
       icon: <Bookmark className="w-4 h-4" />,
       badge: vocabularyCount > 0 ? vocabularyCount : undefined,
     },
     {
       id: 'progress',
-      label: 'Tiến độ',
+      label: 'Progress',
       icon: <TrendingUp className="w-4 h-4" />,
     },
   ]
@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none">
-                Luyện nghe &amp; Chép chính tả YouTube
+                YouTube Listening &amp; Dictation
               </p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onToggleFocusMode}
-                title={isFocusMode ? 'Thoát chế độ tập trung (Alt + Z)' : 'Bật chế độ tập trung cao độ (Alt + Z)'}
+                title={isFocusMode ? 'Exit Focus Mode (Alt + Z)' : 'Enter Focus Mode (Alt + Z)'}
                 className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
                   isFocusMode
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
@@ -128,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Tập trung</span>
+                <span className="hidden lg:inline">Focus</span>
               </button>
             )}
 
@@ -137,19 +137,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onToggleDarkMode}
-                title={isDarkMode ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối (Bảo vệ mắt)'}
-                aria-label="Chuyển đổi giao diện Sáng/Tối"
+                title={isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                aria-label="Toggle Light/Dark Theme"
                 className="p-1.5 sm:px-2.5 sm:py-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-lg transition cursor-pointer"
               >
                 {isDarkMode ? (
                   <>
                     <Sun className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="hidden xl:inline text-amber-300">Sáng</span>
+                    <span className="hidden xl:inline text-amber-300">Light</span>
                   </>
                 ) : (
                   <>
                     <Moon className="w-3.5 h-3.5 text-slate-600" />
-                    <span className="hidden xl:inline">Tối</span>
+                    <span className="hidden xl:inline">Dark</span>
                   </>
                 )}
               </button>
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   storage.syncWithCloud().catch(() => {})
                 }
               }}
-              title="Lưu trữ & Đồng bộ dữ liệu Cloudflare D1"
+              title="Cloudflare D1 Storage &amp; Sync"
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-lg transition cursor-pointer"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -176,11 +176,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenKeyboardShortcuts}
-              title="Xem danh sách phím tắt hữu ích"
+              title="Keyboard shortcuts"
               className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 border border-slate-200/60 dark:border-slate-700/60 rounded-lg transition cursor-pointer"
             >
               <Keyboard className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span className="hidden sm:inline">Phím tắt</span>
+              <span className="hidden sm:inline">Shortcuts</span>
             </button>
           </div>
         </div>
