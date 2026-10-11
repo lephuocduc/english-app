@@ -584,8 +584,15 @@ export const storage = {
           }
           vocabMap.set(targetKey, mergedItem)
 
-          // If local has newer progress or edits, sync up to cloud
-          if (!isCloudSrsNewer && v.lastReviewedAt) {
+          // If local has progress or differences that need to be uploaded to cloud
+          const isDifferentFromCloud =
+            (mergedItem.dueDate || '') !== (cloudMatch.dueDate || '') ||
+            Boolean(mergedItem.mastered) !== Boolean(cloudMatch.mastered) ||
+            (mergedItem.interval || 0) !== (cloudMatch.interval || 0) ||
+            (mergedItem.repetitions || 0) !== (cloudMatch.repetitions || 0) ||
+            (mergedItem.lastReviewedAt || '') !== (cloudMatch.lastReviewedAt || '')
+
+          if (!isCloudSrsNewer && (isDifferentFromCloud || Boolean(v.lastReviewedAt))) {
             apiClient.saveVocabulary(mergedItem).catch(() => {})
           }
         } else {
