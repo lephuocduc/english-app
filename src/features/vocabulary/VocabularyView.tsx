@@ -129,13 +129,10 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               type="button"
               onClick={() => startReviewSession()}
               className="flex-1 md:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-              title="Bắt đầu ôn tập Flashcard lặp lại ngắt quãng"
+              title={dueItems.length > 0 ? `Bắt đầu ôn tập ${dueItems.length} từ đến hạn hôm nay` : 'Ôn tập Flashcard'}
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>
-                Ôn Flashcard{' '}
-                {dueItems.length > 0 ? `(${dueItems.length} cần ôn)` : `(${vocabularyList.length})`}
-              </span>
+              <span>Ôn Flashcard ({dueItems.length})</span>
             </button>
           )}
 

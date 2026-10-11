@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, expect, it, beforeEach } from 'vitest'
 import App from '../App'
 
@@ -273,5 +273,59 @@ describe('ListenFlow Integration & UI Tests', () => {
     fireEvent.click(closeBtn)
 
     expect(screen.queryByText('Phím tắt học tập nhanh')).not.toBeInTheDocument()
+  })
+
+  it('displays due vocabulary count in Navbar tab badge rather than total vocabulary count', () => {
+    // 3 total words: 1 due, 2 mastered
+    storage.saveVocabulary([
+      {
+        id: 'v-due-1',
+        word: 'extraordinary',
+        meaning: 'phi thường',
+        contextSentence: 'An extraordinary achievement.',
+        timestamp: 10,
+        videoId: 'UF8uR6Z6KLc',
+        lessonTitle: 'Steve Jobs',
+        savedAt: '2026-10-10T00:00:00Z',
+        mastered: false,
+        interval: 0,
+        repetitions: 0,
+      },
+      {
+        id: 'v-mastered-1',
+        word: 'graduation',
+        meaning: 'lễ tốt nghiệp',
+        contextSentence: 'Closest to college graduation.',
+        timestamp: 20,
+        videoId: 'UF8uR6Z6KLc',
+        lessonTitle: 'Steve Jobs',
+        savedAt: '2026-10-10T00:00:00Z',
+        mastered: true,
+        interval: 30,
+        dueDate: '2026-11-15',
+        lastReviewedAt: '2026-10-10T00:00:00Z',
+      },
+      {
+        id: 'v-mastered-2',
+        word: 'connect',
+        meaning: 'kết nối',
+        contextSentence: 'Connecting the dots.',
+        timestamp: 30,
+        videoId: 'UF8uR6Z6KLc',
+        lessonTitle: 'Steve Jobs',
+        savedAt: '2026-10-10T00:00:00Z',
+        mastered: true,
+        interval: 30,
+        dueDate: '2026-11-15',
+        lastReviewedAt: '2026-10-10T00:00:00Z',
+      },
+    ])
+
+    render(<App />)
+
+    // Navbar should display badge with count 1 (due words), NOT 3 (total words)
+    const vocabNavBtn = screen.getAllByRole('button', { name: /Từ vựng/i })[0]
+    expect(within(vocabNavBtn).getByText('1')).toBeInTheDocument()
+    expect(within(vocabNavBtn).queryByText('3')).not.toBeInTheDocument()
   })
 })

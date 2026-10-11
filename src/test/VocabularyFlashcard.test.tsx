@@ -52,9 +52,24 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
     expect(screen.getByText('Đang học')).toBeInTheDocument()
     expect(screen.getAllByText('Đã thuộc')[0]).toBeInTheDocument()
 
+    // Button Ôn Flashcard (x) strictly displays count of words due today (1 word due)
+    expect(screen.getByRole('button', { name: /Ôn Flashcard \(1\)/i })).toBeInTheDocument()
+
     // Words displayed
     expect(screen.getByText('resilient')).toBeInTheDocument()
     expect(screen.getByText('curiosity')).toBeInTheDocument()
+  })
+
+  it('displays Ôn Flashcard (0) when all words are mastered or not due yet', () => {
+    const allMastered = mockVocabList.map((item) => ({ ...item, mastered: true }))
+    render(
+      <VocabularyView
+        vocabularyList={allMastered}
+        onRemoveVocabulary={vi.fn()}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: /Ôn Flashcard \(0\)/i })).toBeInTheDocument()
   })
 
   it('filters vocabulary cards by tab (All, Due, Learning, Mastered)', () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   Sparkles,
   Sliders,
@@ -39,6 +39,7 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { CloudSyncModal } from './components/CloudSyncModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
+import { getDueVocabulary } from './lib/srs/sm2'
 
 export function App() {
   // Navigation tab state
@@ -147,6 +148,11 @@ export function App() {
   const [vocabularyList, setVocabularyList] = useState<VocabularyItem[]>(() =>
     storage.loadVocabulary()
   )
+
+  // Calculate count of words due for SRS review today
+  const dueVocabularyCount = useMemo(() => {
+    return getDueVocabulary(vocabularyList).length
+  }, [vocabularyList])
 
   const activeLesson: Lesson | undefined =
     videosList.find((l) => l.id === activeLessonId) || videosList[0]
@@ -920,7 +926,7 @@ export function App() {
           onSelectTab={setActiveTab}
           onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
           onOpenCloudSync={() => setShowCloudSyncModal(true)}
-          vocabularyCount={vocabularyList.length}
+          vocabularyCount={dueVocabularyCount}
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}
           isFocusMode={isFocusMode}
