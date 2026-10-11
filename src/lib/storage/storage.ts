@@ -233,7 +233,14 @@ export const storage = {
 
   updateVocabulary(updatedItem: VocabularyItem): VocabularyItem[] {
     const current = this.loadVocabulary()
-    const index = current.findIndex((item) => item.id === updatedItem.id)
+    const targetWord = updatedItem.word.trim().toLowerCase()
+    const targetVid = (updatedItem.videoId || '').trim()
+    const index = current.findIndex(
+      (item) =>
+        item.id === updatedItem.id ||
+        (item.word.trim().toLowerCase() === targetWord &&
+          (item.videoId || '').trim() === targetVid)
+    )
     let updated: VocabularyItem[]
     if (index >= 0) {
       updated = [...current]
@@ -247,8 +254,22 @@ export const storage = {
 
   updateMultipleVocabulary(items: VocabularyItem[]): VocabularyItem[] {
     const current = this.loadVocabulary()
-    const itemMap = new Map(items.map((it) => [it.id, it]))
-    const updated = current.map((it) => itemMap.get(it.id) || it)
+    const idMap = new Map(items.map((it) => [it.id, it]))
+    const wordKeyMap = new Map(
+      items.map((it) => [
+        `${it.word.trim().toLowerCase()}:::${(it.videoId || '').trim()}`,
+        it,
+      ])
+    )
+    const updated = current.map((it) => {
+      const matchById = idMap.get(it.id)
+      if (matchById) return { ...it, ...matchById }
+      const matchByWord = wordKeyMap.get(
+        `${it.word.trim().toLowerCase()}:::${(it.videoId || '').trim()}`
+      )
+      if (matchByWord) return { ...it, ...matchByWord }
+      return it
+    })
     this.saveVocabulary(updated)
     return updated
   },
@@ -484,18 +505,86 @@ export const storage = {
       }
 
       // 2. Merge local vocabulary with valid cloud vocabulary
-      const mergedV = [...validCloudVocab]
+      // A word is logically identified by: word.trim().toLowerCase() + videoId, or by ID
+      const getVocabKey = (item: { word: string; videoId?: string }) =>
+        `${item.word.trim().toLowerCase()}:::${(item.videoId || '').trim()}`
+
+      const vocabMap = new Map<string, VocabularyItem>()
+      const idToKeyMap = new Map<string, string>()
+
+      // Step A: Seed with valid cloud vocabulary (deduplicating any duplicate cloud records)
+      for (const c of validCloudVocab) {
+        if (!c.word || !c.word.trim()) continue
+        const key = getVocabKey(c)
+        const existing = vocabMap.get(key)
+        if (!existing) {
+          vocabMap.set(key, c)
+          if (c.id) idToKeyMap.set(c.id, key)
+        } else {
+          const mergedCloud: VocabularyItem = {
+            ...existing,
+            ...c,
+            meaning: c.meaning || existing.meaning,
+            contextSentence: c.contextSentence || existing.contextSentence,
+            contextSentenceTranslation:
+              c.contextSentenceTranslation || existing.contextSentenceTranslation,
+            lessonTitle: c.lessonTitle || existing.lessonTitle,
+          }
+          vocabMap.set(key, mergedCloud)
+          if (c.id) idToKeyMap.set(c.id, key)
+        }
+      }
+
+      // Step B: Overlay local vocabulary items
+      // CRITICAL: Local SRS progress (mastered, dueDate, repetitions, interval, easeFactor, lastReviewedAt)
+      // and translations MUST PREVAIL over stripped cloud items so that page refresh never resets review state!
       for (const v of localV) {
         const isDeleted =
           deletedTombstones.has(v.id) ||
           deletedTombstones.has(v.word.trim().toLowerCase())
-        if (!isDeleted) {
-          if (!mergedV.some((c) => c.word.toLowerCase() === v.word.toLowerCase() && c.videoId === v.videoId)) {
-            mergedV.push(v)
-            apiClient.saveVocabulary(v).catch(() => {})
+        if (isDeleted || !v.word || !v.word.trim()) continue
+
+        const key = getVocabKey(v)
+        const matchedKey = vocabMap.has(key)
+          ? key
+          : v.id
+            ? idToKeyMap.get(v.id)
+            : undefined
+        const cloudMatch = matchedKey ? vocabMap.get(matchedKey) : undefined
+
+        if (cloudMatch) {
+          // Merge: Cloud fields + Local fields (Local SRS fields and edits take precedence!)
+          const targetKey = matchedKey || key
+          const mergedItem: VocabularyItem = {
+            ...cloudMatch,
+            ...v,
+            meaning: v.meaning || cloudMatch.meaning || '',
+            contextSentence: v.contextSentence || cloudMatch.contextSentence || '',
+            contextSentenceTranslation:
+              v.contextSentenceTranslation || cloudMatch.contextSentenceTranslation,
+            lessonTitle: v.lessonTitle || cloudMatch.lessonTitle || '',
+            videoId: v.videoId || cloudMatch.videoId || '',
+            id: v.id || cloudMatch.id,
+            savedAt: v.savedAt || cloudMatch.savedAt || new Date().toISOString(),
+
+            // STRICT SRS RETENTION: Never wipe user review state!
+            mastered: v.mastered ?? cloudMatch.mastered ?? false,
+            interval: v.interval ?? cloudMatch.interval,
+            easeFactor: v.easeFactor ?? cloudMatch.easeFactor,
+            repetitions: v.repetitions ?? cloudMatch.repetitions,
+            dueDate: v.dueDate || cloudMatch.dueDate,
+            lastReviewedAt: v.lastReviewedAt || cloudMatch.lastReviewedAt,
           }
+          vocabMap.set(targetKey, mergedItem)
+        } else {
+          // Word exists locally but not in cloud: keep it and sync to cloud
+          vocabMap.set(key, v)
+          if (v.id) idToKeyMap.set(v.id, key)
+          apiClient.saveVocabulary(v).catch(() => {})
         }
       }
+
+      const mergedV = Array.from(vocabMap.values())
       this.saveVocabulary(mergedV)
 
       // Sync progress across lessons

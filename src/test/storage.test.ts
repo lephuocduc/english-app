@@ -151,5 +151,151 @@ describe('Local Storage Persistence', () => {
     listVocabSpy.mockRestore()
     deleteVocabSpy.mockRestore()
   })
+
+  it('syncWithCloud preserves SRS review state (mastered, dueDate, repetitions, interval) and does not reset to due', async () => {
+    const { apiClient } = await import('../lib/api/client')
+    const { isWordDue } = await import('../lib/srs/sm2')
+
+    // Local word reviewed with "Easy" (Rating 4) -> 4 days interval, 1 repetition, future dueDate
+    const reviewedWord = {
+      id: 'vocab-easy-1',
+      word: 'challenge',
+      meaning: 'thách thức',
+      contextSentence: 'Overcoming this challenge makes us stronger',
+      timestamp: 15,
+      videoId: 'vid-xyz',
+      lessonTitle: 'Advanced English',
+      savedAt: '2026-10-11T10:00:00.000Z',
+      mastered: false,
+      interval: 4,
+      repetitions: 1,
+      easeFactor: 2.65,
+      dueDate: '2026-10-15',
+      lastReviewedAt: '2026-10-11T10:30:00.000Z',
+    }
+    storage.saveVocabulary([reviewedWord])
+
+    // Cloudflare D1 returns the word with basic schema (NO SRS fields)
+    const listLessonsSpy = vi.spyOn(apiClient, 'listLessons').mockResolvedValue([])
+    const listVocabSpy = vi.spyOn(apiClient, 'listVocabulary').mockResolvedValue([
+      {
+        id: 'vocab-easy-1',
+        word: 'challenge',
+        meaning: 'thách thức',
+        contextSentence: 'Overcoming this challenge makes us stronger',
+        timestamp: 15,
+        videoId: 'vid-xyz',
+        lessonTitle: 'Advanced English',
+        savedAt: '2026-10-11T10:00:00.000Z',
+      },
+    ])
+
+    // Page refresh triggers cloud sync
+    await storage.syncWithCloud()
+
+    // Vocabulary MUST retain local SRS review progress!
+    const reloaded = storage.loadVocabulary()
+    expect(reloaded).toHaveLength(1)
+    const item = reloaded[0]
+    expect(item.word).toBe('challenge')
+    expect(item.interval).toBe(4)
+    expect(item.repetitions).toBe(1)
+    expect(item.easeFactor).toBe(2.65)
+    expect(item.dueDate).toBe('2026-10-15')
+    expect(item.lastReviewedAt).toBe('2026-10-11T10:30:00.000Z')
+    expect(item.mastered).toBe(false)
+
+    // Crucial check: Is this word due today (2026-10-11)?
+    // It must NOT be due!
+    const isDue = isWordDue(item, new Date('2026-10-11T15:00:00Z'))
+    expect(isDue).toBe(false)
+
+    listLessonsSpy.mockRestore()
+    listVocabSpy.mockRestore()
+  })
+
+  it('syncWithCloud preserves mastered status and prevents word from becoming due on refresh', async () => {
+    const { apiClient } = await import('../lib/api/client')
+    const { isWordDue } = await import('../lib/srs/sm2')
+
+    // Local word marked as mastered
+    const masteredWord = {
+      id: 'vocab-mastered-1',
+      word: 'resilience',
+      meaning: 'sự kiên cường',
+      contextSentence: 'Show resilience in tough times',
+      timestamp: 25,
+      videoId: 'vid-xyz',
+      lessonTitle: 'Advanced English',
+      savedAt: '2026-10-10T10:00:00.000Z',
+      mastered: true,
+      interval: 30,
+      repetitions: 4,
+      easeFactor: 2.8,
+      dueDate: '2026-11-10',
+      lastReviewedAt: '2026-10-10T12:00:00.000Z',
+    }
+    storage.saveVocabulary([masteredWord])
+
+    // Cloud returns without mastered flag
+    const listLessonsSpy = vi.spyOn(apiClient, 'listLessons').mockResolvedValue([])
+    const listVocabSpy = vi.spyOn(apiClient, 'listVocabulary').mockResolvedValue([
+      {
+        id: 'vocab-mastered-1',
+        word: 'resilience',
+        meaning: 'sự kiên cường',
+        contextSentence: 'Show resilience in tough times',
+        timestamp: 25,
+        videoId: 'vid-xyz',
+        lessonTitle: 'Advanced English',
+        savedAt: '2026-10-10T10:00:00.000Z',
+      },
+    ])
+
+    await storage.syncWithCloud()
+
+    const reloaded = storage.loadVocabulary()
+    expect(reloaded).toHaveLength(1)
+    expect(reloaded[0].mastered).toBe(true)
+    expect(isWordDue(reloaded[0], new Date('2026-10-11T15:00:00Z'))).toBe(false)
+
+    listLessonsSpy.mockRestore()
+    listVocabSpy.mockRestore()
+  })
+
+  it('updateVocabulary updates by matching word and videoId if id differs', () => {
+    storage.saveVocabulary([
+      {
+        id: 'id-old-from-cloud',
+        word: 'flourish',
+        meaning: 'phát triển mạnh',
+        contextSentence: 'Plants flourish in sunlight',
+        timestamp: 5,
+        videoId: 'vid-plants',
+        lessonTitle: 'Nature',
+        savedAt: '2026-10-10T10:00:00.000Z',
+      },
+    ])
+
+    // Update with a different client-generated ID but same word and video
+    const updated = storage.updateVocabulary({
+      id: 'id-new-client',
+      word: 'flourish',
+      meaning: 'phát triển rực rỡ',
+      contextSentence: 'Plants flourish in sunlight',
+      timestamp: 5,
+      videoId: 'vid-plants',
+      lessonTitle: 'Nature',
+      savedAt: '2026-10-10T10:00:00.000Z',
+      interval: 7,
+      repetitions: 2,
+      dueDate: '2026-10-18',
+    })
+
+    expect(updated).toHaveLength(1)
+    expect(updated[0].meaning).toBe('phát triển rực rỡ')
+    expect(updated[0].interval).toBe(7)
+    expect(updated[0].repetitions).toBe(2)
+  })
 })
 
