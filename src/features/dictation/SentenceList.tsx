@@ -18,17 +18,22 @@ export const SentenceList: React.FC<SentenceListProps> = ({
   savedProgressMap,
 }) => {
   const activeItemRef = useRef<HTMLButtonElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
-  // Auto-scroll active segment into view when index changes (safely checks if scrollIntoView exists)
+  // Auto-scroll active segment inside its own container without scrolling the page window/viewport
   useEffect(() => {
-    if (
-      activeItemRef.current &&
-      typeof activeItemRef.current.scrollIntoView === 'function'
-    ) {
-      activeItemRef.current.scrollIntoView({
-        block: 'nearest',
-        behavior: 'smooth',
-      })
+    if (containerRef.current && activeItemRef.current) {
+      const container = containerRef.current
+      const item = activeItemRef.current
+
+      const containerRect = container.getBoundingClientRect()
+      const itemRect = item.getBoundingClientRect()
+
+      if (itemRect.top < containerRect.top) {
+        container.scrollTop -= containerRect.top - itemRect.top + 8
+      } else if (itemRect.bottom > containerRect.bottom) {
+        container.scrollTop += itemRect.bottom - containerRect.bottom + 8
+      }
     }
   }, [activeSegmentIndex])
 
@@ -74,6 +79,7 @@ export const SentenceList: React.FC<SentenceListProps> = ({
         </div>
       ) : (
         <div
+          ref={containerRef}
           role="region"
           aria-label="Danh sách các câu luyện nghe"
           className="max-h-[360px] lg:max-h-[520px] overflow-y-auto divide-y divide-slate-100 p-1.5 space-y-1 focus:outline-none"

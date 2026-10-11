@@ -158,7 +158,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     setBookmarkSuccess(false)
 
     const timer = setTimeout(() => {
-      textareaRef.current?.focus()
+      textareaRef.current?.focus({ preventScroll: true })
     }, 80)
     return () => clearTimeout(timer)
   }, [activeSegmentIndex, lesson.id])
@@ -219,7 +219,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     setIsRevealed(false)
     onReplaySegment()
     setTimeout(() => {
-      textareaRef.current?.focus()
+      textareaRef.current?.focus({ preventScroll: true })
     }, 60)
   }
 
