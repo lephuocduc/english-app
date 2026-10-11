@@ -297,5 +297,44 @@ describe('Local Storage Persistence', () => {
     expect(updated[0].interval).toBe(7)
     expect(updated[0].repetitions).toBe(2)
   })
+
+  it('guarantees vocabulary is NOT written to or loaded from localStorage (100% Cloud-First)', () => {
+    // Save vocabulary
+    storage.saveVocabulary([
+      {
+        id: 'v-cloud-only',
+        word: 'cloudy',
+        meaning: 'có mây',
+        contextSentence: 'The sky is cloudy',
+        timestamp: 1,
+        videoId: 'v1',
+        lessonTitle: 'Weather',
+        savedAt: new Date().toISOString(),
+      },
+    ])
+
+    // LocalStorage must NOT contain the vocabulary key
+    expect(window.localStorage.getItem('listenflow_vocabulary_v1')).toBeNull()
+    expect(window.localStorage.getItem('listenflow_deleted_vocab_v1')).toBeNull()
+
+    // Add another word
+    storage.addVocabulary({
+      id: 'v-cloud-only-2',
+      word: 'sunny',
+      contextSentence: 'Sunny day',
+      timestamp: 2,
+      videoId: 'v1',
+      lessonTitle: 'Weather',
+      savedAt: new Date().toISOString(),
+    })
+
+    // LocalStorage still must NOT contain vocabulary
+    expect(window.localStorage.getItem('listenflow_vocabulary_v1')).toBeNull()
+
+    // Remove word
+    storage.removeVocabulary('v-cloud-only-2')
+    expect(window.localStorage.getItem('listenflow_deleted_vocab_v1')).toBeNull()
+  })
 })
+
 

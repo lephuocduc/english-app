@@ -11,10 +11,22 @@ import { apiClient } from '../api/client'
 const STORAGE_KEYS = {
   PREFERENCES: 'listenflow_preferences_v1',
   LESSON_PROGRESS_PREFIX: 'listenflow_progress_',
-  VOCABULARY: 'listenflow_vocabulary_v1',
   ACTIVE_LESSON_ID: 'listenflow_active_lesson_id_v1',
   VIDEOS: 'listenflow_youtube_videos_v2',
-  DELETED_VOCABULARY: 'listenflow_deleted_vocab_v1',
+}
+
+// In-memory vocabulary storage (100% Cloud-First architecture: Cloudflare D1 is the sole source of truth)
+let memoryVocabulary: VocabularyItem[] = []
+const memoryDeletedVocab = new Set<string>()
+
+// Automatically purge legacy localStorage keys so stale local cache never conflicts across localhost & GitHub Pages
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    window.localStorage.removeItem('listenflow_vocabulary_v1')
+    window.localStorage.removeItem('listenflow_deleted_vocab_v1')
+  } catch {
+    // ignore
+  }
 }
 
 const DEFAULT_PREFERENCES: StudyPreferences = {
@@ -98,17 +110,6 @@ function isUserLessonProgress(val: unknown): val is UserLessonProgress {
   )
 }
 
-function isVocabularyList(val: unknown): val is VocabularyItem[] {
-  if (!Array.isArray(val)) return false
-  return val.every(
-    (item) =>
-      item &&
-      typeof item === 'object' &&
-      typeof item.id === 'string' &&
-      typeof item.word === 'string'
-  )
-}
-
 function isYouTubeVideoList(val: unknown): val is YouTubeVideo[] {
   if (!Array.isArray(val)) return false
   return val.every(
@@ -189,34 +190,30 @@ export const storage = {
   },
 
   loadVocabulary(): VocabularyItem[] {
-    const loaded = safeGetItem(STORAGE_KEYS.VOCABULARY, isVocabularyList)
-    return loaded || []
+    return memoryVocabulary
   },
 
   saveVocabulary(items: VocabularyItem[]): void {
-    safeSetItem(STORAGE_KEYS.VOCABULARY, items)
+    memoryVocabulary = items
   },
 
   loadDeletedVocab(): Set<string> {
-    const stored = safeGetItem<string[]>(
-      STORAGE_KEYS.DELETED_VOCABULARY,
-      (v): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string')
-    )
-    return new Set(stored || [])
+    return new Set(memoryDeletedVocab)
   },
 
   addDeletedVocabTombstone(id: string, word?: string): void {
-    const set = this.loadDeletedVocab()
-    if (id) set.add(id)
-    if (word) set.add(word.trim().toLowerCase())
-    safeSetItem(STORAGE_KEYS.DELETED_VOCABULARY, Array.from(set))
+    if (id) memoryDeletedVocab.add(id)
+    if (word) memoryDeletedVocab.add(word.trim().toLowerCase())
   },
 
   removeDeletedVocabTombstone(id: string, word?: string): void {
-    const set = this.loadDeletedVocab()
-    if (id) set.delete(id)
-    if (word) set.delete(word.trim().toLowerCase())
-    safeSetItem(STORAGE_KEYS.DELETED_VOCABULARY, Array.from(set))
+    if (id) memoryDeletedVocab.delete(id)
+    if (word) memoryDeletedVocab.delete(word.trim().toLowerCase())
+  },
+
+  clearVocabularyMemory(): void {
+    memoryVocabulary = []
+    memoryDeletedVocab.clear()
   },
 
   addVocabulary(item: VocabularyItem): VocabularyItem[] {
@@ -228,6 +225,12 @@ export const storage = {
     )
     const updated = [item, ...filtered]
     this.saveVocabulary(updated)
+
+    // Save directly to Cloudflare D1
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient.saveVocabulary(item).catch(() => {})
+    }
+
     return updated
   },
 
@@ -249,6 +252,12 @@ export const storage = {
       updated = [updatedItem, ...current]
     }
     this.saveVocabulary(updated)
+
+    // Save directly to Cloudflare D1
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient.saveVocabulary(updatedItem).catch(() => {})
+    }
+
     return updated
   },
 
@@ -271,6 +280,12 @@ export const storage = {
       return it
     })
     this.saveVocabulary(updated)
+
+    // Save directly to Cloudflare D1
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      items.forEach((it) => apiClient.saveVocabulary(it).catch(() => {}))
+    }
+
     return updated
   },
 
@@ -280,10 +295,10 @@ export const storage = {
     const updated = current.filter((item) => item.id !== id)
     this.saveVocabulary(updated)
 
-    // Save tombstone to prevent syncWithCloud from resurrecting it
+    // Save in-memory tombstone for current session
     this.addDeletedVocabTombstone(id, toDelete?.word)
 
-    // Mirror to Cloudflare D1 in background
+    // Delete directly from Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
       apiClient.deleteVocabulary(id).catch(() => {})
       if (toDelete?.word) {
@@ -295,6 +310,8 @@ export const storage = {
   },
 
   clearAllProgress(): void {
+    memoryVocabulary = []
+    memoryDeletedVocab.clear()
     if (!isLocalStorageAvailable()) return
     try {
       const keysToRemove: string[] = []

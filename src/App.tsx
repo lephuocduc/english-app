@@ -173,16 +173,33 @@ export function App() {
     setAllLessonsProgress(map)
   }, [])
 
-  // Auto-sync with Cloudflare D1 on initial load
+  // Auto-sync with Cloudflare D1 on initial load (100% Cloud-First)
   useEffect(() => {
+    let isMounted = true
+
+    // Direct cloud fetch for vocabulary so list & due counts appear immediately from D1
+    apiClient
+      .listVocabulary()
+      .then((items) => {
+        if (isMounted && Array.isArray(items)) {
+          storage.saveVocabulary(items)
+          setVocabularyList(items)
+        }
+      })
+      .catch(() => {})
+
     storage
       .syncWithCloud()
-      .then((res) => {
-        if (res.lessonsCount > 0 || res.vocabCount > 0 || res.progressCount > 0) {
+      .then(() => {
+        if (isMounted) {
           refreshAllData()
         }
       })
       .catch(() => {})
+
+    return () => {
+      isMounted = false
+    }
   }, [refreshAllData])
 
   // Helper to update a lesson's title with the real YouTube title

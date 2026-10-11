@@ -111,9 +111,21 @@ vocabularyRouter.post('/', async (c) => {
   }
 
   const data = parseResult.data
-  const vocabId = data.id || `vocab-${crypto.randomUUID()}`
+  let vocabId = data.id
 
   try {
+    // Look up by word for this user to reuse existing row ID and prevent duplicate words in D1
+    const existing = await db
+      .prepare('SELECT id FROM saved_vocabulary WHERE LOWER(word) = LOWER(?) AND user_id = ?')
+      .bind(data.word.trim(), userId)
+      .first<{ id: string }>()
+
+    if (existing) {
+      vocabId = existing.id
+    } else if (!vocabId) {
+      vocabId = `vocab-${crypto.randomUUID()}`
+    }
+
     // Parameterized upsert
     await db
       .prepare(
