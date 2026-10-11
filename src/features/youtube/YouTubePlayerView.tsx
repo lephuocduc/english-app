@@ -7,7 +7,6 @@ import {
   RotateCcw,
   Repeat,
   RefreshCw,
-  Gauge,
   Volume2,
   ChevronLeft,
   ChevronRight,
@@ -150,182 +149,193 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
       </div>
 
       {/* Control bar */}
-      <div className="p-3 sm:p-4 bg-slate-50/70 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 transition-colors">
-        {/* Active Segment Time Pill with Live Playback Indicator */}
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs">
-          <Volume2 className={`w-3.5 h-3.5 ${isPlaying ? 'text-emerald-500 animate-pulse' : 'text-indigo-500'}`} />
-          <span>
-            {activeSegment ? (
-              <>
-                Phân đoạn:{' '}
-                <strong className="text-slate-900 dark:text-white font-mono">
-                  {formatTime(activeSegment.startTime)} - {formatTime(activeSegment.endTime)}
-                </strong>{' '}
-                <span className="text-slate-400 dark:text-slate-400">
-                  ({(activeSegment.endTime - activeSegment.startTime).toFixed(0)}s)
-                </span>
-                {isPlaying && (
-                  <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 animate-pulse">
-                    Đang phát
+      <div className="p-3 sm:p-3.5 bg-slate-50/80 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 space-y-2.5 transition-colors">
+        {/* Tier 1: Segment info & Sentence navigation stepper */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Active Segment Time Pill with Live Playback Indicator */}
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs min-w-0">
+            <Volume2 className={`w-3.5 h-3.5 shrink-0 ${isPlaying ? 'text-emerald-500 animate-pulse' : 'text-indigo-500'}`} />
+            <span className="truncate">
+              {activeSegment ? (
+                <>
+                  <span className="text-slate-500 dark:text-slate-400">Phân đoạn:</span>{' '}
+                  <strong className="text-slate-900 dark:text-white font-mono">
+                    {formatTime(activeSegment.startTime)} - {formatTime(activeSegment.endTime)}
+                  </strong>{' '}
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px]">
+                    ({(activeSegment.endTime - activeSegment.startTime).toFixed(0)}s)
                   </span>
-                )}
-                {isLooping && (
-                  <span className="ml-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800" title="Chế độ tự động lặp phân đoạn đang bật">
-                    <Repeat className="w-3 h-3 text-indigo-500" /> Loop
-                  </span>
-                )}
-                {isBlindListening && (
-                  <span className="ml-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded border border-violet-200 dark:border-violet-800" title="Chế độ nghe mù đang bật">
-                    <EyeOff className="w-3 h-3 text-violet-500" /> Nghe mù
-                  </span>
-                )}
-              </>
-            ) : (
-              'Chưa chọn phân đoạn'
+                </>
+              ) : (
+                'Chưa chọn phân đoạn'
+              )}
+            </span>
+            {isPlaying && (
+              <span className="shrink-0 inline-flex items-center text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60 animate-pulse whitespace-nowrap">
+                Đang phát
+              </span>
             )}
-          </span>
+            {isLooping && (
+              <span className="shrink-0 hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60 whitespace-nowrap">
+                <Repeat className="w-2.5 h-2.5" /> Loop
+              </span>
+            )}
+            {isBlindListening && (
+              <span className="shrink-0 hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded border border-violet-200/60 dark:border-violet-800/60 whitespace-nowrap">
+                <EyeOff className="w-2.5 h-2.5" /> Nghe mù
+              </span>
+            )}
+          </div>
+
+          {/* Stepper: Previous / Next Sentence Button Group */}
+          {(onPreviousSegment || onNextSegment) && (
+            <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-0.5 shadow-2xs shrink-0">
+              {onPreviousSegment && (
+                <button
+                  type="button"
+                  onClick={onPreviousSegment}
+                  disabled={!hasPreviousSegment}
+                  title="Phát câu trước (Alt + ←)"
+                  aria-label="Phát câu trước"
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 px-1 select-none whitespace-nowrap">
+                Chuyển câu
+              </span>
+              {onNextSegment && (
+                <button
+                  type="button"
+                  onClick={onNextSegment}
+                  disabled={!hasNextSegment}
+                  title="Phát câu tiếp theo (Alt + →)"
+                  aria-label="Phát câu tiếp theo"
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 rounded-lg transition active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Playback Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Previous Sentence Button */}
-          {onPreviousSegment && (
+        {/* Tier 2: Playback Actions & Mode Toggles */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          {/* Left: Core Playback Actions (Hero Replay & Pause/Resume) */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Repeat Segment (Hero Action) */}
             <button
               type="button"
-              onClick={onPreviousSegment}
-              disabled={!hasPreviousSegment}
-              title="Phát câu trước (Alt + ←)"
-              aria-label="Phát câu trước"
-              className="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              onClick={onPlaySegment}
+              disabled={!isReady || !activeSegment}
+              title="Nghe lại phân đoạn câu hiện tại từ đầu (Ctrl + Space hoặc Alt + R)"
+              aria-label="Nghe lại phân đoạn câu hiện tại"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+              <span>Nghe lại câu</span>
             </button>
-          )}
 
-          {/* Repeat segment */}
-          <button
-            type="button"
-            onClick={onPlaySegment}
-            disabled={!isReady || !activeSegment}
-            title="Nghe lại phân đoạn câu hiện tại từ đầu (Phím tắt: Ctrl + Space hoặc Alt + R)"
-            aria-label="Nghe lại phân đoạn câu hiện tại"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Nghe lại câu</span>
-          </button>
-
-          {/* Blind Listening toggle button */}
-          {onToggleBlindListening && (
+            {/* Toggle play/pause (Pause / Resume) */}
             <button
               type="button"
-              onClick={onToggleBlindListening}
-              title={isBlindListening ? 'Tắt chế độ nghe mù (Alt + B)' : 'Bật chế độ nghe mù - che hình ảnh tập trung nghe (Alt + B)'}
-              aria-label="Chế độ nghe mù"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
-                isBlindListening
-                  ? 'bg-violet-600 hover:bg-violet-700 text-white border-violet-600'
-                  : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              onClick={onTogglePlayPause}
+              disabled={!isReady}
+              title={isPlaying ? 'Tạm dừng phát (Space)' : 'Tiếp tục phát (Space)'}
+              aria-label={isPlaying ? 'Tạm dừng video' : 'Tiếp tục phát video'}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition active:scale-95 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap ${
+                isPlaying
+                  ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200 border-amber-200/80 dark:border-amber-800'
+                  : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
               }`}
             >
-              <EyeOff className={`w-3.5 h-3.5 ${isBlindListening ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-              <span className="hidden sm:inline">Nghe mù{isBlindListening ? ' (Bật)' : ''}</span>
+              {isPlaying ? (
+                <>
+                  <Pause className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Tạm dừng</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />
+                  <span>Tiếp tục</span>
+                </>
+              )}
             </button>
-          )}
+          </div>
 
-          {/* Loop toggle button */}
-          {onToggleLoop && (
-            <button
-              type="button"
-              onClick={onToggleLoop}
-              title={isLooping ? 'Tắt lặp lại câu (Alt + L)' : 'Bật tự động lặp lại câu (Alt + L)'}
-              aria-label="Tự động lặp lại câu"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
-                isLooping
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                  : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
-              <span>Lặp câu{isLooping ? ' (Bật)' : ''}</span>
-            </button>
-          )}
-
-          {/* Toggle play/pause (Pause / Resume) */}
-          <button
-            type="button"
-            onClick={onTogglePlayPause}
-            disabled={!isReady}
-            title={isPlaying ? 'Tạm dừng phát (Phím tắt: Space khi không gõ chữ)' : 'Tiếp tục phát (Phím tắt: Space)'}
-            aria-label={isPlaying ? 'Tạm dừng video' : 'Tiếp tục phát video'}
-            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
-              isPlaying
-                ? 'bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800'
-                : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="hidden sm:inline">Tạm dừng</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
-                <span className="hidden sm:inline">Tiếp tục</span>
-              </>
-            )}
-          </button>
-
-          {/* Next Sentence Button */}
-          {onNextSegment && (
-            <button
-              type="button"
-              onClick={onNextSegment}
-              disabled={!hasNextSegment}
-              title="Phát câu tiếp theo (Alt + →)"
-              aria-label="Phát câu tiếp theo"
-              className="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Reload Frame Button */}
-          {onReloadPlayer && (
-            <button
-              type="button"
-              onClick={onReloadPlayer}
-              title="Làm mới khung hình video (khắc phục lỗi màn hình đen khi chuyển tab)"
-              aria-label="Làm mới khung hình video"
-              className="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs transition cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Speed switcher */}
-          <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-2xs">
-            <span className="pl-2 pr-1 text-slate-400 dark:text-slate-400" title="Tốc độ phát">
-              <Gauge className="w-3.5 h-3.5" />
-            </span>
-            {speeds.map((s) => (
+          {/* Right: Study Modes & Utilities */}
+          <div className="flex items-center gap-1.5">
+            {/* Loop Toggle */}
+            {onToggleLoop && (
               <button
-                key={s}
                 type="button"
-                onClick={() => onChangeSpeed(s)}
-                disabled={!isReady}
-                title={`Đặt tốc độ phát ${s}x`}
-                aria-label={`Tốc độ phát ${s}x`}
-                className={`px-2 py-1 text-xs font-medium rounded-md transition focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
-                  currentSpeed === s
-                    ? 'bg-indigo-50 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                onClick={onToggleLoop}
+                title={isLooping ? 'Tắt lặp lại câu (Alt + L)' : 'Bật tự động lặp lại câu (Alt + L)'}
+                aria-label="Tự động lặp lại câu"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
+                  isLooping
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
                 }`}
               >
-                {s}x
+                <Repeat className={`w-3.5 h-3.5 shrink-0 ${isLooping ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>Lặp câu{isLooping ? ' (Bật)' : ''}</span>
               </button>
-            ))}
+            )}
+
+            {/* Blind Listening Toggle */}
+            {onToggleBlindListening && (
+              <button
+                type="button"
+                onClick={onToggleBlindListening}
+                title={isBlindListening ? 'Tắt chế độ nghe mù (Alt + B)' : 'Bật chế độ nghe mù - che hình ảnh để tập trung nghe (Alt + B)'}
+                aria-label="Chế độ nghe mù"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
+                  isBlindListening
+                    ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
+                }`}
+              >
+                <EyeOff className={`w-3.5 h-3.5 shrink-0 ${isBlindListening ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>Nghe mù</span>
+              </button>
+            )}
+
+            {/* Speed Switcher */}
+            <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-xl p-0.5 shadow-2xs">
+              {speeds.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onChangeSpeed(s)}
+                  disabled={!isReady}
+                  title={`Đặt tốc độ phát ${s}x`}
+                  aria-label={`Tốc độ phát ${s}x`}
+                  className={`px-1.5 py-1 text-[11px] font-mono font-bold rounded-lg transition ${
+                    currentSpeed === s
+                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+
+            {/* Reload Video Frame */}
+            {onReloadPlayer && (
+              <button
+                type="button"
+                onClick={onReloadPlayer}
+                title="Làm mới khung hình video (khắc phục lỗi màn hình đen khi chuyển tab)"
+                aria-label="Làm mới khung hình video"
+                className="p-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs transition cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
