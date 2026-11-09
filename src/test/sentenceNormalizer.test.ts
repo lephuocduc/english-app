@@ -101,3 +101,4 @@ describe('normalizeSentenceBoundaries', () => {
     expect(normalized[1].text).toBe('and received a prescription.')
   })
 })
+
