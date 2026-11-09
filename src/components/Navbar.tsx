@@ -8,9 +8,11 @@ import {
   Moon,
   Sun,
   Maximize2,
+  Monitor,
 } from 'lucide-react'
-import type { NavTab } from '../types'
+import type { NavTab, StreakData } from '../types'
 import { storage } from '../lib/storage/storage'
+import { DailyStreakBadge } from './DailyStreakBadge'
 
 interface NavbarProps {
   activeTab: NavTab
@@ -22,6 +24,9 @@ interface NavbarProps {
   onToggleDarkMode?: () => void
   isFocusMode?: boolean
   onToggleFocusMode?: () => void
+  streak?: StreakData
+  onOpenStreakModal?: () => void
+  onOpenAutoStartModal?: () => void
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +39,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleDarkMode,
   isFocusMode = false,
   onToggleFocusMode,
+  streak,
+  onOpenStreakModal,
+  onOpenAutoStartModal,
 }) => {
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
@@ -95,11 +103,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer relative ${
-                    isActive
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer relative ${isActive
                       ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs font-bold'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
-                  }`}
+                    }`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
@@ -115,17 +122,34 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right helper tools */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Daily Streak Counter with Flame icon & Streak Freeze indicator */}
+            {streak && onOpenStreakModal && (
+              <DailyStreakBadge streak={streak} onClick={onOpenStreakModal} />
+            )}
+
+            {/* Windows Auto-Start quick status & instructions */}
+            {onOpenAutoStartModal && (
+              <button
+                type="button"
+                onClick={onOpenAutoStartModal}
+                title="Tự động mở khi khởi động Windows & Sẵn sàng nghe câu tiếp theo"
+                className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-lg transition cursor-pointer"
+              >
+                <Monitor className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Auto-start</span>
+              </button>
+            )}
+
             {/* Focus / Zen Mode Button */}
             {onToggleFocusMode && activeTab === 'practice' && (
               <button
                 type="button"
                 onClick={onToggleFocusMode}
                 title={isFocusMode ? 'Exit Focus Mode (Alt + Z)' : 'Enter Focus Mode (Alt + Z)'}
-                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
-                  isFocusMode
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${isFocusMode
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border-slate-200/60 dark:border-slate-700/60'
-                }`}
+                  }`}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">Focus</span>
@@ -162,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 if (onOpenCloudSync) {
                   onOpenCloudSync()
                 } else {
-                  storage.syncWithCloud().catch(() => {})
+                  storage.syncWithCloud().catch(() => { })
                 }
               }}
               title="Cloudflare D1 Storage &amp; Sync"
@@ -194,9 +218,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectTab(item.id)}
-                className={`flex flex-col items-center gap-1 py-1 px-2 text-[11px] font-semibold transition cursor-pointer relative ${
-                  isActive ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                className={`flex flex-col items-center gap-1 py-1 px-2 text-[11px] font-semibold transition cursor-pointer relative ${isActive ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
               >
                 <div className="relative">
                   {item.icon}

@@ -335,6 +335,24 @@ describe('Local Storage Persistence', () => {
     storage.removeVocabulary('v-cloud-only-2')
     expect(window.localStorage.getItem('listenflow_deleted_vocab_v1')).toBeNull()
   })
+
+  it('loads, saves, and records daily streak in storage', () => {
+    // Initial streak
+    const initial = storage.loadStreak()
+    expect(initial.currentStreak).toBe(0)
+    expect(initial.freezeAvailable).toBe(true)
+
+    // Record activity
+    const recordResult = storage.recordDailyStreak()
+    expect(recordResult.justCompleted).toBe(true)
+    expect(recordResult.streak.currentStreak).toBe(1)
+    expect(recordResult.streak.todayCompleted).toBe(true)
+
+    // Re-loading from storage reflects the saved streak
+    const reloaded = storage.loadStreak()
+    expect(reloaded.currentStreak).toBe(1)
+    expect(reloaded.todayCompleted).toBe(true)
+  })
 })
 
 

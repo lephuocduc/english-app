@@ -3,6 +3,7 @@ import type {
   SentenceSegment,
   UserLessonProgress,
   VocabularyItem,
+  StreakData,
 } from '../../types'
 
 const USER_ID_KEY = 'listenflow_user_id_v1'
@@ -252,6 +253,32 @@ export class ApiClient {
       method: 'DELETE',
     })
     return res.success
+  }
+
+  // --- Daily Streak Endpoints ---
+  async getStreak(): Promise<StreakData | null> {
+    const res = await this.request<StreakData>('/streak')
+    return res.success && res.data ? res.data : null
+  }
+
+  async recordStreak(): Promise<{ success: boolean; data?: StreakData; justCompleted?: boolean; freezeUsed?: boolean }> {
+    const res = await this.request<StreakData>('/streak/record', {
+      method: 'POST',
+    })
+    return {
+      success: res.success,
+      data: res.data,
+      justCompleted: (res as unknown as { justCompleted?: boolean }).justCompleted,
+      freezeUsed: (res as unknown as { freezeUsed?: boolean }).freezeUsed,
+    }
+  }
+
+  async syncStreak(streak: StreakData): Promise<StreakData | null> {
+    const res = await this.request<StreakData>('/streak/sync', {
+      method: 'PUT',
+      body: JSON.stringify(streak),
+    })
+    return res.success && res.data ? res.data : null
   }
 }
 

@@ -5,14 +5,21 @@ import type {
   VocabularyItem,
   YouTubeVideo,
   SentenceSegment,
+  StreakData,
 } from '../../types'
 import { apiClient } from '../api/client'
+import {
+  createInitialStreak,
+  evaluateStreakStatus,
+  recordSegmentCompleted,
+} from '../streak/streakManager'
 
 const STORAGE_KEYS = {
   PREFERENCES: 'listenflow_preferences_v1',
   LESSON_PROGRESS_PREFIX: 'listenflow_progress_',
   ACTIVE_LESSON_ID: 'listenflow_active_lesson_id_v1',
   VIDEOS: 'listenflow_youtube_videos_v2',
+  STREAK: 'listenflow_daily_streak_v1',
 }
 
 // In-memory vocabulary storage (100% Cloud-First architecture: Cloudflare D1 is the sole source of truth)
@@ -121,6 +128,17 @@ function isYouTubeVideoList(val: unknown): val is YouTubeVideo[] {
   )
 }
 
+function isStreakData(val: unknown): val is StreakData {
+  if (!val || typeof val !== 'object') return false
+  const s = val as Partial<StreakData>
+  return (
+    typeof s.currentStreak === 'number' &&
+    typeof s.longestStreak === 'number' &&
+    Array.isArray(s.freezeUsedDates) &&
+    typeof s.totalDaysActive === 'number'
+  )
+}
+
 // Public Storage API
 export const storage = {
   loadPreferences(): StudyPreferences {
@@ -130,6 +148,39 @@ export const storage = {
 
   savePreferences(prefs: StudyPreferences): void {
     safeSetItem(STORAGE_KEYS.PREFERENCES, prefs)
+  },
+
+  loadStreak(): StreakData {
+    const loaded = safeGetItem(STORAGE_KEYS.STREAK, isStreakData)
+    const raw = loaded || createInitialStreak()
+    const evaluated = evaluateStreakStatus(raw, new Date())
+    // If evaluated status modified fields (e.g. freeze consumed), persist it
+    if (
+      evaluated.freezeUsedDates.length !== raw.freezeUsedDates.length ||
+      evaluated.currentStreak !== raw.currentStreak ||
+      evaluated.lastActiveDate !== raw.lastActiveDate ||
+      evaluated.todayCompleted !== raw.todayCompleted
+    ) {
+      this.saveStreak(evaluated)
+    }
+    return evaluated
+  },
+
+  saveStreak(streak: StreakData): void {
+    safeSetItem(STORAGE_KEYS.STREAK, streak)
+  },
+
+  recordDailyStreak(): { streak: StreakData; justCompleted: boolean; freezeUsed: boolean } {
+    const current = this.loadStreak()
+    const result = recordSegmentCompleted(current, new Date())
+    this.saveStreak(result.streak)
+
+    // Save to Cloudflare D1 in background
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient.recordStreak().catch(() => { })
+    }
+
+    return result
   },
 
   loadLessonProgress(lessonId: string): UserLessonProgress | null {
@@ -167,7 +218,7 @@ export const storage = {
           attemptsCount: sentenceProgress.attempts,
           completed: sentenceProgress.completed,
         })
-        .catch(() => {})
+        .catch(() => { })
     }
   },
 
@@ -228,7 +279,7 @@ export const storage = {
 
     // Save directly to Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      apiClient.saveVocabulary(item).catch(() => {})
+      apiClient.saveVocabulary(item).catch(() => { })
     }
 
     return updated
@@ -255,7 +306,7 @@ export const storage = {
 
     // Save directly to Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      apiClient.saveVocabulary(updatedItem).catch(() => {})
+      apiClient.saveVocabulary(updatedItem).catch(() => { })
     }
 
     return updated
@@ -283,7 +334,7 @@ export const storage = {
 
     // Save directly to Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      items.forEach((it) => apiClient.saveVocabulary(it).catch(() => {}))
+      items.forEach((it) => apiClient.saveVocabulary(it).catch(() => { }))
     }
 
     return updated
@@ -300,9 +351,9 @@ export const storage = {
 
     // Delete directly from Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      apiClient.deleteVocabulary(id).catch(() => {})
+      apiClient.deleteVocabulary(id).catch(() => { })
       if (toDelete?.word) {
-        apiClient.deleteVocabulary(toDelete.word).catch(() => {})
+        apiClient.deleteVocabulary(toDelete.word).catch(() => { })
       }
     }
 
@@ -367,7 +418,7 @@ export const storage = {
           level: video.level,
           sentences: video.sentences,
         })
-        .catch(() => {})
+        .catch(() => { })
     }
 
     return updated
@@ -385,9 +436,9 @@ export const storage = {
 
     // Mirror to Cloudflare D1 API in background
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      apiClient.deleteLesson(videoIdOrId).catch(() => {})
+      apiClient.deleteLesson(videoIdOrId).catch(() => { })
       if (toDelete && toDelete.id !== videoIdOrId) {
-        apiClient.deleteLesson(toDelete.id).catch(() => {})
+        apiClient.deleteLesson(toDelete.id).catch(() => { })
       }
     }
 
@@ -408,7 +459,7 @@ export const storage = {
 
     // Mirror to Cloudflare D1 API in background
     if (typeof window !== 'undefined' && typeof fetch === 'function' && updatedVideo) {
-      apiClient.addSegments(updatedVideo.id, sentences).catch(() => {})
+      apiClient.addSegments(updatedVideo.id, sentences).catch(() => { })
     }
 
     return updated
@@ -453,9 +504,9 @@ export const storage = {
               : existing.sentences || []
           const betterTitle =
             l.title &&
-            !l.title.startsWith('YouTube: ') &&
-            !l.title.startsWith('video-') &&
-            l.title !== 'Đang tải tiêu đề YouTube...'
+              !l.title.startsWith('YouTube: ') &&
+              !l.title.startsWith('video-') &&
+              l.title !== 'Đang tải tiêu đề YouTube...'
               ? l.title
               : existing.title
 
@@ -479,7 +530,7 @@ export const storage = {
                 level: mergedItem.level,
                 sentences: betterSentences,
               })
-              .catch(() => {})
+              .catch(() => { })
           }
         } else {
           const normalized: YouTubeVideo = {
@@ -497,7 +548,7 @@ export const storage = {
               level: normalized.level,
               sentences: normalized.sentences,
             })
-            .catch(() => {})
+            .catch(() => { })
         }
       }
 
@@ -517,7 +568,7 @@ export const storage = {
       // Background cleanup: ensure server deletes any tombstones
       if (deletedTombstones.size > 0) {
         for (const tombstone of deletedTombstones) {
-          apiClient.deleteVocabulary(tombstone).catch(() => {})
+          apiClient.deleteVocabulary(tombstone).catch(() => { })
         }
       }
 
@@ -573,7 +624,7 @@ export const storage = {
           // If cloud has newer review date, use cloud SRS progress, otherwise local wins
           const isCloudSrsNewer = Boolean(
             cloudMatch.lastReviewedAt &&
-              (!v.lastReviewedAt || cloudMatch.lastReviewedAt > v.lastReviewedAt)
+            (!v.lastReviewedAt || cloudMatch.lastReviewedAt > v.lastReviewedAt)
           )
           const srsSource = isCloudSrsNewer ? cloudMatch : v
           const fallbackSrs = isCloudSrsNewer ? v : cloudMatch
@@ -610,13 +661,13 @@ export const storage = {
             (mergedItem.lastReviewedAt || '') !== (cloudMatch.lastReviewedAt || '')
 
           if (!isCloudSrsNewer && (isDifferentFromCloud || Boolean(v.lastReviewedAt))) {
-            apiClient.saveVocabulary(mergedItem).catch(() => {})
+            apiClient.saveVocabulary(mergedItem).catch(() => { })
           }
         } else {
           // Word exists locally but not in cloud: keep it and sync to cloud
           vocabMap.set(key, v)
           if (v.id) idToKeyMap.set(v.id, key)
-          apiClient.saveVocabulary(v).catch(() => {})
+          apiClient.saveVocabulary(v).catch(() => { })
         }
       }
 
@@ -638,7 +689,7 @@ export const storage = {
                 attemptsCount: sp.attempts,
                 completed: sp.completed,
               })
-              .catch(() => {})
+              .catch(() => { })
             progressCount++
           }
         }
@@ -659,6 +710,28 @@ export const storage = {
           safeSetItem(`${STORAGE_KEYS.LESSON_PROGRESS_PREFIX}${l.id}`, current)
           progressCount += Object.keys(cloudProg.sentenceProgress).length
         }
+      }
+
+      // Sync Daily Streak with cloud
+      try {
+        const cloudStreak = await apiClient.getStreak()
+        if (cloudStreak) {
+          const localStreak = this.loadStreak()
+          const mergedStreak: StreakData = {
+            ...cloudStreak,
+            currentStreak: Math.max(localStreak.currentStreak, cloudStreak.currentStreak),
+            longestStreak: Math.max(localStreak.longestStreak, cloudStreak.longestStreak),
+            totalDaysActive: Math.max(localStreak.totalDaysActive, cloudStreak.totalDaysActive),
+            freezeUsedDates: Array.from(
+              new Set([...localStreak.freezeUsedDates, ...cloudStreak.freezeUsedDates])
+            ),
+          }
+          const evaluated = evaluateStreakStatus(mergedStreak, new Date())
+          this.saveStreak(evaluated)
+          apiClient.syncStreak(evaluated).catch(() => { })
+        }
+      } catch {
+        // ignore streak sync errors
       }
 
       return {

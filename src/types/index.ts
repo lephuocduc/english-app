@@ -110,6 +110,17 @@ export interface VocabularyItem {
 
 export type NavTab = 'practice' | 'lessons' | 'vocabulary' | 'progress'
 
+export interface StreakData {
+  currentStreak: number
+  longestStreak: number
+  lastActiveDate: string | null // 'YYYY-MM-DD'
+  freezeUsedDates: string[] // List of dates 'YYYY-MM-DD' where streak freeze was used
+  lastFreezeWeek: string | null // e.g. '2026-W46'
+  freezeAvailable: boolean // 1 freeze allowed per calendar week
+  todayCompleted: boolean // whether completed at least 1 segment today
+  totalDaysActive: number
+}
+
 export interface YouTubeUrlParseResult {
   isValid: boolean
   videoId?: string

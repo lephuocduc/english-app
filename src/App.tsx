@@ -37,15 +37,29 @@ import { ProgressView } from './features/progress/ProgressView'
 import { Navbar } from './components/Navbar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { CloudSyncModal } from './components/CloudSyncModal'
+import { DailyStreakModal } from './components/DailyStreakModal'
+import { AutoStartModal } from './components/AutoStartModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { getDueVocabulary } from './lib/srs/sm2'
+import { getResumeSegmentIndex } from './lib/dictation/resumeManager'
+import type { StreakData } from './types'
 
 export function App() {
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<NavTab>('practice')
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [showCloudSyncModal, setShowCloudSyncModal] = useState(false)
+  const [showDailyStreakModal, setShowDailyStreakModal] = useState(false)
+  const [showAutoStartModal, setShowAutoStartModal] = useState(false)
+
+  // Daily Streak state & celebration notification
+  const [streakData, setStreakData] = useState<StreakData>(() => storage.loadStreak())
+  const [streakCelebration, setStreakCelebration] = useState<{
+    show: boolean
+    streak: number
+    freezeUsed: boolean
+  } | null>(null)
 
   // Quick YouTube URL input state
   const [quickUrlInput, setQuickUrlInput] = useState('')
@@ -65,8 +79,15 @@ export function App() {
       : initialList[0]?.id || ''
   })
 
-  // Selected sentence segment index
-  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number>(0)
+  // Selected sentence segment index (intelligently resumes where left off or next uncompleted sentence)
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number>(() => {
+    const savedId = storage.loadActiveLessonId()
+    const initialList = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
+    const lesson = savedId ? initialList.find((l) => l.id === savedId) : initialList[0]
+    if (!lesson) return 0
+    const prog = storage.loadLessonProgress(lesson.id)
+    return getResumeSegmentIndex(lesson, prog)
+  })
   const activeSegmentIndexRef = useRef<number>(0)
   useEffect(() => {
     activeSegmentIndexRef.current = activeSegmentIndex
@@ -165,6 +186,7 @@ export function App() {
     const freshVideos = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
     setVideosList(freshVideos)
     setVocabularyList(storage.loadVocabulary())
+    setStreakData(storage.loadStreak())
     const map: Record<string, UserLessonProgress> = {}
     freshVideos.forEach((l) => {
       const prog = storage.loadLessonProgress(l.id)
@@ -186,7 +208,24 @@ export function App() {
           setVocabularyList(items)
         }
       })
-      .catch(() => {})
+      .catch(() => { })
+
+    // Direct cloud fetch for streak from D1
+    apiClient
+      .getStreak()
+      .then((remoteStreak) => {
+        if (isMounted && remoteStreak) {
+          const currentLocal = storage.loadStreak()
+          if (
+            remoteStreak.currentStreak >= currentLocal.currentStreak ||
+            remoteStreak.longestStreak >= currentLocal.longestStreak
+          ) {
+            setStreakData(remoteStreak)
+            storage.saveStreak(remoteStreak)
+          }
+        }
+      })
+      .catch(() => { })
 
     storage
       .syncWithCloud()
@@ -195,7 +234,7 @@ export function App() {
           refreshAllData()
         }
       })
-      .catch(() => {})
+      .catch(() => { })
 
     return () => {
       isMounted = false
@@ -227,7 +266,7 @@ export function App() {
       if (changed) {
         storage.saveVideos(updated)
         if (updatedLessonId) {
-          apiClient.updateLesson(updatedLessonId, { title: trimmed }).catch(() => {})
+          apiClient.updateLesson(updatedLessonId, { title: trimmed }).catch(() => { })
         }
       }
       return changed ? updated : prev
@@ -298,11 +337,14 @@ export function App() {
     }
   }, [activeSegment, isPlayerReady, playSegment])
 
-  // Select another video
+  // Select another video and automatically resume to the next uncompleted sentence
   const handleSelectLesson = (lessonId: string) => {
     setActiveLessonId(lessonId)
     storage.saveActiveLessonId(lessonId)
-    setActiveSegmentIndex(0)
+    const targetLesson = videosList.find((v) => v.id === lessonId)
+    const prog = allLessonsProgress[lessonId] || storage.loadLessonProgress(lessonId)
+    const nextIdx = getResumeSegmentIndex(targetLesson, prog)
+    setActiveSegmentIndex(nextIdx)
     setActiveTab('practice')
   }
 
@@ -366,7 +408,7 @@ export function App() {
               level: target.level,
               sentences: res.sentences,
             })
-            .catch(() => {})
+            .catch(() => { })
 
           setTranscriptBannerMessage({
             type: 'success',
@@ -439,7 +481,7 @@ export function App() {
           level: activeLesson.level,
           sentences: segments,
         })
-        .catch(() => {})
+        .catch(() => { })
 
       setTranscriptBannerMessage({
         type: 'success',
@@ -506,7 +548,7 @@ export function App() {
           level: newVideo.level,
           sentences: [],
         })
-        .catch(() => {})
+        .catch(() => { })
 
       // Fetch real YouTube title immediately via oEmbed / noembed
       if (!customTitle) {
@@ -624,11 +666,24 @@ export function App() {
     }
   }
 
-  // Save sentence progress to local storage
+  // Save sentence progress to local storage & Cloudflare D1
   const handleSaveSentenceProgress = (progress: UserSentenceProgress) => {
     if (!activeLesson) return
 
     storage.saveSentenceProgress(activeLesson.id, progress, progress.sentenceId)
+
+    // Complete 1 listening segment in day = preserve & increment Daily Streak!
+    if (progress.completed) {
+      const streakResult = storage.recordDailyStreak()
+      setStreakData(streakResult.streak)
+      if (streakResult.justCompleted) {
+        setStreakCelebration({
+          show: true,
+          streak: streakResult.streak.currentStreak,
+          freezeUsed: streakResult.freezeUsed,
+        })
+      }
+    }
 
     setAllLessonsProgress((prev) => {
       const current = prev[activeLesson.id] || {
@@ -677,7 +732,7 @@ export function App() {
     setVocabularyList(updated)
 
     // Persist to Cloudflare D1
-    apiClient.saveVocabulary(newItem).catch(() => {})
+    apiClient.saveVocabulary(newItem).catch(() => { })
   }
 
   // Update a segment's Vietnamese translation in lesson
@@ -699,22 +754,22 @@ export function App() {
   const handleUpdateVocabulary = (updatedItem: VocabularyItem) => {
     const updated = storage.updateVocabulary(updatedItem)
     setVocabularyList(updated)
-    apiClient.saveVocabulary(updatedItem).catch(() => {})
+    apiClient.saveVocabulary(updatedItem).catch(() => { })
   }
 
   const handleAddVocabulary = (item: VocabularyItem) => {
     const updated = storage.addVocabulary(item)
     setVocabularyList(updated)
-    apiClient.saveVocabulary(item).catch(() => {})
+    apiClient.saveVocabulary(item).catch(() => { })
   }
 
   const handleRemoveVocabulary = (id: string) => {
     const toDelete = vocabularyList.find((v) => v.id === id)
     const updated = storage.removeVocabulary(id)
     setVocabularyList(updated)
-    apiClient.deleteVocabulary(id).catch(() => {})
+    apiClient.deleteVocabulary(id).catch(() => { })
     if (toDelete?.word) {
-      apiClient.deleteVocabulary(toDelete.word).catch(() => {})
+      apiClient.deleteVocabulary(toDelete.word).catch(() => { })
     }
   }
 
@@ -881,11 +936,10 @@ export function App() {
               type="button"
               onClick={toggleBlindListening}
               title={isBlindListening ? 'Turn off video curtain (Alt + B)' : 'Turn on video curtain (Alt + B)'}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer flex items-center gap-1 ${
-                isBlindListening
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer flex items-center gap-1 ${isBlindListening
                   ? 'bg-violet-600 text-white border-violet-600 shadow-2xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400'
-              }`}
+                }`}
             >
               <EyeOff className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Blind Mode{isBlindListening ? ' (On)' : ''}</span>
@@ -920,13 +974,15 @@ export function App() {
           onToggleDarkMode={toggleDarkMode}
           isFocusMode={isFocusMode}
           onToggleFocusMode={toggleFocusMode}
+          streak={streakData}
+          onOpenStreakModal={() => setShowDailyStreakModal(true)}
+          onOpenAutoStartModal={() => setShowAutoStartModal(true)}
         />
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 transition-all ${
-        isFocusMode ? 'max-w-6xl py-4 sm:py-6' : 'max-w-7xl py-6 sm:py-8'
-      }`}>
+      <main className={`flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 transition-all ${isFocusMode ? 'max-w-6xl py-4 sm:py-6' : 'max-w-7xl py-6 sm:py-8'
+        }`}>
         {/* VIEW 1: PRACTICE STUDIO (Kept mounted via CSS to avoid destroying YouTube iframe on tab switch) */}
         <div className={activeTab === 'practice' ? 'space-y-6' : 'hidden'}>
           {/* Quick YouTube URL Bar (Hidden in Zen Focus Mode to eliminate distractions) */}
@@ -1010,15 +1066,14 @@ export function App() {
               {/* Transcript Auto-fetch / Import Status Banner */}
               {transcriptBannerMessage && (
                 <div
-                  className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-fade-in ${
-                    transcriptBannerMessage.type === 'loading'
+                  className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm animate-fade-in ${transcriptBannerMessage.type === 'loading'
                       ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200'
                       : transcriptBannerMessage.type === 'success'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-medium'
-                      : transcriptBannerMessage.type === 'error'
-                      ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
-                      : 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
-                  }`}
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-medium'
+                        : transcriptBannerMessage.type === 'error'
+                          ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                          : 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+                    }`}
                 >
                   <div className="flex items-start sm:items-center gap-2.5 flex-1">
                     {transcriptBannerMessage.type === 'loading' ? (
@@ -1085,7 +1140,7 @@ export function App() {
                     }
                     onNextSegment={
                       activeLesson.sentences.length > 0 &&
-                      activeSegmentIndex < activeLesson.sentences.length - 1
+                        activeSegmentIndex < activeLesson.sentences.length - 1
                         ? () => handleSelectSegment(activeSegmentIndex + 1)
                         : undefined
                     }
@@ -1126,6 +1181,8 @@ export function App() {
                     onUpdateSegmentTranslation={handleUpdateSegmentTranslation}
                     isFetchingTranscript={isAutoFetchingTranscript}
                     getCurrentPlayerTime={getCurrentTime}
+                    streak={streakData}
+                    onOpenStreakModal={() => setShowDailyStreakModal(true)}
                   />
 
                   {/* Tips box (Hidden in Zen Focus Mode) */}
@@ -1232,11 +1289,10 @@ export function App() {
               type="button"
               onClick={toggleLoop}
               title="Toggle segment loop (Alt+L)"
-              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
-                isLooping
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${isLooping
                   ? 'text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60'
                   : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+                }`}
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+L</kbd>
               <span className="hidden sm:inline">Loop{isLooping ? ' ✓' : ''}</span>
@@ -1249,11 +1305,10 @@ export function App() {
               type="button"
               onClick={toggleBlindListening}
               title="Toggle video curtain - Blind Mode (Alt+B)"
-              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
-                isBlindListening
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${isBlindListening
                   ? 'text-violet-700 dark:text-violet-400 font-bold bg-violet-50 dark:bg-violet-950/60'
                   : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+                }`}
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+B</kbd>
               <span className="hidden sm:inline">Blind Mode{isBlindListening ? ' ✓' : ''}</span>
@@ -1274,11 +1329,10 @@ export function App() {
               type="button"
               onClick={toggleFocusMode}
               title="Toggle Zen Mode (Alt+Z)"
-              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${
-                isFocusMode
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${isFocusMode
                   ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60'
                   : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+                }`}
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+Z</kbd>
               <span>{isFocusMode ? 'Exit Zen' : 'Zen'}</span>
@@ -1320,6 +1374,58 @@ export function App() {
           initialTab="paste"
           onSaveTranscript={handleImportTranscript}
         />
+      )}
+
+      {/* Daily Streak Modal */}
+      <DailyStreakModal
+        isOpen={showDailyStreakModal}
+        onClose={() => setShowDailyStreakModal(false)}
+        streak={streakData}
+        onStartPractice={() => setActiveTab('practice')}
+      />
+
+      {/* Windows Auto-Start Modal */}
+      <AutoStartModal
+        isOpen={showAutoStartModal}
+        onClose={() => setShowAutoStartModal(false)}
+      />
+
+      {/* Daily Streak Celebration Toast */}
+      {streakCelebration?.show && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 max-w-sm bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-amber-500/40 flex items-start gap-3 animate-in slide-in-from-bottom duration-300"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shrink-0 shadow-md">
+            <span className="text-xl">🔥</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Daily Streak +1 🎉
+              </h4>
+              <button
+                type="button"
+                onClick={() => setStreakCelebration(null)}
+                className="text-slate-400 hover:text-white text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs font-semibold text-slate-100 mt-0.5">
+              Bạn đã hoàn thành 1 đoạn nghe hôm nay! Chuỗi: {streakCelebration.streak} ngày liên tục.
+            </p>
+            {streakCelebration.freezeUsed && (
+              <p className="text-[11px] text-cyan-300 mt-1 flex items-center gap-1">
+                <span>❄️</span> Streak Freeze đã tự động bảo vệ chuỗi của bạn cho ngày hôm qua!
+              </p>
+            )}
+            <p className="text-[10px] text-slate-400 mt-1 font-mono">
+              ✓ Đã lưu vào cơ sở dữ liệu Cloud D1
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Footer */}
