@@ -3,6 +3,7 @@ import {
   cleanTranscriptText,
   parseSrtOrVtt,
 } from './transcriptParser.ts'
+import { normalizeSentenceBoundaries } from './sentenceNormalizer.ts'
 
 const VIDEO_ID_REGEX = /^[a-zA-Z0-9_\-]{10,12}$/
 
@@ -96,7 +97,7 @@ export function parseTimedTextXml(xml: string): SentenceSegment[] {
     })
   }
 
-  return merged
+  return normalizeSentenceBoundaries(merged)
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   evaluateStreakStatus,
   recordSegmentCompleted,
 } from '../streak/streakManager'
+import { normalizeSentenceBoundaries } from '../transcript/sentenceNormalizer.ts'
 
 const STORAGE_KEYS = {
   PREFERENCES: 'listenflow_preferences_v1',
@@ -423,7 +424,7 @@ export const storage = {
       .map((item) => ({
         ...item,
         title: item.title || `YouTube: ${item.videoId}`,
-        sentences: Array.isArray(item.sentences) ? item.sentences : [],
+        sentences: normalizeSentenceBoundaries(Array.isArray(item.sentences) ? item.sentences : []),
       }))
   },
 
@@ -556,7 +557,7 @@ export const storage = {
         }
         mergedMap.set(cl.id, {
           ...cl,
-          sentences: Array.isArray(cl.sentences) ? cl.sentences : [],
+          sentences: normalizeSentenceBoundaries(Array.isArray(cl.sentences) ? cl.sentences : []),
         })
       }
 
@@ -567,10 +568,11 @@ export const storage = {
           Array.from(mergedMap.values()).find((x) => x.videoId === l.videoId)
 
         if (existing) {
-          const betterSentences =
+          const rawBetterSentences =
             l.sentences && l.sentences.length > (existing.sentences?.length || 0)
               ? l.sentences
               : existing.sentences || []
+          const betterSentences = normalizeSentenceBoundaries(rawBetterSentences)
           const betterTitle =
             l.title &&
               !l.title.startsWith('YouTube: ') &&

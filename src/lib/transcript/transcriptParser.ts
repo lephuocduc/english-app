@@ -1,4 +1,5 @@
 import type { SentenceSegment } from '../../types/index.ts'
+import { normalizeSentenceBoundaries } from './sentenceNormalizer.ts'
 
 /**
  * Strips HTML/XML tags and decodes common HTML entities
@@ -116,7 +117,7 @@ export function parseSrtOrVtt(content: string): SentenceSegment[] {
   }
 
   flushSegment()
-  return segments
+  return normalizeSentenceBoundaries(segments)
 }
 
 /**
@@ -192,7 +193,7 @@ export function parseYouTubeTranscriptPanel(content: string): SentenceSegment[] 
     }
   }
 
-  return segments
+  return normalizeSentenceBoundaries(segments)
 }
 
 /**
