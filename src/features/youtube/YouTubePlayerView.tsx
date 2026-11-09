@@ -13,6 +13,7 @@ import {
   EyeOff,
   Eye,
   Headphones,
+  Sliders,
 } from 'lucide-react'
 import type { SentenceSegment } from '../../types'
 
@@ -34,6 +35,7 @@ interface YouTubePlayerViewProps {
   onChangeSpeed: (speed: number) => void
   onPreviousSegment?: () => void
   onNextSegment?: () => void
+  onSwitchVideo?: () => void
   hasPreviousSegment?: boolean
   hasNextSegment?: boolean
 }
@@ -56,6 +58,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   onChangeSpeed,
   onPreviousSegment,
   onNextSegment,
+  onSwitchVideo,
   hasPreviousSegment = false,
   hasNextSegment = false,
 }) => {
@@ -125,11 +128,21 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
             </h4>
             <p className="text-sm text-slate-300 max-w-md mb-4">{playerError}</p>
             <div className="flex flex-wrap items-center justify-center gap-2">
+              {onSwitchVideo && (
+                <button
+                  type="button"
+                  onClick={onSwitchVideo}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Chọn bài học khác</span>
+                </button>
+              )}
               {onReloadPlayer && (
                 <button
                   type="button"
                   onClick={onReloadPlayer}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg border border-slate-700 shadow-xs transition cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Reload video</span>

@@ -393,12 +393,14 @@ export function useYouTubePlayer({
       try {
         playerRef.current = new window.YT!.Player(containerId, {
           videoId,
+          host: 'https://www.youtube-nocookie.com',
           playerVars: {
             autoplay: 0,
             controls: 1,
             modestbranding: 1,
             rel: 0,
             playsinline: 1,
+            enablejsapi: 1,
             origin: window.location.origin,
             fs: 1,
             cc_load_policy: 1,
@@ -466,7 +468,7 @@ export function useYouTubePlayer({
               setPlaybackRate(event.data)
             },
           },
-        })
+        } as any)
       } catch (err) {
         console.error('Failed to create YT.Player:', err)
         setPlayerError('Failed to initialize YouTube IFrame player.')

@@ -4,7 +4,7 @@
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Vitest-132%2F132%20Pass-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-153%2F153%20Pass-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Cloudflare D1](https://img.shields.io/badge/Cloudflare_D1-Serverless_SQLite-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
 
 **ListenFlow** is a modern, high-performance web application designed for sentence-by-sentence English listening and dictation practice using authentic YouTube videos. Built with a local-first architecture and seamless Cloudflare D1 cloud synchronization, it combines the official YouTube IFrame Player API with dynamic word-level alignment scoring and an Anki-style SuperMemo SM-2 Spaced Repetition (SRS) vocabulary notebook.

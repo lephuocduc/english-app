@@ -25,7 +25,7 @@ const mockSampleLesson = {
 }
 
 describe('DictationStudio Component', () => {
-  const lesson = SAMPLE_LESSONS[0] || mockSampleLesson
+  const lesson = mockSampleLesson
 
   it('renders typing studio and handles answer submission', () => {
     const onSaveProgress = vi.fn()

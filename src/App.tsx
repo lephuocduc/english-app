@@ -1132,6 +1132,7 @@ export function App() {
                     onToggleLoop={toggleLoop}
                     onToggleBlindListening={toggleBlindListening}
                     onReloadPlayer={reloadPlayer}
+                    onSwitchVideo={() => setActiveTab('lessons')}
                     onChangeSpeed={handleSpeedChange}
                     onPreviousSegment={
                       activeLesson.sentences.length > 0 && activeSegmentIndex > 0

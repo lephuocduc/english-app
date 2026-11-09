@@ -87,24 +87,24 @@ describe('Local Storage Persistence', () => {
 
     // Add another video
     storage.addVideo({
-      id: 'video-456',
-      videoId: 'abcdefghijk',
+      id: 'video-test-2',
+      videoId: 'vid12345678',
       title: 'Second Video',
       sentences: []
     })
     expect(storage.loadVideos()).toHaveLength(2)
 
     // Update segments
-    storage.updateVideoSegments('video-456', [
+    storage.updateVideoSegments('video-test-2', [
       { id: 'seg-new', startTime: 10, endTime: 15, text: 'New segment' }
     ])
     const updated = storage.loadVideos()
-    expect(updated?.find((v) => v.id === 'video-456')?.sentences).toHaveLength(1)
+    expect(updated?.find((v) => v.id === 'video-test-2')?.sentences).toHaveLength(1)
 
     // Delete video
     storage.deleteVideo('video-123')
     expect(storage.loadVideos()).toHaveLength(1)
-    expect(storage.loadVideos()?.[0].id).toBe('video-456')
+    expect(storage.loadVideos()?.[0].id).toBe('video-test-2')
   })
 
   it('syncWithCloud does not resurrect deleted vocabulary words from cloud', async () => {

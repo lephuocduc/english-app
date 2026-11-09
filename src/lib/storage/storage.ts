@@ -26,11 +26,31 @@ const STORAGE_KEYS = {
 let memoryVocabulary: VocabularyItem[] = []
 const memoryDeletedVocab = new Set<string>()
 
-// Automatically purge legacy localStorage keys so stale local cache never conflicts across localhost & GitHub Pages
+export const DUMMY_TEST_IDS = new Set(['abcdefghijk', 'lesson-test', 'video-456'])
+
+// Automatically purge legacy localStorage keys and dummy test video IDs
 if (typeof window !== 'undefined' && window.localStorage) {
   try {
     window.localStorage.removeItem('listenflow_vocabulary_v1')
     window.localStorage.removeItem('listenflow_deleted_vocab_v1')
+
+    const activeId = window.localStorage.getItem(STORAGE_KEYS.ACTIVE_LESSON_ID)
+    if (activeId && DUMMY_TEST_IDS.has(activeId)) {
+      window.localStorage.removeItem(STORAGE_KEYS.ACTIVE_LESSON_ID)
+    }
+
+    const rawVideos = window.localStorage.getItem(STORAGE_KEYS.VIDEOS)
+    if (rawVideos) {
+      const parsed = JSON.parse(rawVideos)
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter(
+          (v: any) => v && !DUMMY_TEST_IDS.has(v.id) && !DUMMY_TEST_IDS.has(v.videoId)
+        )
+        if (cleaned.length !== parsed.length) {
+          window.localStorage.setItem(STORAGE_KEYS.VIDEOS, JSON.stringify(cleaned))
+        }
+      }
+    }
   } catch {
     // ignore
   }
@@ -225,7 +245,12 @@ export const storage = {
   loadActiveLessonId(): string | null {
     if (!isLocalStorageAvailable()) return null
     try {
-      return window.localStorage.getItem(STORAGE_KEYS.ACTIVE_LESSON_ID)
+      const id = window.localStorage.getItem(STORAGE_KEYS.ACTIVE_LESSON_ID)
+      if (id && DUMMY_TEST_IDS.has(id)) {
+        window.localStorage.removeItem(STORAGE_KEYS.ACTIVE_LESSON_ID)
+        return null
+      }
+      return id
     } catch {
       return null
     }
@@ -381,11 +406,13 @@ export const storage = {
   loadVideos(): YouTubeVideo[] | null {
     const loaded = safeGetItem(STORAGE_KEYS.VIDEOS, isYouTubeVideoList)
     if (!loaded) return null
-    return loaded.map((item) => ({
-      ...item,
-      title: item.title || `YouTube: ${item.videoId}`,
-      sentences: Array.isArray(item.sentences) ? item.sentences : [],
-    }))
+    return loaded
+      .filter((item) => !DUMMY_TEST_IDS.has(item.id) && !DUMMY_TEST_IDS.has(item.videoId))
+      .map((item) => ({
+        ...item,
+        title: item.title || `YouTube: ${item.videoId}`,
+        sentences: Array.isArray(item.sentences) ? item.sentences : [],
+      }))
   },
 
   saveVideos(videos: YouTubeVideo[]): void {
@@ -485,6 +512,7 @@ export const storage = {
 
       // 1. Seed with cloud lessons
       for (const cl of cloudLessons) {
+        if (DUMMY_TEST_IDS.has(cl.id) || DUMMY_TEST_IDS.has(cl.videoId)) continue
         mergedMap.set(cl.id, {
           ...cl,
           sentences: Array.isArray(cl.sentences) ? cl.sentences : [],
