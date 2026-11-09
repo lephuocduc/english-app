@@ -169,6 +169,10 @@ export function App() {
     })
     return map
   })
+  const allLessonsProgressRef = useRef(allLessonsProgress)
+  useEffect(() => {
+    allLessonsProgressRef.current = allLessonsProgress
+  }, [allLessonsProgress])
   const [vocabularyList, setVocabularyList] = useState<VocabularyItem[]>(() =>
     storage.loadVocabulary()
   )
@@ -219,12 +223,26 @@ export function App() {
       .then((remoteStreak) => {
         if (isMounted && remoteStreak) {
           const currentLocal = storage.loadStreak()
-          if (
-            remoteStreak.currentStreak >= currentLocal.currentStreak ||
-            remoteStreak.longestStreak >= currentLocal.longestStreak
-          ) {
-            setStreakData(remoteStreak)
-            storage.saveStreak(remoteStreak)
+          const bestCurrent = Math.max(remoteStreak.currentStreak, currentLocal.currentStreak)
+          const bestLongest = Math.max(remoteStreak.longestStreak, currentLocal.longestStreak)
+          const bestTotalDays = Math.max(remoteStreak.totalDaysActive, currentLocal.totalDaysActive)
+          const mergedStreak: StreakData = {
+            ...remoteStreak,
+            currentStreak: bestCurrent,
+            longestStreak: bestLongest,
+            totalDaysActive: bestTotalDays,
+            todayCompleted: remoteStreak.todayCompleted || currentLocal.todayCompleted,
+            lastActiveDate: remoteStreak.lastActiveDate || currentLocal.lastActiveDate,
+            freezeUsedDates: Array.from(
+              new Set([...(remoteStreak.freezeUsedDates || []), ...(currentLocal.freezeUsedDates || [])])
+            ),
+          }
+          setStreakData(mergedStreak)
+          storage.saveStreak(mergedStreak)
+
+          // If local was ahead of remote, update D1 database
+          if (currentLocal.currentStreak > remoteStreak.currentStreak) {
+            apiClient.syncStreak(mergedStreak).catch(() => { })
           }
         }
       })
@@ -241,6 +259,56 @@ export function App() {
 
     return () => {
       isMounted = false
+    }
+  }, [refreshAllData])
+
+  // Real-time synchronization across browser tabs (via StorageEvent and window focus)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.key || e.key === 'listenflow_daily_streak_v1') {
+        const updatedStreak = storage.loadStreak()
+        setStreakData(updatedStreak)
+      }
+      if (!e.key || e.key.startsWith('listenflow_progress_') || e.key === 'listenflow_youtube_videos_v2') {
+        refreshAllData()
+      }
+    }
+
+    const handleFocus = () => {
+      // Re-evaluate streak and check for latest state when switching tabs
+      const freshStreak = storage.loadStreak()
+      setStreakData(freshStreak)
+      apiClient
+        .getStreak()
+        .then((remote) => {
+          if (remote) {
+            const local = storage.loadStreak()
+            const bestCurrent = Math.max(remote.currentStreak, local.currentStreak)
+            const bestLongest = Math.max(remote.longestStreak, local.longestStreak)
+            const bestTotalDays = Math.max(remote.totalDaysActive, local.totalDaysActive)
+            const best: StreakData = {
+              ...remote,
+              currentStreak: bestCurrent,
+              longestStreak: bestLongest,
+              totalDaysActive: bestTotalDays,
+              todayCompleted: remote.todayCompleted || local.todayCompleted,
+              lastActiveDate: remote.lastActiveDate || local.lastActiveDate,
+              freezeUsedDates: Array.from(
+                new Set([...(remote.freezeUsedDates || []), ...(local.freezeUsedDates || [])])
+              ),
+            }
+            setStreakData(best)
+            storage.saveStreak(best)
+          }
+        })
+        .catch(() => { })
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [refreshAllData])
 
@@ -873,6 +941,28 @@ export function App() {
         return
       }
 
+      // Alt + J: Jump to next uncompleted sentence
+      if (e.altKey && e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        if (e.repeat) return
+        if (activeLesson && activeLesson.sentences.length > 0) {
+          const curIdx = activeSegmentIndexRef.current
+          const progressMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress || {}
+          // Look for uncompleted sentence after current index
+          let targetIdx = activeLesson.sentences.findIndex(
+            (s, idx) => idx > curIdx && !progressMap[s.id]?.completed
+          )
+          // If not found after current, wrap around and find first uncompleted anywhere
+          if (targetIdx === -1) {
+            targetIdx = activeLesson.sentences.findIndex((s) => !progressMap[s.id]?.completed)
+          }
+          if (targetIdx !== -1 && targetIdx !== curIdx) {
+            handleSelectSegment(targetIdx)
+          }
+        }
+        return
+      }
+
       // Esc to exit Focus Mode if active
       if (e.key === 'Escape' && isFocusMode) {
         e.preventDefault()
@@ -1164,6 +1254,7 @@ export function App() {
                   activeLesson.sentences.length > 0 &&
                   activeSegmentIndex < activeLesson.sentences.length - 1
                 }
+                showStepper={false}
               />
 
               {/* 2. Dictation Studio (Center Hero) */}
@@ -1369,6 +1460,33 @@ export function App() {
             </div>
 
             <span className="hidden md:block w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Jump to unlistened */}
+            <button
+              type="button"
+              onClick={() => {
+                if (activeLesson && activeLesson.sentences.length > 0) {
+                  const curIdx = activeSegmentIndexRef.current
+                  const progressMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress || {}
+                  let targetIdx = activeLesson.sentences.findIndex(
+                    (s, idx) => idx > curIdx && !progressMap[s.id]?.completed
+                  )
+                  if (targetIdx === -1) {
+                    targetIdx = activeLesson.sentences.findIndex((s) => !progressMap[s.id]?.completed)
+                  }
+                  if (targetIdx !== -1 && targetIdx !== curIdx) {
+                    handleSelectSegment(targetIdx)
+                  }
+                }
+              }}
+              title="Jump to next unlistened sentence (Alt+J)"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+J</kbd>
+              <span className="hidden sm:inline">Jump</span>
+            </button>
+
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
 
             {/* Zen Mode */}
             <button

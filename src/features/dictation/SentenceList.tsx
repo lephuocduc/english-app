@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react'
-import { CheckCircle2, Clock, Volume2 } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { CheckCircle2, Clock, Volume2, Compass, Filter } from 'lucide-react'
 import type { SentenceSegment, UserSentenceProgress } from '../../types'
 
 interface SentenceListProps {
@@ -19,6 +19,28 @@ export const SentenceList: React.FC<SentenceListProps> = ({
 }) => {
   const activeItemRef = useRef<HTMLButtonElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const [filter, setFilter] = useState<'all' | 'uncompleted' | 'completed'>('all')
+
+  const completedCount = useMemo(
+    () => sentences.filter((s) => savedProgressMap[s.id]?.completed).length,
+    [sentences, savedProgressMap]
+  )
+  const uncompletedCount = sentences.length - completedCount
+  const firstUncompletedIndex = useMemo(
+    () => sentences.findIndex((s) => !savedProgressMap[s.id]?.completed),
+    [sentences, savedProgressMap]
+  )
+
+  const displayedSentences = useMemo(() => {
+    return sentences
+      .map((seg, originalIndex) => ({ seg, originalIndex }))
+      .filter(({ seg }) => {
+        const isCompleted = savedProgressMap[seg.id]?.completed
+        if (filter === 'completed') return isCompleted
+        if (filter === 'uncompleted') return !isCompleted
+        return true
+      })
+  }, [sentences, savedProgressMap, filter])
 
   // Auto-scroll active segment inside its own container without scrolling the page window/viewport
   useEffect(() => {
@@ -35,7 +57,7 @@ export const SentenceList: React.FC<SentenceListProps> = ({
         container.scrollTop += itemRect.bottom - containerRect.bottom + 8
       }
     }
-  }, [activeSegmentIndex])
+  }, [activeSegmentIndex, filter])
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60)
@@ -55,19 +77,77 @@ export const SentenceList: React.FC<SentenceListProps> = ({
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col transition-colors">
-      <div className="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex items-center justify-between">
+      {/* Header with Title & Quick Jump */}
+      <div className="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-            Practice Sentences
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              Practice Sentences
+            </h4>
+            <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
+              {sentences.length} segments
+            </span>
+          </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Select any sentence to listen and transcribe
           </p>
         </div>
-        <span className="text-xs font-semibold px-2 py-0.5 bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
-          {sentences.length} segments
-        </span>
+
+        {/* Quick jump to first uncompleted sentence button */}
+        {uncompletedCount > 0 && firstUncompletedIndex !== -1 && (
+          <button
+            type="button"
+            onClick={() => onSelectSegment(firstUncompletedIndex)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl border border-indigo-200/80 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+            title="Nhảy tới câu chưa nghe đầu tiên (Alt + J)"
+          >
+            <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Nhảy tới câu chưa nghe (#{firstUncompletedIndex + 1})</span>
+          </button>
+        )}
       </div>
+
+      {/* Filter Tabs: All / Uncompleted / Completed */}
+      {sentences.length > 0 && (
+        <div className="px-3 py-2 border-b border-slate-100 dark:divide-slate-800/80 dark:border-slate-800/60 bg-white dark:bg-slate-900 flex items-center gap-1.5 text-xs">
+          <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-xs transition cursor-pointer ${
+                filter === 'all'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Tất cả ({sentences.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('uncompleted')}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-xs transition cursor-pointer ${
+                filter === 'uncompleted'
+                  ? 'bg-amber-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Chưa nghe ({uncompletedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('completed')}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-xs transition cursor-pointer ${
+                filter === 'completed'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Đã xong ({completedCount})
+            </button>
+          </div>
+        </div>
+      )}
 
       {sentences.length === 0 ? (
         <div className="p-6 text-center space-y-1.5 text-slate-500 dark:text-slate-400">
@@ -84,20 +164,25 @@ export const SentenceList: React.FC<SentenceListProps> = ({
           aria-label="List of practice sentences"
           className="max-h-[360px] lg:max-h-[520px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 p-1.5 space-y-1 focus:outline-none"
         >
-        {sentences.map((seg, idx) => {
-          const isActive = idx === activeSegmentIndex
-          const progress = savedProgressMap[seg.id]
-          const isCompleted = progress?.completed
-          const hasScore = typeof progress?.score === 'number'
-          const duration = (seg.endTime - seg.startTime).toFixed(1)
+        {displayedSentences.length === 0 ? (
+          <div className="p-8 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+            Không có câu nào thuộc danh mục này.
+          </div>
+        ) : (
+          displayedSentences.map(({ seg, originalIndex: idx }) => {
+            const isActive = idx === activeSegmentIndex
+            const progress = savedProgressMap[seg.id]
+            const isCompleted = progress?.completed
+            const hasScore = typeof progress?.score === 'number'
+            const duration = (seg.endTime - seg.startTime).toFixed(1)
 
-          return (
-            <button
-              key={seg.id}
-              ref={isActive ? activeItemRef : null}
-              type="button"
-              onClick={() => onSelectSegment(idx)}
-              onKeyDown={(e) => handleKeyDown(e, idx)}
+            return (
+              <button
+                key={seg.id}
+                ref={isActive ? activeItemRef : null}
+                type="button"
+                onClick={() => onSelectSegment(idx)}
+                onKeyDown={(e) => handleKeyDown(e, idx)}
               aria-current={isActive ? 'true' : undefined}
               className={`w-full text-left p-3 rounded-xl transition flex items-start gap-3 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 isActive
@@ -184,7 +269,8 @@ export const SentenceList: React.FC<SentenceListProps> = ({
               )}
             </button>
           )
-        })}
+        })
+      )}
         </div>
       )}
     </div>

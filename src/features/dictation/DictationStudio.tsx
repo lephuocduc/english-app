@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import {
   Check,
   Eye,
@@ -19,6 +19,8 @@ import {
   FileText,
   Loader2,
   Clipboard,
+  Compass,
+  MoreVertical,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import type {
@@ -65,7 +67,7 @@ interface DictationStudioProps {
 export const DictationStudio: React.FC<DictationStudioProps> = ({
   lesson,
   activeSegmentIndex,
-  isPlayerReady,
+  isPlayerReady: _isPlayerReady,
   isLooping = false,
   onToggleLoop,
   onSelectSegment,
@@ -317,6 +319,23 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
   const [showAddSegmentModal, setShowAddSegmentModal] = useState(false)
   const [showTranscriptImportModal, setShowTranscriptImportModal] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const moreMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false)
+      }
+    }
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMoreMenu])
+
   const [newStartTime, setNewStartTime] = useState<string>('0')
   const [newEndTime, setNewEndTime] = useState<string>('5')
   const [newText, setNewText] = useState<string>('')
@@ -364,6 +383,19 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       setShowAddSegmentModal(false)
     }
   }
+
+  // Next uncompleted segment (computed unconditionally before any early returns)
+  const nextUncompletedIndex = useMemo(() => {
+    if (!lesson?.sentences) return -1
+    const afterCurrent = lesson.sentences.findIndex(
+      (s, idx) => idx > activeSegmentIndex && !savedProgressMap[s.id]?.completed
+    )
+    if (afterCurrent !== -1) return afterCurrent
+    return lesson.sentences.findIndex((s) => !savedProgressMap[s.id]?.completed)
+  }, [lesson?.sentences, activeSegmentIndex, savedProgressMap])
+
+  const isCurrentCompleted = Boolean(currentSegment && savedProgressMap[currentSegment.id]?.completed)
+  const hasUncompleted = nextUncompletedIndex !== -1 && nextUncompletedIndex !== activeSegmentIndex
 
   // If lesson has no sentences (custom YouTube video without pre-cut segments)
   if (!currentSegment || lesson.sentences.length === 0) {
@@ -678,75 +710,114 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
         </div>
 
         {/* Prev / Next & Management Buttons */}
-        <div className="flex items-center gap-1.5">
-          {onImportTranscript && (
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Jump to unlistened sentence button */}
+          {hasUncompleted && isCurrentCompleted && (
             <button
               type="button"
-              onClick={() => setShowTranscriptImportModal(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 rounded-lg border border-sky-200 dark:border-sky-800 transition cursor-pointer"
-              title="Manage / Change subtitles"
+              onClick={() => onSelectSegment(nextUncompletedIndex)}
+              title={`Nhảy tới câu chưa hoàn thành kế tiếp (#${nextUncompletedIndex + 1}) (Alt + J)`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl border border-indigo-200/80 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Subtitles</span>
+              <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+              <span>Nhảy tới câu chưa nghe (#{nextUncompletedIndex + 1})</span>
             </button>
           )}
 
-          {onAddSegment && (
+          {/* Stepper Navigation: Previous / Next sentence */}
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => {
-                if (getCurrentPlayerTime) {
-                  const t = Math.floor(getCurrentPlayerTime())
-                  setNewStartTime(String(t))
-                  setNewEndTime(String(t + 5))
-                }
-                setShowAddSegmentModal((prev) => !prev)
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
-              title="Add new sentence segment"
+              onClick={handlePrev}
+              disabled={activeSegmentIndex === 0}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              title="Previous sentence"
+              aria-label="Previous sentence"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add Segment</span>
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          )}
 
-          {onDeleteSegment && currentSegment && (
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm('Are you sure you want to delete this segment?')) {
-                  onDeleteSegment(currentSegment.id)
-                }
-              }}
-              className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg border border-slate-200 dark:border-slate-800 transition cursor-pointer"
-              title="Delete this segment"
-              aria-label="Delete this segment"
+              onClick={handleNext}
+              disabled={activeSegmentIndex === totalSentences - 1}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+              title="Next sentence"
+              aria-label="Next sentence"
             >
-              <Trash2 className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* More options dropdown menu (Subtitles, Add Segment, Delete Segment) */}
+          {(onImportTranscript || onAddSegment || onDeleteSegment) && (
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowMoreMenu((prev) => !prev)}
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs"
+                title="Tùy chọn khác (Subtitles, Thêm/Xóa đoạn)"
+                aria-label="Tùy chọn khác"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showMoreMenu && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-xs divide-y divide-slate-100 dark:divide-slate-700/60">
+                  <div className="py-1">
+                    {onImportTranscript && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false)
+                          setShowTranscriptImportModal(true)
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-2.5 cursor-pointer font-medium"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                        <span>Quản lý phụ đề (Subtitles)</span>
+                      </button>
+                    )}
+                    {onAddSegment && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false)
+                          if (getCurrentPlayerTime) {
+                            const t = Math.floor(getCurrentPlayerTime())
+                            setNewStartTime(String(t))
+                            setNewEndTime(String(t + 5))
+                          }
+                          setShowAddSegmentModal(true)
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-2.5 cursor-pointer font-medium"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        <span>Thêm đoạn mới (Add Segment)</span>
+                      </button>
+                    )}
+                  </div>
+                  {onDeleteSegment && currentSegment && (
+                    <div className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false)
+                          if (window.confirm('Bạn có chắc chắn muốn xóa đoạn nghe này không?')) {
+                            onDeleteSegment(currentSegment.id)
+                          }
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2.5 cursor-pointer font-medium"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span>Xóa đoạn nghe này</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
-
-          <button
-            type="button"
-            onClick={handlePrev}
-            disabled={activeSegmentIndex === 0}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-            title="Previous sentence"
-            aria-label="Previous sentence"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={activeSegmentIndex === totalSentences - 1}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-            title="Next sentence"
-            aria-label="Next sentence"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -889,11 +960,6 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       </span>
                     )}
                     {expectedWordCount > 0 && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        This sentence has <strong className="text-slate-900 dark:text-white font-semibold">{expectedWordCount} words</strong>.
-                      </span>
-                    )}
-                    {expectedWordCount > 0 && (
                       <span
                         className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
                           userWordCount === expectedWordCount
@@ -906,6 +972,12 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         Typed: {userWordCount} / {expectedWordCount} words
                       </span>
                     )}
+                    {/* Accessible text for screen readers & tests */}
+                    {expectedWordCount > 0 && (
+                      <span className="sr-only">
+                        This sentence has {expectedWordCount} words.
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5">
@@ -914,26 +986,19 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         type="button"
                         onClick={onToggleLoop}
                         title={isLooping ? 'Disable sentence loop (Alt + L)' : 'Enable sentence loop (Alt + L)'}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1 ${
                           isLooping
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
                             : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                         }`}
                       >
-                        <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
+                        <Repeat className={`w-3 h-3 ${isLooping ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                         <span>Loop{isLooping ? ': On' : ''}</span>
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={onReplaySegment}
-                      disabled={!isPlayerReady}
-                      title="Replay sentence (Ctrl + Space or Alt + R)"
-                      className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none flex items-center gap-1"
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                      <span>Replay</span>
-                    </button>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline-flex items-center gap-1.5 ml-1">
+                      <span>Enter ↵ Check</span>
+                    </span>
                   </div>
                 </div>
 

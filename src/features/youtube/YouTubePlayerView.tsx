@@ -38,6 +38,7 @@ interface YouTubePlayerViewProps {
   onSwitchVideo?: () => void
   hasPreviousSegment?: boolean
   hasNextSegment?: boolean
+  showStepper?: boolean
 }
 
 export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
@@ -61,6 +62,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   onSwitchVideo,
   hasPreviousSegment = false,
   hasNextSegment = false,
+  showStepper = true,
 }) => {
   const speeds = [0.75, 1.0, 1.25]
 
@@ -201,7 +203,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
           </div>
 
           {/* Stepper: Previous / Next Sentence Button Group */}
-          {(onPreviousSegment || onNextSegment) && (
+          {showStepper && (onPreviousSegment || onNextSegment) && (
             <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-0.5 shadow-2xs shrink-0">
               {onPreviousSegment && (
                 <button
