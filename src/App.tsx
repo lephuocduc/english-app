@@ -13,6 +13,7 @@ import {
   Sun,
   Headphones,
   EyeOff,
+  ChevronRight,
 } from 'lucide-react'
 import type {
   Lesson,
@@ -64,6 +65,8 @@ export function App() {
   // Quick YouTube URL input state
   const [quickUrlInput, setQuickUrlInput] = useState('')
   const [quickImportError, setQuickImportError] = useState<string | null>(null)
+  const [showQuickUrlBar, setShowQuickUrlBar] = useState(false)
+  const [showFloatingHud, setShowFloatingHud] = useState(true)
 
   // YouTube Videos list & Active video state
   const [videosList, setVideosList] = useState<Lesson[]>(() => {
@@ -981,85 +984,97 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 transition-all ${isFocusMode ? 'max-w-6xl py-4 sm:py-6' : 'max-w-7xl py-6 sm:py-8'
-        }`}>
+      <main className={`flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 transition-all ${
+        isFocusMode ? 'max-w-4xl py-4 sm:py-6' : 'max-w-7xl py-5 sm:py-8'
+      }`}>
         {/* VIEW 1: PRACTICE STUDIO (Kept mounted via CSS to avoid destroying YouTube iframe on tab switch) */}
-        <div className={activeTab === 'practice' ? 'space-y-6' : 'hidden'}>
-          {/* Quick YouTube URL Bar (Hidden in Zen Focus Mode to eliminate distractions) */}
-          {!isFocusMode && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-4 shadow-xs transition-colors">
-              <form
-                onSubmit={handleQuickImport}
-                className="flex flex-col sm:flex-row items-stretch gap-2.5"
-              >
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={quickUrlInput}
-                    onChange={(e) => {
-                      setQuickUrlInput(e.target.value)
-                      if (quickImportError) setQuickImportError(null)
-                    }}
-                    placeholder="Paste any YouTube link (https://www.youtube.com/watch?v=..., youtu.be, shorts)..."
-                    className="w-full pl-3.5 pr-16 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-mono transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleQuickPaste}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-2xs transition"
-                  >
-                    Paste
-                  </button>
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-98"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Load Video</span>
-                </button>
-              </form>
-
-              {quickImportError && (
-                <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{quickImportError}</p>
-              )}
-            </div>
-          )}
-
-          {/* Active Video Header or Empty State */}
+        <div className={activeTab === 'practice' ? 'max-w-3xl mx-auto space-y-4 sm:space-y-5' : 'hidden'}>
+          {/* Active Video or Empty State */}
           {activeLesson ? (
             <>
+              {/* Sleek Minimalist Lesson Header Bar */}
               {!isFocusMode && (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 transition-colors">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 shadow-xs transition-colors space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
                         YouTube ID: {activeLesson.videoId}
                       </span>
+                      <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate" title={activeLesson.title}>
+                        {activeLesson.title}
+                      </h1>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickUrlBar((prev) => !prev)}
+                        title="Dán link YouTube mới"
+                        className="px-2.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl transition cursor-pointer flex items-center gap-1 border border-indigo-200/60 dark:border-indigo-800/60"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{showQuickUrlBar ? 'Đóng' : '+ Dán link'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('lessons')}
+                        className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer flex items-center gap-1 shadow-2xs border border-slate-200/80 dark:border-slate-700"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>Đổi bài ({videosList.length})</span>
+                      </button>
+
                       <a
                         href={`https://www.youtube.com/watch?v=${activeLesson.videoId}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                        title="Watch on YouTube"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Watch on YouTube</span>
                       </a>
                     </div>
-                    <h1 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                      {activeLesson.title}
-                    </h1>
                   </div>
 
-                  {/* Switch video button */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('lessons')}
-                    className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-2xs border border-slate-200/80 dark:border-slate-700"
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>Switch Video ({videosList.length})</span>
-                  </button>
+                  {/* Expandable Quick YouTube Import Form */}
+                  {showQuickUrlBar && (
+                    <form
+                      onSubmit={handleQuickImport}
+                      className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch gap-2 animate-fade-in"
+                    >
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={quickUrlInput}
+                          onChange={(e) => {
+                            setQuickUrlInput(e.target.value)
+                            if (quickImportError) setQuickImportError(null)
+                          }}
+                          placeholder="Paste any YouTube link (https://www.youtube.com/watch?v=..., youtu.be, shorts)..."
+                          className="w-full pl-3 pr-16 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-mono transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleQuickPaste}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-2xs transition"
+                        >
+                          Paste
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-98"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Load Video</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {quickImportError && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400">{quickImportError}</p>
+                  )}
                 </div>
               )}
 
@@ -1107,52 +1122,92 @@ export function App() {
                 </div>
               )}
 
-              {/* Two-Column Studio Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Left Column (YouTube Player & Sentence Navigation) */}
-                <div className="lg:col-span-5 xl:col-span-5 space-y-6">
-                  <YouTubePlayerView
-                    containerId="listenflow-youtube-player-frame"
-                    videoId={activeLesson.videoId}
-                    isReady={isPlayerReady}
-                    isPlaying={isPlaying}
-                    isLooping={isLooping}
-                    isBlindListening={isBlindListening}
-                    playerError={playerError}
-                    currentSpeed={playbackRate}
-                    activeSegment={activeSegment || null}
-                    onPlaySegment={() => {
-                      if (activeSegment) {
-                        playSegment(activeSegment.startTime, activeSegment.endTime)
-                      } else {
-                        togglePlayPause()
-                      }
-                    }}
-                    onTogglePlayPause={togglePlayPause}
-                    onToggleLoop={toggleLoop}
-                    onToggleBlindListening={toggleBlindListening}
-                    onReloadPlayer={reloadPlayer}
-                    onSwitchVideo={() => setActiveTab('lessons')}
-                    onChangeSpeed={handleSpeedChange}
-                    onPreviousSegment={
-                      activeLesson.sentences.length > 0 && activeSegmentIndex > 0
-                        ? () => handleSelectSegment(activeSegmentIndex - 1)
-                        : undefined
-                    }
-                    onNextSegment={
-                      activeLesson.sentences.length > 0 &&
-                        activeSegmentIndex < activeLesson.sentences.length - 1
-                        ? () => handleSelectSegment(activeSegmentIndex + 1)
-                        : undefined
-                    }
-                    hasPreviousSegment={activeSegmentIndex > 0}
-                    hasNextSegment={
-                      activeLesson.sentences.length > 0 &&
-                      activeSegmentIndex < activeLesson.sentences.length - 1
-                    }
-                  />
+              {/* Duolingo Style 1-Column Layout: Video on Top, Dictation Studio at Center */}
+              {/* 1. YouTube Player View */}
+              <YouTubePlayerView
+                containerId="listenflow-youtube-player-frame"
+                videoId={activeLesson.videoId}
+                isReady={isPlayerReady}
+                isPlaying={isPlaying}
+                isLooping={isLooping}
+                isBlindListening={isBlindListening}
+                playerError={playerError}
+                currentSpeed={playbackRate}
+                activeSegment={activeSegment || null}
+                onPlaySegment={() => {
+                  if (activeSegment) {
+                    playSegment(activeSegment.startTime, activeSegment.endTime)
+                  } else {
+                    togglePlayPause()
+                  }
+                }}
+                onTogglePlayPause={togglePlayPause}
+                onToggleLoop={toggleLoop}
+                onToggleBlindListening={toggleBlindListening}
+                onReloadPlayer={reloadPlayer}
+                onSwitchVideo={() => setActiveTab('lessons')}
+                onChangeSpeed={handleSpeedChange}
+                onPreviousSegment={
+                  activeLesson.sentences.length > 0 && activeSegmentIndex > 0
+                    ? () => handleSelectSegment(activeSegmentIndex - 1)
+                    : undefined
+                }
+                onNextSegment={
+                  activeLesson.sentences.length > 0 &&
+                    activeSegmentIndex < activeLesson.sentences.length - 1
+                    ? () => handleSelectSegment(activeSegmentIndex + 1)
+                    : undefined
+                }
+                hasPreviousSegment={activeSegmentIndex > 0}
+                hasNextSegment={
+                  activeLesson.sentences.length > 0 &&
+                  activeSegmentIndex < activeLesson.sentences.length - 1
+                }
+              />
 
-                  {/* Sentence List */}
+              {/* 2. Dictation Studio (Center Hero) */}
+              <DictationStudio
+                lesson={activeLesson}
+                activeSegmentIndex={activeSegmentIndex}
+                isPlayerReady={isPlayerReady}
+                isLooping={isLooping}
+                onToggleLoop={toggleLoop}
+                onSelectSegment={handleSelectSegment}
+                onReplaySegment={handleReplayCurrent}
+                onSaveProgress={handleSaveSentenceProgress}
+                savedProgressMap={activeLessonProgress}
+                onBookmarkVocabulary={handleBookmarkVocabulary}
+                onAddSegment={handleAddSegment}
+                onImportTranscript={handleImportTranscript}
+                onDeleteSegment={handleDeleteSegment}
+                onAutoFetchTranscript={() => handleAutoFetchTranscript(activeLesson.id)}
+                onUpdateSegmentTranslation={handleUpdateSegmentTranslation}
+                isFetchingTranscript={isAutoFetchingTranscript}
+                getCurrentPlayerTime={getCurrentTime}
+                streak={streakData}
+                onOpenStreakModal={() => setShowDailyStreakModal(true)}
+              />
+
+              {/* 3. Collapsible Sentence List Accordion (Accessible at Bottom without cluttering) */}
+              <details className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+                <summary className="p-3.5 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition select-none list-none">
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform duration-200 shrink-0" />
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                      Danh sách câu luyện tập (Practice Sentences)
+                    </h4>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
+                      {activeLesson.sentences.length} segments
+                    </span>
+                  </div>
+                  <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-open:hidden">
+                    Xem tất cả ({activeLesson.sentences.length}) ↓
+                  </span>
+                  <span className="text-xs text-slate-400 group-open:inline hidden">
+                    Thu gọn ↑
+                  </span>
+                </summary>
+                <div className="border-t border-slate-100 dark:border-slate-800">
                   <SentenceList
                     sentences={activeLesson.sentences}
                     activeSegmentIndex={activeSegmentIndex}
@@ -1161,55 +1216,7 @@ export function App() {
                     savedProgressMap={activeLessonProgress}
                   />
                 </div>
-
-                {/* Right Column (Dictation Studio) */}
-                <div className="lg:col-span-7 xl:col-span-7 space-y-6">
-                  <DictationStudio
-                    lesson={activeLesson}
-                    activeSegmentIndex={activeSegmentIndex}
-                    isPlayerReady={isPlayerReady}
-                    isLooping={isLooping}
-                    onToggleLoop={toggleLoop}
-                    onSelectSegment={handleSelectSegment}
-                    onReplaySegment={handleReplayCurrent}
-                    onSaveProgress={handleSaveSentenceProgress}
-                    savedProgressMap={activeLessonProgress}
-                    onBookmarkVocabulary={handleBookmarkVocabulary}
-                    onAddSegment={handleAddSegment}
-                    onImportTranscript={handleImportTranscript}
-                    onDeleteSegment={handleDeleteSegment}
-                    onAutoFetchTranscript={() => handleAutoFetchTranscript(activeLesson.id)}
-                    onUpdateSegmentTranslation={handleUpdateSegmentTranslation}
-                    isFetchingTranscript={isAutoFetchingTranscript}
-                    getCurrentPlayerTime={getCurrentTime}
-                    streak={streakData}
-                    onOpenStreakModal={() => setShowDailyStreakModal(true)}
-                  />
-
-                  {/* Tips box (Hidden in Zen Focus Mode) */}
-                  {!isFocusMode && (
-                    <div className="bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl p-4 text-xs space-y-1.5 text-indigo-950 dark:text-indigo-200 transition-colors">
-                      <h5 className="font-bold flex items-center gap-1.5 text-indigo-900 dark:text-indigo-300">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        <span>Tips for effective listening &amp; dictation:</span>
-                      </h5>
-                      <ol className="list-decimal list-inside space-y-0.5 text-slate-600 dark:text-slate-400 leading-relaxed">
-                        <li>
-                          Press <strong className="text-slate-800 dark:text-slate-200">Replay Sentence (Ctrl+Space)</strong> to capture rhythm and phrasing.
-                        </li>
-                        <li>Type the words you hear most clearly into the text input.</li>
-                        <li>Listen again to catch linking words, articles, and plural/past tense endings.</li>
-                        <li>
-                          Enable <strong className="text-slate-800 dark:text-slate-200">Blind Mode (Alt+B)</strong> to focus purely on audio without visuals.
-                        </li>
-                        <li>
-                          Enable <strong className="text-slate-800 dark:text-slate-200">Zen Mode (Alt+Z)</strong> to eliminate interface distractions.
-                        </li>
-                      </ol>
-                    </div>
-                  )}
-                </div>
-              </div>
+              </details>
             </>
           ) : (
             /* Empty state when user has no videos at all */
@@ -1222,9 +1229,46 @@ export function App() {
                   Get Started with Any YouTube Video
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-                  Paste any YouTube video link in the bar above to start practicing dictation.
+                  Paste any YouTube video link below to start practicing dictation.
                 </p>
               </div>
+
+              {/* Paste URL form in empty state */}
+              <form
+                onSubmit={handleQuickImport}
+                className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-2"
+              >
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={quickUrlInput}
+                    onChange={(e) => {
+                      setQuickUrlInput(e.target.value)
+                      if (quickImportError) setQuickImportError(null)
+                    }}
+                    placeholder="Paste any YouTube link (https://www.youtube.com/watch?v=..., youtu.be, shorts)..."
+                    className="w-full pl-3.5 pr-16 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-mono transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleQuickPaste}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-2xs transition"
+                  >
+                    Paste
+                  </button>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-98"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Load Video</span>
+                </button>
+              </form>
+
+              {quickImportError && (
+                <p className="text-xs text-rose-600 dark:text-rose-400">{quickImportError}</p>
+              )}
             </div>
           )}
         </div>
@@ -1266,7 +1310,7 @@ export function App() {
       </main>
 
       {/* Hands-free Floating Keyboard Shortcuts HUD (Always accessible, minimal bottom dock) */}
-      {activeTab === 'practice' && (
+      {activeTab === 'practice' && showFloatingHud && (
         <aside
           aria-label="Quick shortcut HUD"
           className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center pointer-events-auto animate-fade-in"
@@ -1343,10 +1387,21 @@ export function App() {
             <button
               type="button"
               onClick={() => setShowKeyboardShortcuts(true)}
-              title="View all shortcuts (?)"
+              title="Keyboard shortcuts"
               className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 ml-0.5 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               <kbd className="px-1 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-300">?</kbd>
+            </button>
+
+            {/* Dismiss button */}
+            <button
+              type="button"
+              onClick={() => setShowFloatingHud(false)}
+              title="Đóng thanh phím tắt nhanh"
+              aria-label="Close shortcuts dock"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded cursor-pointer ml-1"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </aside>

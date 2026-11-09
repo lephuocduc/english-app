@@ -19,7 +19,6 @@ import {
   FileText,
   Loader2,
   Clipboard,
-  Flame,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import type {
@@ -81,8 +80,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   onUpdateSegmentTranslation,
   isFetchingTranscript = false,
   getCurrentPlayerTime,
-  streak,
-  onOpenStreakModal,
+  streak: _streak,
+  onOpenStreakModal: _onOpenStreakModal,
 }) => {
   const currentSegment: SentenceSegment | undefined = lesson?.sentences?.[activeSegmentIndex]
   const saved = currentSegment ? savedProgressMap[currentSegment.id] : undefined
@@ -680,29 +679,6 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
         {/* Prev / Next & Management Buttons */}
         <div className="flex items-center gap-1.5">
-          {streak && (
-            <button
-              type="button"
-              onClick={onOpenStreakModal}
-              title={
-                streak.todayCompleted
-                  ? `Daily Streak: Đã giữ chuỗi hôm nay (${streak.currentStreak} ngày liên tục)!`
-                  : `Daily Streak: Hoàn thành câu này để kích hoạt/giữ chuỗi hôm nay!`
-              }
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer ${streak.todayCompleted
-                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                  : 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-800 animate-pulse'
-                }`}
-            >
-              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span>
-                {streak.todayCompleted
-                  ? `Streak: ${streak.currentStreak}d`
-                  : 'Luyện 1 câu giữ Streak 🔥'}
-              </span>
-            </button>
-          )}
-
           {onImportTranscript && (
             <button
               type="button"
@@ -897,47 +873,13 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
           return (
             <>
-              <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 transition-colors">
-                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                  <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>
-                    This sentence has <strong className="text-slate-900 dark:text-white font-bold">{expectedWordCount} words</strong>. Press &quot;Replay&quot; and type each word accurately.
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {onToggleLoop && (
-                    <button
-                      type="button"
-                      onClick={onToggleLoop}
-                      title={isLooping ? 'Disable sentence loop (Alt + L)' : 'Enable sentence loop (Alt + L)'}
-                      className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${isLooping
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                        }`}
-                    >
-                      <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
-                      <span>Loop{isLooping ? ': On' : ''}</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onReplaySegment}
-                    disabled={!isPlayerReady}
-                    title="Replay sentence (Ctrl + Space or Alt + R)"
-                    className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-                  >
-                    Replay
-                  </button>
-                </div>
-              </div>
-
-              {/* Textarea Input Area */}
-              <div className="space-y-1.5">
+              {/* Sleek Dictation Input Header */}
+              <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <label
                       htmlFor="dictation-input"
-                      className="block text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="block text-xs font-bold text-slate-800 dark:text-slate-200"
                     >
                       Your answer:
                     </label>
@@ -946,25 +888,55 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         💡 Hint: {expectedWordCount} words
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
+                    {expectedWordCount > 0 && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        This sentence has <strong className="text-slate-900 dark:text-white font-semibold">{expectedWordCount} words</strong>.
+                      </span>
+                    )}
                     {expectedWordCount > 0 && (
                       <span
-                        className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${userWordCount === expectedWordCount
+                        className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
+                          userWordCount === expectedWordCount
                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                             : userWordCount > expectedWordCount
                               ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                          }`}
+                        }`}
                       >
                         Typed: {userWordCount} / {expectedWordCount} words
                       </span>
                     )}
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                      Shortcuts: <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-mono text-slate-700 dark:text-slate-300">Enter</kbd> submit • <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-mono text-slate-700 dark:text-slate-300">Ctrl+Space</kbd> replay
-                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {onToggleLoop && (
+                      <button
+                        type="button"
+                        onClick={onToggleLoop}
+                        title={isLooping ? 'Disable sentence loop (Alt + L)' : 'Enable sentence loop (Alt + L)'}
+                        className={`px-2.5 py-1 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                          isLooping
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                            : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
+                        <span>Loop{isLooping ? ': On' : ''}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onReplaySegment}
+                      disabled={!isPlayerReady}
+                      title="Replay sentence (Ctrl + Space or Alt + R)"
+                      className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer disabled:cursor-not-allowed shrink-0 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none flex items-center gap-1"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>Replay</span>
+                    </button>
                   </div>
                 </div>
+
                 <div className="relative">
                   <textarea
                     id="dictation-input"
@@ -1334,13 +1306,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${scoreResult.score >= 80
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${scoreResult.score >= 80
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
                     }`}
                 >
                   <span>Next Sentence</span>
                   <ArrowRight className="w-4 h-4" />
+                  <kbd className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-black/20 text-white rounded">Enter ➔</kbd>
                 </button>
               )}
             </div>

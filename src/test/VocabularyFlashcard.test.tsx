@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import { VocabularyView } from '../features/vocabulary/VocabularyView'
 import { FlashcardReviewModal } from '../features/vocabulary/FlashcardReviewModal'
 import { AddVocabularyModal } from '../features/vocabulary/AddVocabularyModal'
@@ -129,6 +129,42 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
 
     expect(screen.getByText('resilient')).toBeInTheDocument()
     expect(screen.queryByText('curiosity')).not.toBeInTheDocument()
+  })
+
+  it('opens confirmation modal before deleting vocabulary, cancels or confirms deletion', () => {
+    const onRemoveVocabulary = vi.fn()
+    render(
+      <VocabularyView
+        vocabularyList={mockVocabList}
+        onRemoveVocabulary={onRemoveVocabulary}
+      />
+    )
+
+    // Find delete button for first word
+    const deleteBtns = screen.getAllByTitle('Delete word')
+    fireEvent.click(deleteBtns[0])
+
+    // Confirmation modal should appear with word name and warning
+    const modal = screen.getByRole('dialog')
+    expect(within(modal).getByText('Xóa từ vựng?')).toBeInTheDocument()
+    expect(within(modal).getByText(/Bạn có chắc chắn muốn xóa từ/i)).toBeInTheDocument()
+    expect(within(modal).getByText(/resilient/i)).toBeInTheDocument()
+    expect(within(modal).getByText(/Toàn bộ câu ngữ cảnh và tiến trình ôn tập Spaced Repetition/i)).toBeInTheDocument()
+
+    // Clicking "Hủy" cancels without deleting
+    const cancelBtn = within(modal).getByRole('button', { name: /Hủy/i })
+    fireEvent.click(cancelBtn)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(onRemoveVocabulary).not.toHaveBeenCalled()
+
+    // Re-open modal and confirm deletion
+    fireEvent.click(deleteBtns[0])
+    const modalAgain = screen.getByRole('dialog')
+    const confirmBtn = within(modalAgain).getByRole('button', { name: /Xóa từ này/i })
+    fireEvent.click(confirmBtn)
+
+    expect(onRemoveVocabulary).toHaveBeenCalledWith('v1')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
 

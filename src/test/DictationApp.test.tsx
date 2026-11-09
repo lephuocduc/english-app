@@ -227,6 +227,9 @@ describe('ListenFlow Integration & UI Tests', () => {
   it('allows importing a valid YouTube URL from the quick URL bar and displays it', () => {
     render(<App />)
 
+    const toggleBtn = screen.queryByTitle('Dán link YouTube mới') || screen.queryByRole('button', { name: /\+ Dán link/i })
+    if (toggleBtn) fireEvent.click(toggleBtn)
+
     const quickInput = screen.getByPlaceholderText(/Paste any YouTube link/)
     fireEvent.change(quickInput, {
       target: { value: 'https://www.youtube.com/watch?v=arj7oStGLkU' },
