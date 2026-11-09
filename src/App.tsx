@@ -1079,21 +1079,20 @@ export function App() {
         isFocusMode ? 'max-w-4xl py-4 sm:py-6' : 'max-w-7xl py-5 sm:py-8'
       }`}>
         {/* VIEW 1: PRACTICE STUDIO (Kept mounted via CSS to avoid destroying YouTube iframe on tab switch) */}
-        <div className={activeTab === 'practice' ? 'max-w-3xl mx-auto space-y-4 sm:space-y-5' : 'hidden'}>
+        <div className={activeTab === 'practice' ? 'max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6 space-y-4 sm:space-y-5' : 'hidden'}>
           {/* Active Video or Empty State */}
           {activeLesson ? (
             <>
-              {/* Sleek Minimalist Lesson Header Bar */}
+              {/* Sleek Minimalist Lesson Header Bar (without technical YouTube ID) */}
               {!isFocusMode && (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 sm:p-4 shadow-xs transition-colors space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="px-2 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
-                        YouTube ID: {activeLesson.videoId}
-                      </span>
-                      <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate" title={activeLesson.title}>
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Đang học bài này" />
+                      <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 dark:text-white truncate" title={activeLesson.title}>
                         {activeLesson.title}
                       </h1>
+                      <span className="sr-only">YouTube ID: {activeLesson.videoId}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -1213,102 +1212,123 @@ export function App() {
                 </div>
               )}
 
-              {/* Duolingo Style 1-Column Layout: Video on Top, Dictation Studio at Center */}
-              {/* 1. YouTube Player View */}
-              <YouTubePlayerView
-                containerId="listenflow-youtube-player-frame"
-                videoId={activeLesson.videoId}
-                isReady={isPlayerReady}
-                isPlaying={isPlaying}
-                isLooping={isLooping}
-                isBlindListening={isBlindListening}
-                playerError={playerError}
-                currentSpeed={playbackRate}
-                activeSegment={activeSegment || null}
-                onPlaySegment={() => {
-                  if (activeSegment) {
-                    playSegment(activeSegment.startTime, activeSegment.endTime)
-                  } else {
-                    togglePlayPause()
-                  }
-                }}
-                onTogglePlayPause={togglePlayPause}
-                onToggleLoop={toggleLoop}
-                onToggleBlindListening={toggleBlindListening}
-                onReloadPlayer={reloadPlayer}
-                onSwitchVideo={() => setActiveTab('lessons')}
-                onChangeSpeed={handleSpeedChange}
-                onPreviousSegment={
-                  activeLesson.sentences.length > 0 && activeSegmentIndex > 0
-                    ? () => handleSelectSegment(activeSegmentIndex - 1)
-                    : undefined
-                }
-                onNextSegment={
-                  activeLesson.sentences.length > 0 &&
-                    activeSegmentIndex < activeLesson.sentences.length - 1
-                    ? () => handleSelectSegment(activeSegmentIndex + 1)
-                    : undefined
-                }
-                hasPreviousSegment={activeSegmentIndex > 0}
-                hasNextSegment={
-                  activeLesson.sentences.length > 0 &&
-                  activeSegmentIndex < activeLesson.sentences.length - 1
-                }
-                showStepper={false}
-              />
-
-              {/* 2. Dictation Studio (Center Hero) */}
-              <DictationStudio
-                lesson={activeLesson}
-                activeSegmentIndex={activeSegmentIndex}
-                isPlayerReady={isPlayerReady}
-                isLooping={isLooping}
-                onToggleLoop={toggleLoop}
-                onSelectSegment={handleSelectSegment}
-                onReplaySegment={handleReplayCurrent}
-                onSaveProgress={handleSaveSentenceProgress}
-                savedProgressMap={activeLessonProgress}
-                onBookmarkVocabulary={handleBookmarkVocabulary}
-                onAddSegment={handleAddSegment}
-                onImportTranscript={handleImportTranscript}
-                onDeleteSegment={handleDeleteSegment}
-                onAutoFetchTranscript={() => handleAutoFetchTranscript(activeLesson.id)}
-                onUpdateSegmentTranslation={handleUpdateSegmentTranslation}
-                isFetchingTranscript={isAutoFetchingTranscript}
-                getCurrentPlayerTime={getCurrentTime}
-                streak={streakData}
-                onOpenStreakModal={() => setShowDailyStreakModal(true)}
-              />
-
-              {/* 3. Collapsible Sentence List Accordion (Accessible at Bottom without cluttering) */}
-              <details className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
-                <summary className="p-3.5 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition select-none list-none">
-                  <div className="flex items-center gap-2">
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform duration-200 shrink-0" />
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                      Danh sách câu luyện tập (Practice Sentences)
-                    </h4>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
-                      {activeLesson.sentences.length} segments
-                    </span>
-                  </div>
-                  <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-open:hidden">
-                    Xem tất cả ({activeLesson.sentences.length}) ↓
-                  </span>
-                  <span className="text-xs text-slate-400 group-open:inline hidden">
-                    Thu gọn ↑
-                  </span>
-                </summary>
-                <div className="border-t border-slate-100 dark:border-slate-800">
-                  <SentenceList
-                    sentences={activeLesson.sentences}
-                    activeSegmentIndex={activeSegmentIndex}
+              {/* Responsive 2-Column Split Desktop Layout (12 cols) / 1-Column Mobile Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+                {/* Left Column (5/12 on Desktop): YouTube Player + Sentence List */}
+                <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
+                  {/* 1. YouTube Player View */}
+                  <YouTubePlayerView
+                    containerId="listenflow-youtube-player-frame"
+                    videoId={activeLesson.videoId}
+                    isReady={isPlayerReady}
                     isPlaying={isPlaying}
-                    onSelectSegment={handleSelectSegment}
-                    savedProgressMap={activeLessonProgress}
+                    isLooping={isLooping}
+                    isBlindListening={isBlindListening}
+                    playerError={playerError}
+                    currentSpeed={playbackRate}
+                    activeSegment={activeSegment || null}
+                    onPlaySegment={() => {
+                      if (activeSegment) {
+                        playSegment(activeSegment.startTime, activeSegment.endTime)
+                      } else {
+                        togglePlayPause()
+                      }
+                    }}
+                    onTogglePlayPause={togglePlayPause}
+                    onToggleLoop={toggleLoop}
+                    onToggleBlindListening={toggleBlindListening}
+                    onReloadPlayer={reloadPlayer}
+                    onSwitchVideo={() => setActiveTab('lessons')}
+                    onChangeSpeed={handleSpeedChange}
+                    onPreviousSegment={
+                      activeLesson.sentences.length > 0 && activeSegmentIndex > 0
+                        ? () => handleSelectSegment(activeSegmentIndex - 1)
+                        : undefined
+                    }
+                    onNextSegment={
+                      activeLesson.sentences.length > 0 &&
+                        activeSegmentIndex < activeLesson.sentences.length - 1
+                        ? () => handleSelectSegment(activeSegmentIndex + 1)
+                        : undefined
+                    }
+                    hasPreviousSegment={activeSegmentIndex > 0}
+                    hasNextSegment={
+                      activeLesson.sentences.length > 0 &&
+                      activeSegmentIndex < activeLesson.sentences.length - 1
+                    }
+                    showStepper={false}
                   />
+
+                  {/* Desktop Sentence List (5/12 side panel) */}
+                  <div className="hidden lg:block">
+                    <SentenceList
+                      sentences={activeLesson.sentences}
+                      activeSegmentIndex={activeSegmentIndex}
+                      isPlaying={isPlaying}
+                      onSelectSegment={handleSelectSegment}
+                      savedProgressMap={activeLessonProgress}
+                    />
+                  </div>
                 </div>
-              </details>
+
+                {/* Right Column (7/12 on Desktop): Dictation Studio Hero + Mobile Sentence List */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* 2. Dictation Studio (Center Stage) */}
+                  <DictationStudio
+                    lesson={activeLesson}
+                    activeSegmentIndex={activeSegmentIndex}
+                    isPlayerReady={isPlayerReady}
+                    isLooping={isLooping}
+                    onToggleLoop={toggleLoop}
+                    onSelectSegment={handleSelectSegment}
+                    onReplaySegment={handleReplayCurrent}
+                    onSaveProgress={handleSaveSentenceProgress}
+                    savedProgressMap={activeLessonProgress}
+                    onBookmarkVocabulary={handleBookmarkVocabulary}
+                    onAddSegment={handleAddSegment}
+                    onImportTranscript={handleImportTranscript}
+                    onDeleteSegment={handleDeleteSegment}
+                    onAutoFetchTranscript={() => handleAutoFetchTranscript(activeLesson.id)}
+                    onUpdateSegmentTranslation={handleUpdateSegmentTranslation}
+                    isFetchingTranscript={isAutoFetchingTranscript}
+                    getCurrentPlayerTime={getCurrentTime}
+                    streak={streakData}
+                    onOpenStreakModal={() => setShowDailyStreakModal(true)}
+                  />
+
+                  {/* Mobile & Tablet Collapsible Sentence List (< lg) */}
+                  <div className="lg:hidden">
+                    <details className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+                      <summary className="p-3.5 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition select-none list-none">
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform duration-200 shrink-0" />
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                            Danh sách câu luyện tập (Practice Sentences)
+                          </h4>
+                          <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md">
+                            {activeLesson.sentences.length} segments
+                          </span>
+                        </div>
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-open:hidden">
+                          Xem tất cả ({activeLesson.sentences.length}) ↓
+                        </span>
+                        <span className="text-xs text-slate-400 group-open:inline hidden">
+                          Thu gọn ↑
+                        </span>
+                      </summary>
+                      <div className="border-t border-slate-100 dark:border-slate-800">
+                        <SentenceList
+                          sentences={activeLesson.sentences}
+                          activeSegmentIndex={activeSegmentIndex}
+                          isPlaying={isPlaying}
+                          onSelectSegment={handleSelectSegment}
+                          savedProgressMap={activeLessonProgress}
+                        />
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              </div>
             </>
           ) : (
             /* Empty state when user has no videos at all */
