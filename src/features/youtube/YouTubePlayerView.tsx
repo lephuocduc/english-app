@@ -14,6 +14,8 @@ import {
   Eye,
   Headphones,
   Sliders,
+  Captions,
+  CaptionsOff,
 } from 'lucide-react'
 import type { SentenceSegment } from '../../types'
 
@@ -24,6 +26,7 @@ interface YouTubePlayerViewProps {
   isPlaying: boolean
   isLooping?: boolean
   isBlindListening?: boolean
+  showSubtitles?: boolean
   playerError: string | null
   currentSpeed: number
   activeSegment: SentenceSegment | null
@@ -31,6 +34,7 @@ interface YouTubePlayerViewProps {
   onTogglePlayPause: () => void
   onToggleLoop?: () => void
   onToggleBlindListening?: () => void
+  onToggleSubtitles?: () => void
   onReloadPlayer?: () => void
   onChangeSpeed: (speed: number) => void
   onPreviousSegment?: () => void
@@ -48,6 +52,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   isPlaying,
   isLooping = false,
   isBlindListening = false,
+  showSubtitles = false,
   playerError,
   currentSpeed,
   activeSegment,
@@ -55,6 +60,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   onTogglePlayPause,
   onToggleLoop,
   onToggleBlindListening,
+  onToggleSubtitles,
   onReloadPlayer,
   onChangeSpeed,
   onPreviousSegment,
@@ -200,6 +206,11 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 <EyeOff className="w-2.5 h-2.5" /> Blind Mode
               </span>
             )}
+            {showSubtitles && (
+              <span className="shrink-0 hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap">
+                <Captions className="w-2.5 h-2.5" /> CC On
+              </span>
+            )}
           </div>
 
           {/* Stepper: Previous / Next Sentence Button Group */}
@@ -315,6 +326,32 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
               >
                 <EyeOff className={`w-3.5 h-3.5 shrink-0 ${isBlindListening ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span>Blind Mode</span>
+              </button>
+            )}
+
+            {/* Subtitles (CC) Toggle */}
+            {onToggleSubtitles && (
+              <button
+                type="button"
+                onClick={onToggleSubtitles}
+                title={
+                  showSubtitles
+                    ? 'Tắt phụ đề video (Subtitles Off - Alt + C)'
+                    : 'Bật phụ đề video (Subtitles On - Alt + C)'
+                }
+                aria-label="Toggle YouTube subtitles"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
+                  showSubtitles
+                    ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
+                }`}
+              >
+                {showSubtitles ? (
+                  <Captions className="w-3.5 h-3.5 shrink-0 text-white" />
+                ) : (
+                  <CaptionsOff className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                )}
+                <span>Subtitles{showSubtitles ? ' (On)' : ' (Off)'}</span>
               </button>
             )}
 

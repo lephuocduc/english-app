@@ -4,6 +4,7 @@ export interface YouTubePlayerHookOptions {
   containerId: string
   videoId: string
   initialSpeed?: number
+  showSubtitles?: boolean
   onSegmentEnd?: () => void
   onStateChange?: (state: number) => void
   onError?: (errorMessage: string) => void
@@ -112,6 +113,7 @@ export function useYouTubePlayer({
   containerId,
   videoId,
   initialSpeed = 1.0,
+  showSubtitles: initialShowSubtitles = false,
   onSegmentEnd,
   onStateChange,
   onError,
@@ -124,6 +126,57 @@ export function useYouTubePlayer({
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
   const [isLooping, setIsLooping] = useState<boolean>(false)
   const isLoopingRef = useRef<boolean>(false)
+
+  const [showSubtitles, setShowSubtitles] = useState<boolean>(initialShowSubtitles ?? false)
+  const showSubtitlesRef = useRef<boolean>(showSubtitles)
+
+  // Subtitle / Closed captions control helper
+  const applyCaptionsState = useCallback((enabled: boolean) => {
+    const player = playerRef.current
+    if (!player) return
+    try {
+      if (enabled) {
+        if (typeof player.loadModule === 'function') {
+          player.loadModule('captions')
+          player.loadModule('cc')
+        }
+        if (typeof player.setOption === 'function') {
+          player.setOption('captions', 'track', { languageCode: 'en' })
+          player.setOption('cc', 'track', { languageCode: 'en' })
+        }
+      } else {
+        if (typeof player.setOption === 'function') {
+          player.setOption('captions', 'track', {})
+          player.setOption('cc', 'track', {})
+        }
+        if (typeof player.unloadModule === 'function') {
+          player.unloadModule('captions')
+          player.unloadModule('cc')
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    if (initialShowSubtitles !== undefined) {
+      setShowSubtitles(initialShowSubtitles)
+    }
+  }, [initialShowSubtitles])
+
+  useEffect(() => {
+    showSubtitlesRef.current = showSubtitles
+    applyCaptionsState(showSubtitles)
+  }, [showSubtitles, applyCaptionsState])
+
+  const toggleSubtitles = useCallback(() => {
+    setShowSubtitles((prev) => {
+      const next = !prev
+      applyCaptionsState(next)
+      return next
+    })
+  }, [applyCaptionsState])
 
   useEffect(() => {
     isLoopingRef.current = isLooping
@@ -403,8 +456,9 @@ export function useYouTubePlayer({
             enablejsapi: 1,
             origin: window.location.origin,
             fs: 1,
-            cc_load_policy: 1,
-            cc_lang_pref: 'en',
+            cc_load_policy: showSubtitlesRef.current ? 1 : 0,
+            iv_load_policy: 3,
+            ...(showSubtitlesRef.current ? { cc_lang_pref: 'en' } : {}),
           },
           events: {
             onReady: (event: any) => {
@@ -420,6 +474,9 @@ export function useYouTubePlayer({
                 // ignore
               }
 
+              // Ensure captions match preference (off by default to avoid spoiling dictation answers)
+              applyCaptionsState(showSubtitlesRef.current)
+
               // If a playSegment was requested while player was initializing, trigger it now
               if (pendingSegmentRef.current) {
                 const pending = pendingSegmentRef.current
@@ -434,6 +491,15 @@ export function useYouTubePlayer({
 
               if (window.YT && state === window.YT.PlayerState.PLAYING) {
                 setIsPlaying(true)
+                // When starting playback, ensure YouTube did not auto-display captions if turned off
+                if (!showSubtitlesRef.current) {
+                  applyCaptionsState(false)
+                  window.setTimeout(() => {
+                    if (!showSubtitlesRef.current) {
+                      applyCaptionsState(false)
+                    }
+                  }, 150)
+                }
               } else {
                 setIsPlaying(false)
               }
@@ -504,6 +570,9 @@ export function useYouTubePlayer({
     isLooping,
     setIsLooping,
     toggleLoop,
+    showSubtitles,
+    setShowSubtitles,
+    toggleSubtitles,
     reloadPlayer,
     playSegment,
     pauseSegment,

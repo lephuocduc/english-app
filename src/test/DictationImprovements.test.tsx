@@ -674,6 +674,64 @@ describe('ListenFlow Improvement Requirements', () => {
         expect.stringContaining('Failed to load YouTube IFrame API')
       )
     })
+
+    it('disables closed captions by default and supports programmatic toggle', async () => {
+      vi.useFakeTimers()
+      let capturedOpts: any = null
+      const mockPlayerInstance = {
+        seekTo: vi.fn(),
+        playVideo: vi.fn(),
+        pauseVideo: vi.fn(),
+        getCurrentTime: vi.fn(() => 0),
+        setPlaybackRate: vi.fn(),
+        setOption: vi.fn(),
+        unloadModule: vi.fn(),
+        loadModule: vi.fn(),
+        destroy: vi.fn(),
+      }
+
+      window.YT!.Player = class {
+        constructor(_id: any, opts: any) {
+          capturedOpts = opts
+          Object.assign(this, mockPlayerInstance)
+          setTimeout(() => {
+            opts.events?.onReady?.({ target: this })
+          }, 0)
+        }
+      } as any
+
+      const container = document.createElement('div')
+      container.id = 'cc-player'
+      document.body.appendChild(container)
+
+      const { result } = renderHook(() =>
+        useYouTubePlayer({
+          containerId: 'cc-player',
+          videoId: 'test-cc-vid',
+        })
+      )
+
+      await act(async () => {
+        await Promise.resolve()
+        vi.advanceTimersByTime(20)
+      })
+
+      // cc_load_policy must be 0 by default to prevent YouTube from forcing captions on
+      expect(capturedOpts.playerVars.cc_load_policy).toBe(0)
+      expect(capturedOpts.playerVars.cc_lang_pref).toBeUndefined()
+      expect(result.current.showSubtitles).toBe(false)
+      expect(mockPlayerInstance.setOption).toHaveBeenCalledWith('captions', 'track', {})
+      expect(mockPlayerInstance.unloadModule).toHaveBeenCalledWith('captions')
+
+      // Toggle captions ON
+      act(() => {
+        result.current.toggleSubtitles()
+      })
+
+      expect(result.current.showSubtitles).toBe(true)
+      expect(mockPlayerInstance.loadModule).toHaveBeenCalledWith('captions')
+      expect(mockPlayerInstance.setOption).toHaveBeenCalledWith('captions', 'track', { languageCode: 'en' })
+    })
   })
 })
 

@@ -41,6 +41,14 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
       description: 'Toggle video curtain (Blind Listening Mode)',
     },
     {
+      keys: ['Alt', 'C'],
+      description: 'Toggle YouTube closed captions / subtitles',
+    },
+    {
+      keys: ['Alt', 'J'],
+      description: 'Jump to next uncompleted sentence',
+    },
+    {
       keys: ['Alt', 'A'],
       description: 'Show / hide answer transcript & translation',
     },

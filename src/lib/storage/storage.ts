@@ -77,6 +77,7 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   isDarkMode: false,
   isBlindListening: false,
   isFocusMode: false,
+  showSubtitles: false,
 }
 
 /**

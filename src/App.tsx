@@ -158,6 +158,22 @@ export function App() {
       return next
     })
   }, [])
+
+  const [showSubtitles, setShowSubtitles] = useState<boolean>(
+    () => preferences.showSubtitles ?? false
+  )
+
+  const toggleSubtitles = useCallback(() => {
+    setShowSubtitles((prev) => {
+      const next = !prev
+      setPreferences((currentPrefs) => {
+        const updated = { ...currentPrefs, showSubtitles: next }
+        storage.savePreferences(updated)
+        return updated
+      })
+      return next
+    })
+  }, [])
   const [allLessonsProgress, setAllLessonsProgress] = useState<
     Record<string, UserLessonProgress>
   >(() => {
@@ -362,6 +378,7 @@ export function App() {
     containerId: 'listenflow-youtube-player-frame',
     videoId: activeLesson ? activeLesson.videoId : '',
     initialSpeed: preferences.playbackSpeed,
+    showSubtitles,
     onVideoMetadata: (meta) => {
       if (meta?.title && activeLesson) {
         updateVideoTitle(activeLesson.videoId, meta.title)
@@ -941,6 +958,14 @@ export function App() {
         return
       }
 
+      // Alt + C: toggle YouTube subtitles / closed captions
+      if (e.altKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault()
+        if (e.repeat) return
+        toggleSubtitles()
+        return
+      }
+
       // Alt + J: Jump to next uncompleted sentence
       if (e.altKey && e.key.toLowerCase() === 'j') {
         e.preventDefault()
@@ -1224,6 +1249,7 @@ export function App() {
                     isPlaying={isPlaying}
                     isLooping={isLooping}
                     isBlindListening={isBlindListening}
+                    showSubtitles={showSubtitles}
                     playerError={playerError}
                     currentSpeed={playbackRate}
                     activeSegment={activeSegment || null}
@@ -1237,6 +1263,7 @@ export function App() {
                     onTogglePlayPause={togglePlayPause}
                     onToggleLoop={toggleLoop}
                     onToggleBlindListening={toggleBlindListening}
+                    onToggleSubtitles={toggleSubtitles}
                     onReloadPlayer={reloadPlayer}
                     onSwitchVideo={() => setActiveTab('lessons')}
                     onChangeSpeed={handleSpeedChange}
@@ -1469,6 +1496,22 @@ export function App() {
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+B</kbd>
               <span className="hidden sm:inline">Blind Mode{isBlindListening ? ' ✓' : ''}</span>
+            </button>
+
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
+
+            {/* Subtitles (CC) */}
+            <button
+              type="button"
+              onClick={toggleSubtitles}
+              title="Toggle YouTube Subtitles (Alt+C)"
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${showSubtitles
+                  ? 'text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/60'
+                  : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400'
+                }`}
+            >
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+C</kbd>
+              <span className="hidden sm:inline">Subtitles{showSubtitles ? ' ✓' : ' (Tắt)'}</span>
             </button>
 
             <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
