@@ -206,6 +206,35 @@ describe('ListenFlow Integration & UI Tests', () => {
     ).toBeInTheDocument()
   })
 
+  it('opens confirmation modal and allows deleting a video from library', () => {
+    render(<App />)
+
+    const videosTabBtn = screen.getAllByText('My Videos')[0]
+    fireEvent.click(videosTabBtn)
+
+    const deleteBtn = screen.getByTitle('Delete video from library')
+    fireEvent.click(deleteBtn)
+
+    // Modal appears
+    const modal = screen.getByRole('dialog')
+    expect(within(modal).getByText('Xóa video khỏi thư viện?')).toBeInTheDocument()
+    expect(within(modal).getByText(/Steve Jobs: Connecting the Dots/i)).toBeInTheDocument()
+
+    // Cancel deletion
+    const cancelBtn = within(modal).getByRole('button', { name: /Hủy/i })
+    fireEvent.click(cancelBtn)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // Confirm deletion
+    fireEvent.click(deleteBtn)
+    const modalAgain = screen.getByRole('dialog')
+    const confirmBtn = within(modalAgain).getByRole('button', { name: /Xóa video này/i })
+    fireEvent.click(confirmBtn)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByText('Steve Jobs: Connecting the Dots (Stanford 2005)')).not.toBeInTheDocument()
+  })
+
   it('handles invalid custom YouTube URL with a clear error in import form', () => {
     render(<App />)
 

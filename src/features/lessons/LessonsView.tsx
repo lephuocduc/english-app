@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   CheckCircle2,
   Clock,
@@ -29,6 +29,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
   onDeleteVideo,
   allProgressMap,
 }) => {
+  const [videoToDelete, setVideoToDelete] = useState<Lesson | null>(null)
   return (
     <div className="space-y-8">
       {/* Intro banner */}
@@ -159,12 +160,8 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       {onDeleteVideo && (
                         <button
                           type="button"
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete "${lesson.title}" from your library?`)) {
-                              onDeleteVideo(lesson.id)
-                            }
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                          onClick={() => setVideoToDelete(lesson)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition cursor-pointer"
                           title="Delete video from library"
                           aria-label="Delete video"
                         >
@@ -200,6 +197,62 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Video Confirmation Modal */}
+      {videoToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-video-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+        >
+          <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 id="delete-video-title" className="text-sm font-bold text-slate-900 dark:text-white">
+                  Xóa video khỏi thư viện?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                  <strong className="text-slate-900 dark:text-white">&ldquo;{videoToDelete.title}&rdquo;</strong>
+                </p>
+                <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                  ID: {videoToDelete.videoId}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+              ⚠️ Toàn bộ phân đoạn câu và tiến trình luyện tập của video này sẽ bị xóa khỏi máy và Cloudflare D1.
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setVideoToDelete(null)}
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeleteVideo) {
+                    onDeleteVideo(videoToDelete.id)
+                  }
+                  setVideoToDelete(null)
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Xóa video này</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

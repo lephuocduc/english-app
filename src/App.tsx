@@ -656,6 +656,7 @@ export function App() {
   const handleDeleteVideo = (videoIdOrId: string) => {
     const updated = storage.deleteVideo(videoIdOrId)
     setVideosList(updated)
+    apiClient.deleteLesson(videoIdOrId).catch(() => { })
 
     if (activeLessonId === videoIdOrId || activeLesson?.videoId === videoIdOrId) {
       if (updated.length > 0) {

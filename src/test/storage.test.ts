@@ -72,8 +72,8 @@ describe('Local Storage Persistence', () => {
     expect(storage.loadVideos()).toBeNull()
 
     const video = {
-      id: 'video-123',
-      videoId: '12345678901',
+      id: 'test-local-video-1',
+      videoId: 'testlocal001',
       title: 'Test YouTube Video',
       sentences: [
         { id: 'seg-1', startTime: 0, endTime: 5, text: 'Hello world' }
@@ -87,24 +87,24 @@ describe('Local Storage Persistence', () => {
 
     // Add another video
     storage.addVideo({
-      id: 'video-test-2',
-      videoId: 'vid12345678',
+      id: 'test-local-video-2',
+      videoId: 'testlocal002',
       title: 'Second Video',
       sentences: []
     })
     expect(storage.loadVideos()).toHaveLength(2)
 
     // Update segments
-    storage.updateVideoSegments('video-test-2', [
+    storage.updateVideoSegments('test-local-video-2', [
       { id: 'seg-new', startTime: 10, endTime: 15, text: 'New segment' }
     ])
     const updated = storage.loadVideos()
-    expect(updated?.find((v) => v.id === 'video-test-2')?.sentences).toHaveLength(1)
+    expect(updated?.find((v) => v.id === 'test-local-video-2')?.sentences).toHaveLength(1)
 
     // Delete video
-    storage.deleteVideo('video-123')
+    storage.deleteVideo('test-local-video-1')
     expect(storage.loadVideos()).toHaveLength(1)
-    expect(storage.loadVideos()?.[0].id).toBe('video-test-2')
+    expect(storage.loadVideos()?.[0].id).toBe('test-local-video-2')
   })
 
   it('syncWithCloud does not resurrect deleted vocabulary words from cloud', async () => {

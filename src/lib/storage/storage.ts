@@ -20,13 +20,25 @@ const STORAGE_KEYS = {
   ACTIVE_LESSON_ID: 'listenflow_active_lesson_id_v1',
   VIDEOS: 'listenflow_youtube_videos_v2',
   STREAK: 'listenflow_daily_streak_v1',
+  DELETED_VIDEOS: 'listenflow_deleted_videos_v1',
 }
 
 // In-memory vocabulary storage (100% Cloud-First architecture: Cloudflare D1 is the sole source of truth)
 let memoryVocabulary: VocabularyItem[] = []
 const memoryDeletedVocab = new Set<string>()
 
-export const DUMMY_TEST_IDS = new Set(['abcdefghijk', 'lesson-test', 'video-456'])
+export const DUMMY_TEST_IDS = new Set([
+  'abcdefghijk',
+  'lesson-test',
+  'video-456',
+  'vid12345678',
+  'video-test-2',
+  'video-123',
+  'sWGGuVp6DkQ',
+  'sWG6uVp6DkQ',
+  'video-sWGGuVp6DkQ',
+  'video-sWG6uVp6DkQ',
+])
 
 // Automatically purge legacy localStorage keys and dummy test video IDs
 if (typeof window !== 'undefined' && window.localStorage) {
@@ -451,6 +463,21 @@ export const storage = {
     return updated
   },
 
+  loadDeletedVideos(): Set<string> {
+    const raw = safeGetItem<string[]>(
+      STORAGE_KEYS.DELETED_VIDEOS,
+      (val): val is string[] => Array.isArray(val)
+    )
+    return new Set(Array.isArray(raw) ? raw : [])
+  },
+
+  addDeletedVideo(idOrVideoId: string): void {
+    if (!idOrVideoId) return
+    const current = this.loadDeletedVideos()
+    current.add(idOrVideoId)
+    safeSetItem(STORAGE_KEYS.DELETED_VIDEOS, Array.from(current))
+  },
+
   deleteVideo(videoIdOrId: string): YouTubeVideo[] {
     const current = this.loadVideos() || []
     const toDelete = current.find(
@@ -460,6 +487,11 @@ export const storage = {
       (v) => v.id !== videoIdOrId && v.videoId !== videoIdOrId
     )
     this.saveVideos(updated)
+
+    // Tombstone this video so it is never resurrected by syncWithCloud
+    this.addDeletedVideo(videoIdOrId)
+    if (toDelete?.id) this.addDeletedVideo(toDelete.id)
+    if (toDelete?.videoId) this.addDeletedVideo(toDelete.videoId)
 
     // Mirror to Cloudflare D1 API in background
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
@@ -508,11 +540,20 @@ export const storage = {
       ])
 
       const local = this.loadVideos() || []
+      const deletedVideos = this.loadDeletedVideos()
       const mergedMap = new Map<string, YouTubeVideo>()
 
-      // 1. Seed with cloud lessons
+      // 1. Seed with cloud lessons (excluding dummy IDs and deleted tombstones)
       for (const cl of cloudLessons) {
-        if (DUMMY_TEST_IDS.has(cl.id) || DUMMY_TEST_IDS.has(cl.videoId)) continue
+        if (
+          DUMMY_TEST_IDS.has(cl.id) ||
+          DUMMY_TEST_IDS.has(cl.videoId) ||
+          deletedVideos.has(cl.id) ||
+          deletedVideos.has(cl.videoId)
+        ) {
+          apiClient.deleteLesson(cl.id).catch(() => { })
+          continue
+        }
         mergedMap.set(cl.id, {
           ...cl,
           sentences: Array.isArray(cl.sentences) ? cl.sentences : [],
