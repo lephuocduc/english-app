@@ -41,7 +41,10 @@ interface DictationStudioProps {
   activeSegmentIndex: number
   isPlayerReady: boolean
   isLooping?: boolean
+  hasLeadIn?: boolean
   onToggleLoop?: () => void
+  onToggleLeadIn?: () => void
+  onPlayPreviousSegment?: () => void
   onSelectSegment: (index: number) => void
   onReplaySegment: () => void
   onSaveProgress: (progress: UserSentenceProgress) => void
@@ -69,7 +72,10 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   activeSegmentIndex,
   isPlayerReady: _isPlayerReady,
   isLooping = false,
+  hasLeadIn = true,
   onToggleLoop,
+  onToggleLeadIn,
+  onPlayPreviousSegment,
   onSelectSegment,
   onReplaySegment,
   onSaveProgress,
@@ -99,6 +105,39 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   const [selectedWordToBookmark, setSelectedWordToBookmark] = useState<string | null>(null)
   const [bookmarkSuccess, setBookmarkSuccess] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Previous sentence context state
+  const previousSegment: SentenceSegment | null =
+    activeSegmentIndex > 0 && lesson?.sentences ? lesson.sentences[activeSegmentIndex - 1] : null
+  const [isPrevContextCollapsed, setIsPrevContextCollapsed] = useState(false)
+  const [prevTranslation, setPrevTranslation] = useState<string>(
+    () => previousSegment?.translation || ''
+  )
+
+  useEffect(() => {
+    if (!previousSegment) {
+      setPrevTranslation('')
+      return
+    }
+    if (previousSegment.translation) {
+      setPrevTranslation(previousSegment.translation)
+      return
+    }
+    let active = true
+    translateToVietnamese(previousSegment.text)
+      .then((trans) => {
+        if (active && trans) {
+          setPrevTranslation(trans)
+          if (onUpdateSegmentTranslation) {
+            onUpdateSegmentTranslation(previousSegment.id, trans)
+          }
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [previousSegment?.id, previousSegment?.text, previousSegment?.translation, onUpdateSegmentTranslation])
 
   // Translation states for active sentence and vocabulary
   const [segmentTranslation, setSegmentTranslation] = useState<string>(
@@ -944,6 +983,61 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
           return (
             <>
+              {/* Previous Sentence Context Card (Helps understand & predict current sentence flow) */}
+              {previousSegment && (
+                <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3 sm:p-3.5 shadow-2xs transition-all space-y-1.5 mb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Câu trước đó (Context #{activeSegmentIndex}):</span>
+                      </span>
+                      {savedProgressMap[previousSegment.id]?.completed && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/60">
+                          <Check className="w-2.5 h-2.5" /> Đã nghe
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {onPlayPreviousSegment && (
+                        <button
+                          type="button"
+                          onClick={onPlayPreviousSegment}
+                          title={`Nghe lại câu trước (#${activeSegmentIndex})`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition border border-transparent hover:border-slate-200 dark:hover:border-slate-700 cursor-pointer"
+                        >
+                          <Volume2 className="w-3 h-3 text-indigo-500" />
+                          <span className="hidden sm:inline">Nghe câu trước</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsPrevContextCollapsed((v) => !v)}
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md transition"
+                        title={isPrevContextCollapsed ? 'Mở rộng ngữ cảnh' : 'Thu gọn ngữ cảnh'}
+                        aria-label="Toggle previous context"
+                      >
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isPrevContextCollapsed ? '' : 'rotate-90'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {!isPrevContextCollapsed && (
+                    <div className="space-y-1 text-xs animate-fade-in pl-1">
+                      <p className="text-slate-800 dark:text-slate-200 font-medium italic select-text leading-relaxed border-l-2 border-indigo-400 dark:border-indigo-500 pl-2.5">
+                        &ldquo;{previousSegment.text}&rdquo;
+                      </p>
+                      {(previousSegment.translation || prevTranslation) && (
+                        <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed pl-2.5">
+                          🇻🇳 {previousSegment.translation || prevTranslation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Sleek Dictation Input Header */}
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -994,6 +1088,25 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       >
                         <Repeat className={`w-3 h-3 ${isLooping ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                         <span>Loop{isLooping ? ': On' : ''}</span>
+                      </button>
+                    )}
+                    {onToggleLeadIn && (
+                      <button
+                        type="button"
+                        onClick={onToggleLeadIn}
+                        title={
+                          hasLeadIn
+                            ? 'Tắt nghe đệm 1s từ câu trước (Alt + P)'
+                            : 'Bật nghe đệm 1s từ câu trước để liền mạch phát âm (Alt + P)'
+                        }
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1 ${
+                          hasLeadIn
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600'
+                            : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <Volume2 className={`w-3 h-3 ${hasLeadIn ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span>+1s Đệm{hasLeadIn ? ': Bật' : ''}</span>
                       </button>
                     )}
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline-flex items-center gap-1.5 ml-1">

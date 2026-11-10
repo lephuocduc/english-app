@@ -187,10 +187,10 @@ export function useYouTubePlayer({
   }, [])
 
   // Track active segment boundary
-  const segmentBoundsRef = useRef<{ start: number; end: number; isSegmentPlay: boolean } | null>(null)
+  const segmentBoundsRef = useRef<{ start: number; end: number; isSegmentPlay: boolean; leadIn?: number } | null>(null)
   const segmentWatchTimerRef = useRef<number | null>(null)
   const hasSettledRef = useRef(false)
-  const pendingSegmentRef = useRef<{ start: number; end: number } | null>(null)
+  const pendingSegmentRef = useRef<{ start: number; end: number; leadIn?: number } | null>(null)
 
   // Clear monitoring loop
   const stopSegmentWatcher = useCallback(() => {
@@ -267,21 +267,23 @@ export function useYouTubePlayer({
 
   // Playback control functions
   const playSegment = useCallback(
-    (startTime: number, endTime: number) => {
+    (startTime: number, endTime: number, leadInSeconds = 0) => {
       const player = playerRef.current
       if (!player || typeof player.seekTo !== 'function') {
         // Player not ready yet; save in pending ref for onReady execution
-        pendingSegmentRef.current = { start: startTime, end: endTime }
+        pendingSegmentRef.current = { start: startTime, end: endTime, leadIn: leadInSeconds }
         return
       }
 
-      segmentBoundsRef.current = { start: startTime, end: endTime, isSegmentPlay: true }
+      segmentBoundsRef.current = { start: startTime, end: endTime, isSegmentPlay: true, leadIn: leadInSeconds }
       pendingSegmentRef.current = null
 
+      const actualStart = Math.max(0, startTime - leadInSeconds)
+
       try {
-        player.seekTo(startTime, true)
+        player.seekTo(actualStart, true)
         player.playVideo()
-        startSegmentWatcher(startTime, endTime, false)
+        startSegmentWatcher(actualStart, endTime, false)
       } catch (err) {
         console.warn('Error during playSegment:', err)
       }
@@ -291,7 +293,7 @@ export function useYouTubePlayer({
 
   const replaySegment = useCallback(() => {
     if (segmentBoundsRef.current) {
-      playSegment(segmentBoundsRef.current.start, segmentBoundsRef.current.end)
+      playSegment(segmentBoundsRef.current.start, segmentBoundsRef.current.end, segmentBoundsRef.current.leadIn || 0)
     }
   }, [playSegment])
 
@@ -319,13 +321,14 @@ export function useYouTubePlayer({
 
       // If we have an active segment boundary, resume watching it so it stops at endTime
       if (segmentBoundsRef.current) {
-        const { start, end } = segmentBoundsRef.current
+        const { start, end, leadIn } = segmentBoundsRef.current
+        const actualStart = Math.max(0, start - (leadIn || 0))
         const currentTime = typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : start
         if (currentTime < end - 0.05) {
-          startSegmentWatcher(start, end, true)
+          startSegmentWatcher(actualStart, end, true)
         } else {
           // If already past endTime, restart segment from beginning
-          playSegment(start, end)
+          playSegment(start, end, leadIn || 0)
         }
       }
     } catch {
@@ -481,7 +484,7 @@ export function useYouTubePlayer({
               if (pendingSegmentRef.current) {
                 const pending = pendingSegmentRef.current
                 pendingSegmentRef.current = null
-                playSegment(pending.start, pending.end)
+                playSegment(pending.start, pending.end, pending.leadIn || 0)
               }
             },
             onStateChange: (event: any) => {

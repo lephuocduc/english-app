@@ -27,6 +27,7 @@ interface YouTubePlayerViewProps {
   isLooping?: boolean
   isBlindListening?: boolean
   showSubtitles?: boolean
+  hasLeadIn?: boolean
   playerError: string | null
   currentSpeed: number
   activeSegment: SentenceSegment | null
@@ -35,6 +36,7 @@ interface YouTubePlayerViewProps {
   onToggleLoop?: () => void
   onToggleBlindListening?: () => void
   onToggleSubtitles?: () => void
+  onToggleLeadIn?: () => void
   onReloadPlayer?: () => void
   onChangeSpeed: (speed: number) => void
   onPreviousSegment?: () => void
@@ -53,6 +55,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   isLooping = false,
   isBlindListening = false,
   showSubtitles = false,
+  hasLeadIn = true,
   playerError,
   currentSpeed,
   activeSegment,
@@ -61,6 +64,7 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
   onToggleLoop,
   onToggleBlindListening,
   onToggleSubtitles,
+  onToggleLeadIn,
   onReloadPlayer,
   onChangeSpeed,
   onPreviousSegment,
@@ -211,6 +215,11 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                 <Captions className="w-2.5 h-2.5" /> CC On
               </span>
             )}
+            {hasLeadIn && (
+              <span className="shrink-0 hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200/60 dark:border-indigo-800/60 whitespace-nowrap">
+                +1s Lead-in
+              </span>
+            )}
           </div>
 
           {/* Stepper: Previous / Next Sentence Button Group */}
@@ -352,6 +361,28 @@ export const YouTubePlayerView: React.FC<YouTubePlayerViewProps> = ({
                   <CaptionsOff className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
                 )}
                 <span>Subtitles{showSubtitles ? ' (On)' : ' (Off)'}</span>
+              </button>
+            )}
+
+            {/* 1s Lead-in Context Toggle */}
+            {onToggleLeadIn && (
+              <button
+                type="button"
+                onClick={onToggleLeadIn}
+                title={
+                  hasLeadIn
+                    ? 'Tắt nghe đệm 1s từ câu trước (Alt + P)'
+                    : 'Bật nghe đệm 1s từ câu trước để liền mạch phát âm (Alt + P)'
+                }
+                aria-label="Toggle 1-second audio lead-in"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
+                  hasLeadIn
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
+                }`}
+              >
+                <Volume2 className={`w-3.5 h-3.5 shrink-0 ${hasLeadIn ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>+1s Lead-in{hasLeadIn ? ' (On)' : ''}</span>
               </button>
             )}
 

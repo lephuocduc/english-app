@@ -85,6 +85,7 @@ export interface StudyPreferences {
   isBlindListening?: boolean
   isFocusMode?: boolean
   showSubtitles?: boolean
+  hasAudioLeadIn?: boolean
 }
 
 export type SRSRating = 1 | 2 | 3 | 4 // 1: Again, 2: Hard, 3: Good, 4: Easy

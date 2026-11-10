@@ -45,6 +45,10 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
       description: 'Toggle YouTube closed captions / subtitles',
     },
     {
+      keys: ['Alt', 'P'],
+      description: 'Toggle 1-second audio lead-in (Nghe đệm 1s câu trước)',
+    },
+    {
       keys: ['Alt', 'J'],
       description: 'Jump to next uncompleted sentence',
     },

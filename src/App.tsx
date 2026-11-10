@@ -174,6 +174,24 @@ export function App() {
       return next
     })
   }, [])
+
+  // 1-second pre-roll audio lead-in state for smooth sentence transitions
+  const [hasAudioLeadIn, setHasAudioLeadIn] = useState<boolean>(() => {
+    const saved = preferences.hasAudioLeadIn
+    return saved !== undefined ? saved : true
+  })
+
+  const toggleAudioLeadIn = useCallback(() => {
+    setHasAudioLeadIn((prev) => {
+      const next = !prev
+      setPreferences((currentPrefs) => {
+        const updated = { ...currentPrefs, hasAudioLeadIn: next }
+        storage.savePreferences(updated)
+        return updated
+      })
+      return next
+    })
+  }, [])
   const [allLessonsProgress, setAllLessonsProgress] = useState<
     Record<string, UserLessonProgress>
   >(() => {
@@ -403,7 +421,7 @@ export function App() {
     }
   }, [activeLesson?.videoId, activeLesson?.title, updateVideoTitle])
 
-  // Set active segment and auto-seek player to start time
+  // Set active segment and auto-seek player to start time with optional 1s lead-in
   const handleSelectSegment = useCallback(
     (index: number) => {
       if (activeLesson && index >= 0 && index < activeLesson.sentences.length) {
@@ -411,19 +429,31 @@ export function App() {
         setActiveSegmentIndex(index)
         const seg = activeLesson.sentences[index]
         if (seg && isPlayerReady) {
-          playSegment(seg.startTime, seg.endTime)
+          const leadIn = hasAudioLeadIn && index > 0 ? 1.0 : 0
+          playSegment(seg.startTime, seg.endTime, leadIn)
         }
       }
     },
-    [activeLesson, isPlayerReady, playSegment]
+    [activeLesson, isPlayerReady, playSegment, hasAudioLeadIn]
   )
 
-  // Replay current segment
+  // Replay current segment with optional 1s lead-in
   const handleReplayCurrent = useCallback(() => {
     if (activeSegment && isPlayerReady) {
-      playSegment(activeSegment.startTime, activeSegment.endTime)
+      const leadIn = hasAudioLeadIn && activeSegmentIndex > 0 ? 1.0 : 0
+      playSegment(activeSegment.startTime, activeSegment.endTime, leadIn)
     }
-  }, [activeSegment, isPlayerReady, playSegment])
+  }, [activeSegment, isPlayerReady, playSegment, hasAudioLeadIn, activeSegmentIndex])
+
+  // Play previous segment explicitly for context comparison
+  const handlePlayPreviousSegment = useCallback(() => {
+    if (activeLesson && activeSegmentIndex > 0 && isPlayerReady) {
+      const prevSeg = activeLesson.sentences[activeSegmentIndex - 1]
+      if (prevSeg) {
+        playSegment(prevSeg.startTime, prevSeg.endTime, 0)
+      }
+    }
+  }, [activeLesson, activeSegmentIndex, isPlayerReady, playSegment])
 
   // Select another video and automatically resume to the next uncompleted sentence
   const handleSelectLesson = (lessonId: string) => {
@@ -966,6 +996,14 @@ export function App() {
         return
       }
 
+      // Alt + P: toggle 1-second audio lead-in context
+      if (e.altKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault()
+        if (e.repeat) return
+        toggleAudioLeadIn()
+        return
+      }
+
       // Alt + J: Jump to next uncompleted sentence
       if (e.altKey && e.key.toLowerCase() === 'j') {
         e.preventDefault()
@@ -1250,6 +1288,7 @@ export function App() {
                     isLooping={isLooping}
                     isBlindListening={isBlindListening}
                     showSubtitles={showSubtitles}
+                    hasLeadIn={hasAudioLeadIn}
                     playerError={playerError}
                     currentSpeed={playbackRate}
                     activeSegment={activeSegment || null}
@@ -1264,6 +1303,7 @@ export function App() {
                     onToggleLoop={toggleLoop}
                     onToggleBlindListening={toggleBlindListening}
                     onToggleSubtitles={toggleSubtitles}
+                    onToggleLeadIn={toggleAudioLeadIn}
                     onReloadPlayer={reloadPlayer}
                     onSwitchVideo={() => setActiveTab('lessons')}
                     onChangeSpeed={handleSpeedChange}
@@ -1306,7 +1346,10 @@ export function App() {
                     activeSegmentIndex={activeSegmentIndex}
                     isPlayerReady={isPlayerReady}
                     isLooping={isLooping}
+                    hasLeadIn={hasAudioLeadIn}
                     onToggleLoop={toggleLoop}
+                    onToggleLeadIn={toggleAudioLeadIn}
+                    onPlayPreviousSegment={handlePlayPreviousSegment}
                     onSelectSegment={handleSelectSegment}
                     onReplaySegment={handleReplayCurrent}
                     onSaveProgress={handleSaveSentenceProgress}
