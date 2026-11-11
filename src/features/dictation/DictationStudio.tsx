@@ -226,6 +226,27 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
     const result = scoreDictation(currentSegment.text, userInput)
     setScoreResult(result)
+    setIsRevealed(true)
+
+    // Automatically translate sentence if no translation exists yet
+    if (!segmentTranslation && !currentSegment.translation) {
+      setIsTranslatingSegment(true)
+      translateToVietnamese(currentSegment.text)
+        .then((trans) => {
+          if (trans) {
+            setSegmentTranslation(trans)
+            if (onUpdateSegmentTranslation) {
+              onUpdateSegmentTranslation(currentSegment.id, trans)
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Auto translation error:', err)
+        })
+        .finally(() => {
+          setIsTranslatingSegment(false)
+        })
+    }
 
     if (result.score === 100) {
       try {
@@ -244,7 +265,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       sentenceId: currentSegment.id,
       userInput,
       score: result.score,
-      isRevealed,
+      isRevealed: true,
       attempts: previousAttempts + 1,
       completed: result.score >= 80,
       lastAttemptAt: new Date().toISOString(),

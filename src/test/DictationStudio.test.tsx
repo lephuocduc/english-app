@@ -56,10 +56,12 @@ describe('DictationStudio Component', () => {
 
     expect(screen.getByText('100%')).toBeInTheDocument()
     expect(screen.getByText('Correct: 20')).toBeInTheDocument()
+    expect(screen.getByText(/Official Transcript:/i)).toBeInTheDocument()
     expect(onSaveProgress).toHaveBeenCalledWith(
       expect.objectContaining({
         score: 100,
         completed: true,
+        isRevealed: true,
       })
     )
   })
