@@ -287,6 +287,36 @@ describe('ListenFlow Integration & UI Tests', () => {
     expect(screen.getByText(/No vocabulary in your notebook yet/i)).toBeInTheDocument()
   })
 
+  it('replaying vocabulary item navigates to practice tab and selects the matching sentence segment', () => {
+    storage.saveVocabulary([
+      {
+        id: 'vocab-test-1',
+        word: 'graduated',
+        meaning: 'tốt nghiệp',
+        contextSentence: 'I never graduated from college.',
+        timestamp: 32,
+        videoId: 'UF8uR6Z6KLc',
+        lessonTitle: 'Steve Jobs',
+        savedAt: new Date().toISOString(),
+      },
+    ])
+
+    render(<App />)
+
+    // Switch to Vocabulary tab
+    const vocabTabBtn = screen.getAllByText('Vocabulary')[0]
+    fireEvent.click(vocabTabBtn)
+
+    expect(screen.getByText('graduated')).toBeInTheDocument()
+
+    // Click Replay button on vocabulary item
+    const replayBtns = screen.getAllByRole('button', { name: /Replay/i })
+    fireEvent.click(replayBtns[replayBtns.length - 1])
+
+    // Should return to Practice tab and jump to Sentence 2 (timestamp 30-36)
+    expect(screen.getByText(/Sentence 2 of 5/i)).toBeInTheDocument()
+  })
+
   it('navigates to Progress tab and displays statistics overview', () => {
     render(<App />)
 

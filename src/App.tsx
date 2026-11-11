@@ -406,6 +406,7 @@ export function App() {
     toggleLoop,
     reloadPlayer,
     playSegment,
+    pauseSegment,
     togglePlayPause,
     seekTo,
     changeSpeed,
@@ -421,6 +422,24 @@ export function App() {
       }
     },
   })
+
+  // Pause video whenever switching away from practice tab
+  useEffect(() => {
+    if (activeTab !== 'practice' && isPlaying) {
+      pauseSegment()
+    }
+  }, [activeTab, isPlaying, pauseSegment])
+
+  // Pause video when browser tab is hidden (user switches windows/tabs)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isPlaying) {
+        pauseSegment()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isPlaying, pauseSegment])
 
   // Automatically fetch official title if active video currently has a placeholder title
   useEffect(() => {
@@ -918,15 +937,75 @@ export function App() {
   }
 
   const handleJumpToVocabTimestamp = (videoId: string, timestamp: number) => {
-    const matchingVideo = videosList.find((l) => l.videoId === videoId)
+    const matchingVideo = videosList.find((l) => l.videoId === videoId || l.id === videoId)
     if (matchingVideo) {
+      storage.saveActiveLessonId(matchingVideo.id)
       setActiveLessonId(matchingVideo.id)
+
+      let targetIndex = matchingVideo.sentences.findIndex((s) => {
+        return Math.abs(s.startTime - timestamp) < 0.5 || (timestamp >= s.startTime && timestamp <= s.endTime)
+      })
+      if (targetIndex === -1 && matchingVideo.sentences.length > 0) {
+        let minDiff = Infinity
+        matchingVideo.sentences.forEach((s, idx) => {
+          const diff = Math.abs(s.startTime - timestamp)
+          if (diff < minDiff) {
+            minDiff = diff
+            targetIndex = idx
+          }
+        })
+      }
+      if (targetIndex === -1) targetIndex = 0
+
+      // Ensure sentences up to targetIndex are unlocked so learner can practice/listen
+      const currentProg = allLessonsProgressRef.current[matchingVideo.id]?.sentenceProgress || {}
+      let needsProgressUpdate = false
+      for (let i = 0; i <= targetIndex; i++) {
+        const s = matchingVideo.sentences[i]
+        if (!currentProg[s.id]?.completed && !currentProg[s.id]?.isRevealed) {
+          needsProgressUpdate = true
+          const unlockedProg: UserSentenceProgress = {
+            sentenceId: s.id,
+            userInput: '',
+            score: 100,
+            isRevealed: true,
+            attempts: 1,
+            completed: true,
+            lastAttemptAt: new Date().toISOString(),
+          }
+          storage.saveSentenceProgress(matchingVideo.id, unlockedProg, s.id)
+        }
+      }
+
+      if (needsProgressUpdate) {
+        const updatedLessonProg = storage.loadLessonProgress(matchingVideo.id)
+        if (updatedLessonProg) {
+          setAllLessonsProgress((prev) => ({
+            ...prev,
+            [matchingVideo.id]: updatedLessonProg,
+          }))
+          allLessonsProgressRef.current = {
+            ...allLessonsProgressRef.current,
+            [matchingVideo.id]: updatedLessonProg,
+          }
+        }
+      }
+
+      activeSegmentIndexRef.current = targetIndex
+      setActiveSegmentIndex(targetIndex)
       setActiveTab('practice')
+
+      const targetSeg = matchingVideo.sentences[targetIndex]
+      const startTime = targetSeg ? targetSeg.startTime : timestamp
+      const endTime = targetSeg ? targetSeg.endTime : timestamp + 5
+
+      // Seek & play segment
       setTimeout(() => {
-        seekTo(timestamp)
-      }, 500)
+        playSegment(startTime, endTime, 0)
+      }, 350)
     } else {
       handleImportVideo(videoId)
+      setActiveTab('practice')
       setTimeout(() => {
         seekTo(timestamp)
       }, 500)
