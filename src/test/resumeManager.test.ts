@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getResumeSegmentIndex, isLessonCompleted } from '../lib/dictation/resumeManager'
+import { getResumeSegmentIndex, isLessonCompleted, getMaxUnlockedIndex } from '../lib/dictation/resumeManager'
 import type { Lesson, UserLessonProgress } from '../types'
 
 describe('Dictation Resume Manager', () => {
@@ -107,6 +107,29 @@ describe('Dictation Resume Manager', () => {
 
     expect(isLessonCompleted(mockLesson, progress)).toBe(true)
     expect(getResumeSegmentIndex(mockLesson, progress)).toBe(0) // loops back to 0
+  })
+
+  describe('getMaxUnlockedIndex for sequential listening', () => {
+    it('returns 0 when no sentences completed yet', () => {
+      expect(getMaxUnlockedIndex(mockLesson.sentences, {})).toBe(0)
+      expect(getMaxUnlockedIndex(mockLesson.sentences, null)).toBe(0)
+    })
+
+    it('returns 1 when sentence 0 is completed, locking sentence 2', () => {
+      const progress = {
+        's-1': { sentenceId: 's-1', userInput: '', score: 90, isRevealed: false, attempts: 1, completed: true, lastAttemptAt: '' },
+      }
+      expect(getMaxUnlockedIndex(mockLesson.sentences, progress)).toBe(1)
+    })
+
+    it('returns last index when all sentences completed', () => {
+      const progress = {
+        's-1': { sentenceId: 's-1', userInput: '', score: 100, isRevealed: false, attempts: 1, completed: true, lastAttemptAt: '' },
+        's-2': { sentenceId: 's-2', userInput: '', score: 100, isRevealed: false, attempts: 1, completed: true, lastAttemptAt: '' },
+        's-3': { sentenceId: 's-3', userInput: '', score: 100, isRevealed: false, attempts: 1, completed: true, lastAttemptAt: '' },
+      }
+      expect(getMaxUnlockedIndex(mockLesson.sentences, progress)).toBe(2)
+    })
   })
 })
 

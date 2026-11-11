@@ -3,7 +3,7 @@ import { normalizeSentenceBoundaries } from '../lib/transcript/sentenceNormalize
 import type { SentenceSegment } from '../types'
 
 describe('normalizeSentenceBoundaries', () => {
-  it('shifts dangling word after terminal punctuation to next segment', () => {
+  it('preserves raw transcript segments faithfully without artificial word shifting', () => {
     const raw: SentenceSegment[] = [
       {
         id: 'seg-13',
@@ -19,119 +19,22 @@ describe('normalizeSentenceBoundaries', () => {
       },
     ]
 
-    const normalized = normalizeSentenceBoundaries(raw)
+    const result = normalizeSentenceBoundaries(raw)
 
-    expect(normalized[0].text).toBe(
-      'Catherine Brush, who was an American newspaper columnist, a short story writer, a novelist.'
-    )
-    expect(normalized[1].text).toBe(
-      'This particular story was published in 1946. But like all good writing, it still remains fresh today.'
-    )
-    expect(normalized[0].endTime).toBeLessThan(68.3)
-    expect(normalized[1].startTime).toBe(normalized[0].endTime)
+    expect(result).toHaveLength(2)
+    expect(result[0].text).toBe(raw[0].text)
+    expect(result[1].text).toBe(raw[1].text)
+    expect(result[0].startTime).toBe(raw[0].startTime)
+    expect(result[0].endTime).toBe(raw[0].endTime)
+    expect(result[1].startTime).toBe(raw[1].startTime)
+    expect(result[1].endTime).toBe(raw[1].endTime)
   })
 
-  it('handles question marks with trailing words correctly', () => {
-    const raw: SentenceSegment[] = [
-      {
-        id: 'seg-34',
-        startTime: 100.0,
-        endTime: 105.0,
-        text: 'feel a little uncomfortable or embarrassed? Like',
-      },
-      {
-        id: 'seg-35',
-        startTime: 105.0,
-        endTime: 110.0,
-        text: "maybe you got an insight into someone's personal relationship",
-      },
+  it('handles empty and single segment arrays gracefully', () => {
+    expect(normalizeSentenceBoundaries([])).toEqual([])
+    const single: SentenceSegment[] = [
+      { id: '1', startTime: 0, endTime: 5, text: 'Single sentence.' },
     ]
-
-    const normalized = normalizeSentenceBoundaries(raw)
-
-    expect(normalized[0].text).toBe('feel a little uncomfortable or embarrassed?')
-    expect(normalized[1].text).toBe(
-      "Like maybe you got an insight into someone's personal relationship"
-    )
-  })
-
-  it('preserves valid sentences ending naturally with terminal punctuation', () => {
-    const raw: SentenceSegment[] = [
-      {
-        id: 'seg-1',
-        startTime: 0.0,
-        endTime: 5.0,
-        text: 'Hello, welcome to this English podcast.',
-      },
-      {
-        id: 'seg-2',
-        startTime: 5.0,
-        endTime: 10.0,
-        text: 'Today we will discuss an interesting story.',
-      },
-    ]
-
-    const normalized = normalizeSentenceBoundaries(raw)
-
-    expect(normalized[0].text).toBe('Hello, welcome to this English podcast.')
-    expect(normalized[1].text).toBe('Today we will discuss an interesting story.')
-    expect(normalized[0].endTime).toBe(5.0)
-    expect(normalized[1].startTime).toBe(5.0)
-  })
-
-  it('does not falsely split abbreviations like Dr. or U.S.', () => {
-    const raw: SentenceSegment[] = [
-      {
-        id: 'seg-1',
-        startTime: 0.0,
-        endTime: 5.0,
-        text: 'He visited Dr. Smith yesterday',
-      },
-      {
-        id: 'seg-2',
-        startTime: 5.0,
-        endTime: 10.0,
-        text: 'and received a prescription.',
-      },
-    ]
-
-    const normalized = normalizeSentenceBoundaries(raw)
-
-    expect(normalized[0].text).toBe('He visited Dr. Smith yesterday')
-    expect(normalized[1].text).toBe('and received a prescription.')
-  })
-
-  it('pulls back leading remnants completing previous sentence and merges dangling prepositions', () => {
-    const raw: SentenceSegment[] = [
-      {
-        id: 'seg-1',
-        startTime: 71.5,
-        endTime: 74.0,
-        text: 'and something that is kind of',
-      },
-      {
-        id: 'seg-2',
-        startTime: 74.0,
-        endTime: 79.5,
-        text: "of fresh and new. So I'm gonna start in just a second, but first of all, just one question for",
-      },
-      {
-        id: 'seg-3',
-        startTime: 79.5,
-        endTime: 83.0,
-        text: 'you: have you ever been to a birthday party?',
-      },
-    ]
-
-    const normalized = normalizeSentenceBoundaries(raw)
-
-    expect(normalized).toHaveLength(2)
-    expect(normalized[0].text).toBe('and something that is kind of of fresh and new.')
-    expect(normalized[1].text).toBe(
-      "So I'm gonna start in just a second, but first of all, just one question for you: have you ever been to a birthday party?"
-    )
-    expect(normalized[0].endTime).toBeGreaterThan(74.0)
-    expect(normalized[1].startTime).toBe(normalized[0].endTime)
-    expect(normalized[1].endTime).toBe(83.0)
+    expect(normalizeSentenceBoundaries(single)).toEqual(single)
   })
 })

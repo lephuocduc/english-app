@@ -127,9 +127,9 @@ describe('ListenFlow Integration & UI Tests', () => {
     fireEvent.click(revealBtn)
     expect(screen.getByText(/Official Transcript/i)).toBeInTheDocument()
     expect(
-      screen.getByText(
+      screen.getAllByText(
         'I am honored to be with you today at your commencement from one of the finest universities in the world.'
-      )
+      )[0]
     ).toBeInTheDocument()
 
     // Click to hide
@@ -181,9 +181,17 @@ describe('ListenFlow Integration & UI Tests', () => {
 
     expect(screen.getByText(/Sentence 1 of 5/)).toBeInTheDocument()
 
-    // Click next sentence button
-    const nextBtn = screen.getByTitle('Next sentence')
-    fireEvent.click(nextBtn)
+    // Next button is disabled initially because sentence 1 is not completed (sequential listening)
+    const nextBtns = screen.getAllByTitle(/tuần tự|Next sentence/i)
+    expect(nextBtns[0]).toBeDisabled()
+
+    // Reveal sentence 1 to unlock progression
+    const revealBtn = screen.getByText(/Show Answer/i)
+    fireEvent.click(revealBtn)
+
+    // Now next button is enabled
+    expect(nextBtns[0]).not.toBeDisabled()
+    fireEvent.click(nextBtns[0])
 
     expect(screen.getByText(/Sentence 2 of 5/)).toBeInTheDocument()
 

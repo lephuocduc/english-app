@@ -224,6 +224,27 @@ describe('User Requested Features Tests', () => {
     it('advances exactly 1 segment when pressing Alt + ArrowRight even while focused on dictation textarea', () => {
       storage.saveVideos([multiSegmentLesson])
       storage.saveActiveLessonId(multiSegmentLesson.id)
+      storage.saveSentenceProgress(multiSegmentLesson.id, {
+        sentenceId: 's1',
+        completed: true,
+        score: 100,
+        attempts: 1,
+        userInput: 'First sentence segment.',
+      })
+      storage.saveSentenceProgress(multiSegmentLesson.id, {
+        sentenceId: 's2',
+        completed: true,
+        score: 100,
+        attempts: 1,
+        userInput: 'Second sentence segment.',
+      })
+      storage.saveSentenceProgress(multiSegmentLesson.id, {
+        sentenceId: 's3',
+        completed: true,
+        score: 100,
+        attempts: 1,
+        userInput: 'Third sentence segment.',
+      })
 
       render(<App />)
 

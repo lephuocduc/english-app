@@ -1,4 +1,31 @@
-import type { Lesson, UserLessonProgress } from '../../types'
+import type { Lesson, UserLessonProgress, SentenceSegment, UserSentenceProgress } from '../../types'
+
+/**
+ * Calculates the highest sentence index currently unlocked for sequential study.
+ * Strict sequential listening: you can only listen up to the first uncompleted sentence.
+ * All subsequent sentences remain locked until the current one is completed (score >= 80% or completed).
+ */
+export function getMaxUnlockedIndex(
+  sentences?: SentenceSegment[],
+  sentenceProgress?: Record<string, UserSentenceProgress> | null
+): number {
+  if (!sentences || sentences.length === 0) {
+    return 0
+  }
+  if (!sentenceProgress) {
+    return 0
+  }
+
+  for (let i = 0; i < sentences.length; i++) {
+    const prog = sentenceProgress[sentences[i].id]
+    const isDone = Boolean(prog?.completed || (prog?.score ?? 0) >= 80 || prog?.isRevealed)
+    if (!isDone) {
+      return i
+    }
+  }
+
+  return sentences.length - 1
+}
 
 /**
  * Determines the best sentence index to resume practice on for a given lesson.

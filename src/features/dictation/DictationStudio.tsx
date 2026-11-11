@@ -21,6 +21,7 @@ import {
   Clipboard,
   Compass,
   MoreVertical,
+  Lock,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import type {
@@ -35,6 +36,7 @@ import { parseUniversalTranscript } from '../../lib/transcript/transcriptParser'
 import { TranscriptImportModal } from '../transcript/TranscriptImportModal'
 import { apiClient } from '../../lib/api/client'
 import { translateToVietnamese, cleanWord } from '../../lib/translation/translator'
+import { getMaxUnlockedIndex } from '../../lib/dictation/resumeManager'
 
 interface DictationStudioProps {
   lesson: Lesson
@@ -42,6 +44,7 @@ interface DictationStudioProps {
   isPlayerReady: boolean
   isLooping?: boolean
   hasLeadIn?: boolean
+  maxUnlockedIndex?: number
   onToggleLoop?: () => void
   onToggleLeadIn?: () => void
   onPlayPreviousSegment?: () => void
@@ -73,6 +76,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   isPlayerReady: _isPlayerReady,
   isLooping = false,
   hasLeadIn = true,
+  maxUnlockedIndex: propMaxUnlocked,
   onToggleLoop,
   onToggleLeadIn,
   onPlayPreviousSegment,
@@ -138,6 +142,13 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       active = false
     }
   }, [previousSegment?.id, previousSegment?.text, previousSegment?.translation, onUpdateSegmentTranslation])
+
+  // Highest sentence index unlocked for sequential listening
+  const maxUnlocked = useMemo(() => {
+    return typeof propMaxUnlocked === 'number'
+      ? propMaxUnlocked
+      : getMaxUnlockedIndex(lesson?.sentences, savedProgressMap)
+  }, [propMaxUnlocked, lesson?.sentences, savedProgressMap])
 
   // Translation states for active sentence and vocabulary
   const [segmentTranslation, setSegmentTranslation] = useState<string>(
@@ -275,10 +286,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     setIsRevealed(nextRevealed)
 
     if (currentSegment) {
-      const prev = savedProgressMap[currentSegment.id]
-      if (prev) {
-        onSaveProgress({ ...prev, isRevealed: nextRevealed })
+      const prev = savedProgressMap[currentSegment.id] || {
+        sentenceId: currentSegment.id,
+        completed: false,
+        score: null,
+        attempts: 0,
+        userInput: '',
       }
+      onSaveProgress({ ...prev, isRevealed: nextRevealed })
 
       // Automatically translate sentence if revealing answer and no translation exists yet
       if (nextRevealed && !segmentTranslation && !currentSegment.translation) {
@@ -326,7 +341,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   }
 
   const handleNext = () => {
-    if (activeSegmentIndex < lesson.sentences.length - 1) {
+    // Only allow advancing if next sentence is unlocked (sequential study)
+    if (activeSegmentIndex < maxUnlocked) {
       onSelectSegment(activeSegmentIndex + 1)
     }
   }
@@ -422,19 +438,6 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       setShowAddSegmentModal(false)
     }
   }
-
-  // Next uncompleted segment (computed unconditionally before any early returns)
-  const nextUncompletedIndex = useMemo(() => {
-    if (!lesson?.sentences) return -1
-    const afterCurrent = lesson.sentences.findIndex(
-      (s, idx) => idx > activeSegmentIndex && !savedProgressMap[s.id]?.completed
-    )
-    if (afterCurrent !== -1) return afterCurrent
-    return lesson.sentences.findIndex((s) => !savedProgressMap[s.id]?.completed)
-  }, [lesson?.sentences, activeSegmentIndex, savedProgressMap])
-
-  const isCurrentCompleted = Boolean(currentSegment && savedProgressMap[currentSegment.id]?.completed)
-  const hasUncompleted = nextUncompletedIndex !== -1 && nextUncompletedIndex !== activeSegmentIndex
 
   // If lesson has no sentences (custom YouTube video without pre-cut segments)
   if (!currentSegment || lesson.sentences.length === 0) {
@@ -750,16 +753,16 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
 
         {/* Prev / Next & Management Buttons */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Jump to unlistened sentence button */}
-          {hasUncompleted && isCurrentCompleted && (
+          {/* Quick jump back to current active sentence if reviewing previous ones */}
+          {activeSegmentIndex < maxUnlocked && (
             <button
               type="button"
-              onClick={() => onSelectSegment(nextUncompletedIndex)}
-              title={`Nhảy tới câu chưa hoàn thành kế tiếp (#${nextUncompletedIndex + 1}) (Alt + J)`}
+              onClick={() => onSelectSegment(maxUnlocked)}
+              title={`Tiếp tục bài học tại câu #${maxUnlocked + 1} (Alt + J)`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl border border-indigo-200/80 dark:border-indigo-800 shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
             >
-              <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-              <span>Nhảy tới câu chưa nghe (#{nextUncompletedIndex + 1})</span>
+              <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Tiếp tục câu hiện tại (#{maxUnlocked + 1})</span>
             </button>
           )}
 
@@ -779,9 +782,13 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             <button
               type="button"
               onClick={handleNext}
-              disabled={activeSegmentIndex === totalSentences - 1}
+              disabled={activeSegmentIndex >= maxUnlocked}
               className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed shadow-2xs focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
-              title="Next sentence"
+              title={
+                activeSegmentIndex >= maxUnlocked
+                  ? "Chỉ được nghe theo tuần tự - Hoàn thành câu hiện tại để mở khóa câu kế tiếp"
+                  : "Next sentence"
+              }
               aria-label="Next sentence"
             >
               <ChevronRight className="w-4 h-4" />
@@ -1484,14 +1491,32 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${scoreResult.score >= 80
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
-                    }`}
+                  disabled={activeSegmentIndex >= maxUnlocked}
+                  title={
+                    activeSegmentIndex >= maxUnlocked
+                      ? "Chỉ được nghe theo tuần tự - Đạt từ 80% hoặc xem đáp án để mở khóa câu kế tiếp"
+                      : "Next Sentence"
+                  }
+                  className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
+                    activeSegmentIndex >= maxUnlocked
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed opacity-60 shadow-none'
+                      : scoreResult.score >= 80
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 cursor-pointer'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20 cursor-pointer'
+                  }`}
                 >
-                  <span>Next Sentence</span>
-                  <ArrowRight className="w-4 h-4" />
-                  <kbd className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-black/20 text-white rounded">Enter ➔</kbd>
+                  {activeSegmentIndex >= maxUnlocked ? (
+                    <>
+                      <Lock className="w-4 h-4 text-slate-500" />
+                      <span>Hoàn thành câu để tiếp tục</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Next Sentence</span>
+                      <ArrowRight className="w-4 h-4" />
+                      <kbd className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-black/20 text-white rounded">Enter ➔</kbd>
+                    </>
+                  )}
                 </button>
               )}
             </div>

@@ -43,7 +43,7 @@ import { AutoStartModal } from './components/AutoStartModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { getDueVocabulary } from './lib/srs/sm2'
-import { getResumeSegmentIndex } from './lib/dictation/resumeManager'
+import { getMaxUnlockedIndex, getResumeSegmentIndex } from './lib/dictation/resumeManager'
 import type { StreakData } from './types'
 
 export function App() {
@@ -61,6 +61,16 @@ export function App() {
     streak: number
     freezeUsed: boolean
   } | null>(null)
+
+  // Auto-dismiss streak celebration popup after 3.5 seconds
+  useEffect(() => {
+    if (streakCelebration?.show) {
+      const timer = window.setTimeout(() => {
+        setStreakCelebration(null)
+      }, 3500)
+      return () => window.clearTimeout(timer)
+    }
+  }, [streakCelebration?.show])
 
   // Quick YouTube URL input state
   const [quickUrlInput, setQuickUrlInput] = useState('')
@@ -221,6 +231,14 @@ export function App() {
 
   const activeSegment: SentenceSegment | undefined =
     activeLesson?.sentences ? activeLesson.sentences[activeSegmentIndex] : undefined
+
+  const activeLessonProgress = useMemo(() => {
+    return activeLesson ? allLessonsProgress[activeLesson.id]?.sentenceProgress || {} : {}
+  }, [activeLesson, allLessonsProgress])
+
+  const maxUnlockedIndex = useMemo(() => {
+    return getMaxUnlockedIndex(activeLesson?.sentences, activeLessonProgress)
+  }, [activeLesson?.sentences, activeLessonProgress])
 
   // Refresh all state from local storage after cloud sync
   const refreshAllData = useCallback(() => {
@@ -425,6 +443,11 @@ export function App() {
   const handleSelectSegment = useCallback(
     (index: number) => {
       if (activeLesson && index >= 0 && index < activeLesson.sentences.length) {
+        const progMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress
+        const maxUnlocked = getMaxUnlockedIndex(activeLesson.sentences, progMap)
+        if (index > maxUnlocked) {
+          return
+        }
         activeSegmentIndexRef.current = index
         setActiveSegmentIndex(index)
         const seg = activeLesson.sentences[index]
@@ -811,7 +834,7 @@ export function App() {
         lastSentenceId: progress.sentenceId,
         updatedAt: new Date().toISOString(),
       }
-      return {
+      const updated = {
         ...prev,
         [activeLesson.id]: {
           ...current,
@@ -823,6 +846,8 @@ export function App() {
           updatedAt: new Date().toISOString(),
         },
       }
+      allLessonsProgressRef.current = updated
+      return updated
     })
   }
 
@@ -1004,22 +1029,15 @@ export function App() {
         return
       }
 
-      // Alt + J: Jump to next uncompleted sentence
+      // Alt + J: Jump to current active uncompleted sentence
       if (e.altKey && e.key.toLowerCase() === 'j') {
         e.preventDefault()
         if (e.repeat) return
         if (activeLesson && activeLesson.sentences.length > 0) {
           const curIdx = activeSegmentIndexRef.current
           const progressMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress || {}
-          // Look for uncompleted sentence after current index
-          let targetIdx = activeLesson.sentences.findIndex(
-            (s, idx) => idx > curIdx && !progressMap[s.id]?.completed
-          )
-          // If not found after current, wrap around and find first uncompleted anywhere
-          if (targetIdx === -1) {
-            targetIdx = activeLesson.sentences.findIndex((s) => !progressMap[s.id]?.completed)
-          }
-          if (targetIdx !== -1 && targetIdx !== curIdx) {
+          const targetIdx = getMaxUnlockedIndex(activeLesson.sentences, progressMap)
+          if (targetIdx !== curIdx) {
             handleSelectSegment(targetIdx)
           }
         }
@@ -1046,7 +1064,9 @@ export function App() {
           e.preventDefault()
           if (e.repeat) return
           const curIdx = activeSegmentIndexRef.current
-          if (curIdx < activeLesson.sentences.length - 1) {
+          const progressMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress || {}
+          const maxUnlocked = getMaxUnlockedIndex(activeLesson.sentences, progressMap)
+          if (curIdx < maxUnlocked && curIdx < activeLesson.sentences.length - 1) {
             handleSelectSegment(curIdx + 1)
           }
         }
@@ -1067,9 +1087,6 @@ export function App() {
     isFocusMode,
   ])
 
-  const activeLessonProgress = activeLesson
-    ? allLessonsProgress[activeLesson.id]?.sentenceProgress || {}
-    : {}
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col text-slate-800 dark:text-slate-100 transition-colors">
@@ -1314,13 +1331,15 @@ export function App() {
                     }
                     onNextSegment={
                       activeLesson.sentences.length > 0 &&
-                        activeSegmentIndex < activeLesson.sentences.length - 1
+                      activeSegmentIndex < maxUnlockedIndex &&
+                      activeSegmentIndex < activeLesson.sentences.length - 1
                         ? () => handleSelectSegment(activeSegmentIndex + 1)
                         : undefined
                     }
                     hasPreviousSegment={activeSegmentIndex > 0}
                     hasNextSegment={
                       activeLesson.sentences.length > 0 &&
+                      activeSegmentIndex < maxUnlockedIndex &&
                       activeSegmentIndex < activeLesson.sentences.length - 1
                     }
                     showStepper={false}
@@ -1334,6 +1353,7 @@ export function App() {
                       isPlaying={isPlaying}
                       onSelectSegment={handleSelectSegment}
                       savedProgressMap={activeLessonProgress}
+                      maxUnlockedIndex={maxUnlockedIndex}
                     />
                   </div>
                 </div>
@@ -1364,6 +1384,7 @@ export function App() {
                     getCurrentPlayerTime={getCurrentTime}
                     streak={streakData}
                     onOpenStreakModal={() => setShowDailyStreakModal(true)}
+                    maxUnlockedIndex={maxUnlockedIndex}
                   />
 
                   {/* Mobile & Tablet Collapsible Sentence List (< lg) */}
@@ -1393,6 +1414,7 @@ export function App() {
                           isPlaying={isPlaying}
                           onSelectSegment={handleSelectSegment}
                           savedProgressMap={activeLessonProgress}
+                          maxUnlockedIndex={maxUnlockedIndex}
                         />
                       </div>
                     </details>
@@ -1567,25 +1589,20 @@ export function App() {
 
             <span className="hidden md:block w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
 
-            {/* Jump to unlistened */}
+            {/* Jump to active sentence */}
             <button
               type="button"
               onClick={() => {
                 if (activeLesson && activeLesson.sentences.length > 0) {
                   const curIdx = activeSegmentIndexRef.current
                   const progressMap = allLessonsProgressRef.current[activeLesson.id]?.sentenceProgress || {}
-                  let targetIdx = activeLesson.sentences.findIndex(
-                    (s, idx) => idx > curIdx && !progressMap[s.id]?.completed
-                  )
-                  if (targetIdx === -1) {
-                    targetIdx = activeLesson.sentences.findIndex((s) => !progressMap[s.id]?.completed)
-                  }
-                  if (targetIdx !== -1 && targetIdx !== curIdx) {
+                  const targetIdx = getMaxUnlockedIndex(activeLesson.sentences, progressMap)
+                  if (targetIdx !== curIdx) {
                     handleSelectSegment(targetIdx)
                   }
                 }
               }}
-              title="Jump to next unlistened sentence (Alt+J)"
+              title="Jump to current active sentence (Alt+J)"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+J</kbd>
@@ -1702,9 +1719,6 @@ export function App() {
                 <span>❄️</span> Streak Freeze đã tự động bảo vệ chuỗi của bạn cho ngày hôm qua!
               </p>
             )}
-            <p className="text-[10px] text-slate-400 mt-1 font-mono">
-              ✓ Đã lưu vào cơ sở dữ liệu Cloud D1
-            </p>
           </div>
         </div>
       )}

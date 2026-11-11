@@ -602,6 +602,14 @@ describe('ListenFlow Improvement Requirements', () => {
 
       expect(screen.getByText(/Sentence 1 of 5/i)).toBeInTheDocument()
 
+      // Alt+ArrowRight blocked because sentence 1 is not yet completed
+      fireEvent.keyDown(window, { altKey: true, key: 'ArrowRight' })
+      expect(screen.getByText(/Sentence 1 of 5/i)).toBeInTheDocument()
+
+      // Reveal sentence 1 to unlock progression
+      const revealBtn = screen.getByText(/Show Answer/i)
+      fireEvent.click(revealBtn)
+
       // Navigate to sentence 2
       fireEvent.keyDown(window, { altKey: true, key: 'ArrowRight' })
       expect(screen.getByText(/Sentence 2 of 5/i)).toBeInTheDocument()
