@@ -29,7 +29,7 @@ interface VocabularyViewProps {
   onRemoveVocabulary: (id: string) => void
   onUpdateVocabulary?: (item: VocabularyItem) => void
   onAddVocabulary?: (item: VocabularyItem) => void
-  onJumpToTimestamp?: (videoId: string, timestamp: number) => void
+  onJumpToTimestamp?: (videoId: string, timestamp: number, contextSentence?: string) => void
   activeLessonTitle?: string
   activeVideoId?: string
 }
@@ -419,7 +419,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     {onJumpToTimestamp && (
                       <button
                         type="button"
-                        onClick={() => onJumpToTimestamp(item.videoId, item.timestamp)}
+                        onClick={() => onJumpToTimestamp(item.videoId, item.timestamp, item.contextSentence)}
                         className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-semibold cursor-pointer"
                       >
                         <span>Replay</span>

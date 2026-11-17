@@ -37,6 +37,7 @@ import { TranscriptImportModal } from '../transcript/TranscriptImportModal'
 import { apiClient } from '../../lib/api/client'
 import { translateToVietnamese, cleanWord } from '../../lib/translation/translator'
 import { getMaxUnlockedIndex } from '../../lib/dictation/resumeManager'
+import { getBrokenSentencePrefix } from '../../lib/transcript/sentenceNormalizer'
 
 interface DictationStudioProps {
   lesson: Lesson
@@ -150,6 +151,18 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       : getMaxUnlockedIndex(lesson?.sentences, savedProgressMap)
   }, [propMaxUnlocked, lesson?.sentences, savedProgressMap])
 
+  // Extract preceding incomplete clause if this segment continues a split sentence
+  const precedingSplitPrefix = useMemo(() => {
+    return getBrokenSentencePrefix(lesson?.sentences || [], activeSegmentIndex)
+  }, [lesson?.sentences, activeSegmentIndex])
+
+  const fullDisplaySentence = useMemo(() => {
+    if (!currentSegment) return ''
+    return precedingSplitPrefix
+      ? `${precedingSplitPrefix} ${currentSegment.text}`
+      : currentSegment.text
+  }, [precedingSplitPrefix, currentSegment])
+
   // Translation states for active sentence and vocabulary
   const [segmentTranslation, setSegmentTranslation] = useState<string>(
     () => currentSegment?.translation || ''
@@ -182,7 +195,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     const knownSentenceTrans = currentSegment.translation || segmentTranslation
     const sentencePromise = knownSentenceTrans
       ? Promise.resolve(knownSentenceTrans)
-      : translateToVietnamese(currentSegment.text)
+      : translateToVietnamese(fullDisplaySentence)
 
     Promise.all([translateToVietnamese(cleaned), sentencePromise])
       .then(([wTrans, sTrans]) => {
@@ -204,7 +217,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     return () => {
       isCurrent = false
     }
-  }, [selectedWordToBookmark, currentSegment, segmentTranslation, onUpdateSegmentTranslation])
+  }, [selectedWordToBookmark, currentSegment, fullDisplaySentence, segmentTranslation, onUpdateSegmentTranslation])
 
   // When switching to another sentence, reset the typing input to blank and focus
   useEffect(() => {
@@ -220,7 +233,28 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     return () => clearTimeout(timer)
   }, [activeSegmentIndex, lesson.id])
 
-  // Handle checking the learner's answer
+  // Shared helper to translate the complete sentence (including preceding split words if needed)
+  const autoTranslateCurrentSentence = async (force = false) => {
+    if (!currentSegment) return
+    if (!force && (segmentTranslation || currentSegment.translation)) return
+
+    setIsTranslatingSegment(true)
+    try {
+      const trans = await translateToVietnamese(fullDisplaySentence)
+      if (trans) {
+        setSegmentTranslation(trans)
+        if (onUpdateSegmentTranslation) {
+          onUpdateSegmentTranslation(currentSegment.id, trans)
+        }
+      }
+    } catch (err) {
+      console.warn('Auto translation error:', err)
+    } finally {
+      setIsTranslatingSegment(false)
+    }
+  }
+
+  // Handle checking the learner's answer (scores strictly against currentSegment.text)
   const handleCheckAnswer = () => {
     if (!currentSegment) return
 
@@ -228,25 +262,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     setScoreResult(result)
     setIsRevealed(true)
 
-    // Automatically translate sentence if no translation exists yet
-    if (!segmentTranslation && !currentSegment.translation) {
-      setIsTranslatingSegment(true)
-      translateToVietnamese(currentSegment.text)
-        .then((trans) => {
-          if (trans) {
-            setSegmentTranslation(trans)
-            if (onUpdateSegmentTranslation) {
-              onUpdateSegmentTranslation(currentSegment.id, trans)
-            }
-          }
-        })
-        .catch((err) => {
-          console.warn('Auto translation error:', err)
-        })
-        .finally(() => {
-          setIsTranslatingSegment(false)
-        })
-    }
+    void autoTranslateCurrentSentence(false)
 
     if (result.score === 100) {
       try {
@@ -316,42 +332,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       }
       onSaveProgress({ ...prev, isRevealed: nextRevealed })
 
-      // Automatically translate sentence if revealing answer and no translation exists yet
-      if (nextRevealed && !segmentTranslation && !currentSegment.translation) {
-        setIsTranslatingSegment(true)
-        try {
-          const trans = await translateToVietnamese(currentSegment.text)
-          if (trans) {
-            setSegmentTranslation(trans)
-            if (onUpdateSegmentTranslation) {
-              onUpdateSegmentTranslation(currentSegment.id, trans)
-            }
-          }
-        } catch (err) {
-          console.warn('Auto translation error:', err)
-        } finally {
-          setIsTranslatingSegment(false)
-        }
+      if (nextRevealed) {
+        await autoTranslateCurrentSentence(false)
       }
     }
   }
 
   const handleManualTranslateSentence = async () => {
-    if (!currentSegment) return
-    setIsTranslatingSegment(true)
-    try {
-      const trans = await translateToVietnamese(currentSegment.text)
-      if (trans) {
-        setSegmentTranslation(trans)
-        if (onUpdateSegmentTranslation) {
-          onUpdateSegmentTranslation(currentSegment.id, trans)
-        }
-      }
-    } catch (err) {
-      console.warn('Manual translation error:', err)
-    } finally {
-      setIsTranslatingSegment(false)
-    }
+    await autoTranslateCurrentSentence(true)
   }
 
   // Navigation handlers
@@ -1214,16 +1202,35 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
         {/* Revealed Expected Transcript Box */}
         {isRevealed && (
           <div className="p-4 bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/80 rounded-xl space-y-2.5 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Official Transcript:
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Official Transcript:
+                </span>
+                {precedingSplitPrefix && (
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100/90 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-700/60"
+                    title="Chữ mờ là phần câu trước đó được nối để dịch trọn nghĩa (không tính khi chấm điểm)"
+                  >
+                    + Ngữ cảnh câu trước (chữ mờ không tính điểm)
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
                 {lesson.transcriptSource}
               </span>
             </div>
             <p className="text-sm font-medium text-slate-900 dark:text-white leading-relaxed select-text">
-              {currentSegment.text}
+              {precedingSplitPrefix && (
+                <span
+                  data-testid="split-sentence-prefix"
+                  className="text-slate-500 dark:text-slate-400 font-normal"
+                  title="Các từ trước đó do câu bị ngắt giữa chừng (không tính vào điểm chấm)"
+                >
+                  {precedingSplitPrefix}{' '}
+                </span>
+              )}
+              <span>{currentSegment.text}</span>
             </p>
 
             {/* Vietnamese Translation */}

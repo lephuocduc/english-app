@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 export interface YouTubePlayerHookOptions {
   containerId: string
   videoId: string
+  isVisible?: boolean
   initialSpeed?: number
   showSubtitles?: boolean
   onSegmentEnd?: () => void
@@ -112,6 +113,7 @@ export function loadYouTubeIframeApi(timeoutMs = 10000): Promise<void> {
 export function useYouTubePlayer({
   containerId,
   videoId,
+  isVisible = true,
   initialSpeed = 1.0,
   showSubtitles: initialShowSubtitles = false,
   onSegmentEnd,
@@ -121,6 +123,7 @@ export function useYouTubePlayer({
 }: YouTubePlayerHookOptions) {
   const playerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
+  const isReadyRef = useRef<boolean>(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playerError, setPlayerError] = useState<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
@@ -265,12 +268,27 @@ export function useYouTubePlayer({
     [onSegmentEnd, stopSegmentWatcher]
   )
 
+  // Queue a segment to play automatically once player finishes mounting/loading
+  const queueSegmentPlay = useCallback((startTime: number, endTime: number, leadInSeconds = 0) => {
+    pendingSegmentRef.current = { start: startTime, end: endTime, leadIn: leadInSeconds }
+  }, [])
+
   // Playback control functions
   const playSegment = useCallback(
     (startTime: number, endTime: number, leadInSeconds = 0) => {
       const player = playerRef.current
-      if (!player || typeof player.seekTo !== 'function') {
-        // Player not ready yet; save in pending ref for onReady execution
+      let isConnected = true
+      try {
+        const iframe = player?.getIframe?.()
+        if (iframe && iframe.isConnected === false) {
+          isConnected = false
+        }
+      } catch {
+        // ignore
+      }
+
+      if (!player || !isReadyRef.current || !isConnected || typeof player.seekTo !== 'function') {
+        // Player not ready yet or container detached; save in pending ref for onReady execution
         pendingSegmentRef.current = { start: startTime, end: endTime, leadIn: leadInSeconds }
         return
       }
@@ -385,14 +403,14 @@ export function useYouTubePlayer({
   // Listen to tab visibility & window focus to recover black/frozen player on tab switch
   useEffect(() => {
     const handleTabVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && isVisible) {
         const container = document.getElementById(containerId)
         const hasIframe = Boolean(
           container?.querySelector('iframe') || (container && container.tagName === 'IFRAME')
         )
 
         // If the container exists in DOM but the iframe was lost during tab switch/re-render
-        if (!hasIframe && videoId) {
+        if (container && !hasIframe && videoId) {
           reloadPlayer()
         } else if (playerRef.current) {
           // Force a repaint on the iframe surface to unfreeze GPU black screen
@@ -417,18 +435,22 @@ export function useYouTubePlayer({
       document.removeEventListener('visibilitychange', handleTabVisibility)
       window.removeEventListener('focus', handleTabVisibility)
     }
-  }, [containerId, videoId, reloadPlayer])
+  }, [containerId, videoId, isVisible, reloadPlayer])
 
-  // Initialize player when videoId, containerId, or reloadKey changes
+  // Initialize player when videoId, containerId, isVisible, or reloadKey changes
   useEffect(() => {
     let isCancelled = false
     stopSegmentWatcher()
+    isReadyRef.current = false
+    setIsReady(false)
+    setIsPlaying(false)
 
-    if (!videoId) return
+    if (!videoId || !isVisible) return
 
     loadYouTubeIframeApi().then(() => {
       if (isCancelled) return
 
+      isReadyRef.current = false
       setIsReady(false)
       setPlayerError(null)
       setIsPlaying(false)
@@ -466,6 +488,7 @@ export function useYouTubePlayer({
           events: {
             onReady: (event: any) => {
               if (isCancelled) return
+              isReadyRef.current = true
               setIsReady(true)
               try {
                 event.target.setPlaybackRate(initialSpeed)
@@ -553,6 +576,7 @@ export function useYouTubePlayer({
 
     return () => {
       isCancelled = true
+      isReadyRef.current = false
       stopSegmentWatcher()
       if (playerRef.current && typeof playerRef.current.destroy === 'function') {
         try {
@@ -563,7 +587,7 @@ export function useYouTubePlayer({
         playerRef.current = null
       }
     }
-  }, [videoId, containerId, initialSpeed, reloadKey, stopSegmentWatcher, onStateChange, onError, playSegment])
+  }, [videoId, containerId, isVisible, initialSpeed, reloadKey, stopSegmentWatcher, onStateChange, onError, playSegment])
 
   return {
     isReady,
@@ -578,6 +602,7 @@ export function useYouTubePlayer({
     toggleSubtitles,
     reloadPlayer,
     playSegment,
+    queueSegmentPlay,
     pauseSegment,
     resumeSegment,
     replaySegment,

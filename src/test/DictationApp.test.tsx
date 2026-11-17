@@ -287,14 +287,34 @@ describe('ListenFlow Integration & UI Tests', () => {
     expect(screen.getByText(/No vocabulary in your notebook yet/i)).toBeInTheDocument()
   })
 
-  it('replaying vocabulary item navigates to practice tab and selects the matching sentence segment', () => {
+  it('replaying vocabulary item navigates to practice tab, selects the exact sentence at boundary timestamp, and plays audio', async () => {
+    const seekToSpy = vi.fn()
+    const playVideoSpy = vi.fn()
+    window.YT = {
+      Player: class SpyMockPlayer {
+        seekTo = seekToSpy
+        playVideo = playVideoSpy
+        pauseVideo = vi.fn()
+        getCurrentTime = () => 30
+        setPlaybackRate = vi.fn()
+        destroy = vi.fn()
+        constructor(_id: any, opts: any) {
+          setTimeout(() => {
+            opts.events?.onReady?.({ target: this })
+          }, 0)
+        }
+      },
+      PlayerState: window.YT!.PlayerState,
+    } as any
+
     storage.saveVocabulary([
       {
         id: 'vocab-test-1',
         word: 'graduated',
         meaning: 'tốt nghiệp',
-        contextSentence: 'I never graduated from college.',
-        timestamp: 32,
+        // Timestamp 30 sits right on boundary between seg-1 (24..30) and seg-2 (30..36)
+        contextSentence: "I never graduated from college. Truth be told, this is the closest I've ever gotten to a college graduation.",
+        timestamp: 30,
         videoId: 'UF8uR6Z6KLc',
         lessonTitle: 'Steve Jobs',
         savedAt: new Date().toISOString(),
@@ -313,8 +333,13 @@ describe('ListenFlow Integration & UI Tests', () => {
     const replayBtns = screen.getAllByRole('button', { name: /Replay/i })
     fireEvent.click(replayBtns[replayBtns.length - 1])
 
-    // Should return to Practice tab and jump to Sentence 2 (timestamp 30-36)
+    // Should return to Practice tab and jump to Sentence 2 (startTime 30, NOT seg-1)
     expect(screen.getByText(/Sentence 2 of 5/i)).toBeInTheDocument()
+
+    // Wait for YT.Player onReady after returning from Vocabulary tab
+    await new Promise((r) => setTimeout(r, 20))
+    expect(seekToSpy).toHaveBeenCalledWith(30, true)
+    expect(playVideoSpy).toHaveBeenCalled()
   })
 
   it('navigates to Progress tab and displays statistics overview', () => {

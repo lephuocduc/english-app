@@ -26,7 +26,7 @@ interface FlashcardReviewModalProps {
   onClose: () => void
   itemsToReview: VocabularyItem[]
   onUpdateVocabulary: (updated: VocabularyItem) => void
-  onJumpToTimestamp?: (videoId: string, timestamp: number) => void
+  onJumpToTimestamp?: (videoId: string, timestamp: number, contextSentence?: string) => void
 }
 
 export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
@@ -454,7 +454,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        onJumpToTimestamp(currentCard.videoId, currentCard.timestamp)
+                        onJumpToTimestamp(currentCard.videoId, currentCard.timestamp, currentCard.contextSentence)
                         onClose()
                       }}
                       className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"

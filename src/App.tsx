@@ -406,14 +406,15 @@ export function App() {
     toggleLoop,
     reloadPlayer,
     playSegment,
+    queueSegmentPlay,
     pauseSegment,
     togglePlayPause,
-    seekTo,
     changeSpeed,
     getCurrentTime,
   } = useYouTubePlayer({
     containerId: 'listenflow-youtube-player-frame',
     videoId: activeLesson ? activeLesson.videoId : '',
+    isVisible: activeTab === 'practice' && Boolean(activeLesson),
     initialSpeed: preferences.playbackSpeed,
     showSubtitles,
     onVideoMetadata: (meta) => {
@@ -936,26 +937,77 @@ export function App() {
     }
   }
 
-  const handleJumpToVocabTimestamp = (videoId: string, timestamp: number) => {
+  const findBestMatchingSegmentIndex = (
+    sentences: SentenceSegment[],
+    timestamp: number,
+    contextSentence?: string
+  ): number => {
+    if (!sentences || sentences.length === 0) return 0
+
+    // 1. Prioritize matching context sentence text (breaking ties by closest timestamp)
+    const cleanContext = contextSentence?.trim().toLowerCase()
+    if (cleanContext) {
+      const textMatches: number[] = []
+      sentences.forEach((s, idx) => {
+        const cleanSeg = s.text.trim().toLowerCase()
+        if (cleanSeg === cleanContext || cleanSeg.includes(cleanContext) || cleanContext.includes(cleanSeg)) {
+          textMatches.push(idx)
+        }
+      })
+      if (textMatches.length > 0) {
+        let bestIdx = textMatches[0]
+        let minDiff = Math.abs(sentences[bestIdx].startTime - timestamp)
+        for (let i = 1; i < textMatches.length; i++) {
+          const idx = textMatches[i]
+          const diff = Math.abs(sentences[idx].startTime - timestamp)
+          if (diff < minDiff) {
+            minDiff = diff
+            bestIdx = idx
+          }
+        }
+        return bestIdx
+      }
+    }
+
+    // 2. Match exact startTime before interval bounds so boundary timestamps hit the new sentence
+    const startMatchIdx = sentences.findIndex((s) => Math.abs(s.startTime - timestamp) < 0.5)
+    if (startMatchIdx !== -1) return startMatchIdx
+
+    // 3. Strict half-open interval [startTime, endTime)
+    const rangeIdx = sentences.findIndex((s) => timestamp >= s.startTime && timestamp < s.endTime)
+    if (rangeIdx !== -1) return rangeIdx
+
+    // 4. Fallback to closest startTime
+    let closestIdx = 0
+    let minDiff = Infinity
+    sentences.forEach((s, idx) => {
+      const diff = Math.abs(s.startTime - timestamp)
+      if (diff < minDiff) {
+        minDiff = diff
+        closestIdx = idx
+      }
+    })
+    return closestIdx
+  }
+
+  const handleJumpToVocabTimestamp = (
+    videoId: string,
+    timestamp: number,
+    contextSentence?: string
+  ) => {
     const matchingVideo = videosList.find((l) => l.videoId === videoId || l.id === videoId)
     if (matchingVideo) {
+      const isSameVideoAndVisible =
+        activeTab === 'practice' && activeLesson?.videoId === matchingVideo.videoId && isPlayerReady
+
       storage.saveActiveLessonId(matchingVideo.id)
       setActiveLessonId(matchingVideo.id)
 
-      let targetIndex = matchingVideo.sentences.findIndex((s) => {
-        return Math.abs(s.startTime - timestamp) < 0.5 || (timestamp >= s.startTime && timestamp <= s.endTime)
-      })
-      if (targetIndex === -1 && matchingVideo.sentences.length > 0) {
-        let minDiff = Infinity
-        matchingVideo.sentences.forEach((s, idx) => {
-          const diff = Math.abs(s.startTime - timestamp)
-          if (diff < minDiff) {
-            minDiff = diff
-            targetIndex = idx
-          }
-        })
-      }
-      if (targetIndex === -1) targetIndex = 0
+      const targetIndex = findBestMatchingSegmentIndex(
+        matchingVideo.sentences,
+        timestamp,
+        contextSentence
+      )
 
       // Ensure sentences up to targetIndex are unlocked so learner can practice/listen
       const currentProg = allLessonsProgressRef.current[matchingVideo.id]?.sentenceProgress || {}
@@ -999,16 +1051,16 @@ export function App() {
       const startTime = targetSeg ? targetSeg.startTime : timestamp
       const endTime = targetSeg ? targetSeg.endTime : timestamp + 5
 
-      // Seek & play segment
-      setTimeout(() => {
+      if (isSameVideoAndVisible) {
         playSegment(startTime, endTime, 0)
-      }, 350)
+      } else {
+        // Player will mount / reload for practice tab or new video; queue for onReady playback
+        queueSegmentPlay(startTime, endTime, 0)
+      }
     } else {
+      queueSegmentPlay(timestamp, timestamp + 5, 0)
       handleImportVideo(videoId)
       setActiveTab('practice')
-      setTimeout(() => {
-        seekTo(timestamp)
-      }, 500)
     }
   }
 

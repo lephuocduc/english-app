@@ -164,4 +164,66 @@ describe('DictationStudio Component', () => {
     // The typing input must now be blank!
     expect(input.value).toBe('')
   })
+
+  it('shows preceding incomplete words on Show Answer and Check Answer for split sentences, without counting them in score', () => {
+    const splitLesson: Lesson = {
+      id: 'split-lesson-1',
+      title: 'Split Sentence Lesson',
+      videoId: 'abc12345678',
+      sentences: [
+        {
+          id: 's1',
+          startTime: 0,
+          endTime: 6,
+          text: 'of fresh and new. So I am gonna start in just a second, but first of all, just one question for',
+        },
+        {
+          id: 's2',
+          startTime: 6,
+          endTime: 10,
+          text: 'you before we begin.',
+        },
+      ],
+    }
+    const onSaveProgress = vi.fn()
+
+    render(
+      <DictationStudio
+        lesson={splitLesson}
+        activeSegmentIndex={1}
+        isPlayerReady={true}
+        onSelectSegment={vi.fn()}
+        onReplaySegment={vi.fn()}
+        onSaveProgress={onSaveProgress}
+        savedProgressMap={{}}
+      />
+    )
+
+    // User only types the current segment words ("you before we begin.")
+    const input = screen.getByPlaceholderText(/Type what you hear/i)
+    fireEvent.change(input, { target: { value: 'you before we begin.' } })
+
+    const checkBtn = screen.getByRole('button', { name: /Check Answer/i })
+    fireEvent.click(checkBtn)
+
+    // Score MUST be 100% (preceding words must NOT be scored!)
+    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(screen.getByText('Correct: 4')).toBeInTheDocument()
+    expect(onSaveProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        score: 100,
+        completed: true,
+        isRevealed: true,
+      })
+    )
+
+    // Official Transcript displays BOTH the preceding incomplete clause AND current segment text
+    const prefixEl = screen.getByTestId('split-sentence-prefix')
+    expect(prefixEl).toHaveTextContent(
+      'So I am gonna start in just a second, but first of all, just one question for'
+    )
+    expect(prefixEl.parentElement).toHaveTextContent(
+      'So I am gonna start in just a second, but first of all, just one question for you before we begin.'
+    )
+  })
 })
