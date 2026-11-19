@@ -23,6 +23,7 @@ export function useAudioLessonPlayer({
   const [isLoadingAudio, setIsLoadingAudio] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
   const [usingFallbackSpeech, setUsingFallbackSpeech] = useState(false)
+  const [fallbackAccentMissing, setFallbackAccentMissing] = useState(false)
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
   const [isLooping, setIsLooping] = useState(false)
   const [isPhoneCallMode, setIsPhoneCallMode] = useState(initialPhoneCallMode)
@@ -68,7 +69,10 @@ export function useAudioLessonPlayer({
   const playTextSegment = useCallback(
     async (params: PlayAudioTextParams) => {
       clearLoopTimer()
-      lastPlayedRef.current = params
+      lastPlayedRef.current = {
+        text: params.text,
+        leadInText: params.leadInText,
+      }
       setAudioError(null)
       setIsLoadingAudio(true)
 
@@ -76,10 +80,13 @@ export function useAudioLessonPlayer({
         await sharedTtsAudioEngine.playSegment({
           text: params.text,
           leadInText: withLeadIn ? params.leadInText : undefined,
-          accent: params.accent || accentRef.current,
+          accent: withLeadIn && params.accent ? params.accent : accentRef.current,
           speed: speedRef.current,
           isPhoneCallMode: phoneCallModeRef.current,
-          onFallbackUsed: (used) => setUsingFallbackSpeech(used),
+          onFallbackUsed: (used, exactMatch) => {
+            setUsingFallbackSpeech(used)
+            setFallbackAccentMissing(Boolean(used && exactMatch === false))
+          },
           onStart: () => {
             setIsLoadingAudio(false)
             setIsPlaying(true)
@@ -155,6 +162,7 @@ export function useAudioLessonPlayer({
     isLoadingAudio,
     audioError,
     usingFallbackSpeech,
+    fallbackAccentMissing,
     playbackRate,
     isLooping,
     isPhoneCallMode,

@@ -10,8 +10,59 @@ export interface PlayAudioSegmentOptions {
   loop?: boolean
   onStart?: () => void
   onEnd?: () => void
-  onFallbackUsed?: (usedFallback: boolean) => void
+  onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
   onError?: (msg: string) => void
+}
+
+const HIGH_QUALITY_VOICE_HINTS = [
+  'google',
+  'natural',
+  'online',
+  'neural',
+  'siri',
+  'enhanced',
+  'daniel',
+  'serena',
+  'karen',
+  'samantha',
+]
+
+function selectBestSpeechVoice(
+  voices: SpeechSynthesisVoice[],
+  accent: VoiceAccent
+): { voice: SpeechSynthesisVoice | null; exactMatch: boolean } {
+  if (!voices || voices.length === 0) {
+    return { voice: null, exactMatch: false }
+  }
+
+  const norm = (s: string) => s.replace(/_/g, '-').toLowerCase()
+  const target = norm(accent)
+
+  const nameMatchesAccent = (name: string): boolean => {
+    if (accent === 'en-GB') return /(?:^|\b)(?:uk|british|great britain|united kingdom)(?:\b|$)/i.test(name)
+    if (accent === 'en-AU') return /(?:^|\b)(?:au|australian|australia)(?:\b|$)/i.test(name)
+    return /(?:^|\b)(?:us|u\.s\.|american|united states)(?:\b|$)/i.test(name)
+  }
+
+  const qualityScore = (v: SpeechSynthesisVoice): number => {
+    const lowerName = (v.name || '').toLowerCase()
+    const idx = HIGH_QUALITY_VOICE_HINTS.findIndex((hint) => lowerName.includes(hint))
+    const langBonus = norm(v.lang) === target ? 100 : 0
+    return langBonus + (idx >= 0 ? 50 - idx : 0)
+  }
+
+  const matching = voices.filter((v) => {
+    const lang = norm(v.lang || '')
+    return lang === target || (lang.startsWith('en') && nameMatchesAccent(v.name || ''))
+  })
+
+  if (matching.length > 0) {
+    matching.sort((a, b) => qualityScore(b) - qualityScore(a))
+    return { voice: matching[0], exactMatch: true }
+  }
+
+  const fallbackEn = voices.find((v) => norm(v.lang || '').startsWith('en')) || null
+  return { voice: fallbackEn, exactMatch: false }
 }
 
 const bufferCache = new Map<string, AudioBuffer>()
@@ -155,6 +206,11 @@ export class TtsAudioEngine {
       throw new Error(`TTS HTTP ${response.status}`)
     }
 
+    const contentType = (response.headers?.get?.('content-type') || '').toLowerCase()
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
+      throw new Error('TTS endpoint did not return audio')
+    }
+
     const arrayBuf = await response.arrayBuffer()
     if (arrayBuf.byteLength < 64) {
       throw new Error('TTS returned empty audio data')
@@ -203,7 +259,31 @@ export class TtsAudioEngine {
     }
   }
 
-  private playWithSpeechSynthesisFallback(options: PlayAudioSegmentOptions, token: number): boolean {
+  private getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
+    const synth = window.speechSynthesis
+    const current = synth.getVoices?.() || []
+    if (current.length > 0 || typeof synth.addEventListener !== 'function') {
+      return Promise.resolve(current)
+    }
+
+    return new Promise((resolve) => {
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        synth.removeEventListener?.('voiceschanged', finish)
+        window.clearTimeout(timer)
+        resolve(synth.getVoices?.() || [])
+      }
+      const timer = window.setTimeout(finish, 250)
+      synth.addEventListener('voiceschanged', finish)
+    })
+  }
+
+  private async playWithSpeechSynthesisFallback(
+    options: PlayAudioSegmentOptions,
+    token: number
+  ): Promise<boolean> {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       return false
     }
@@ -219,16 +299,17 @@ export class TtsAudioEngine {
     } = options
 
     try {
+      const voices = await this.getVoicesReady()
+      if (this.playbackToken !== token) return false
+
       window.speechSynthesis.cancel()
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = accent
       utterance.rate = speed
 
-      const voices = window.speechSynthesis.getVoices?.() || []
-      const exactVoice = voices.find((v) => v.lang.toLowerCase() === accent.toLowerCase())
-      const langVoice = voices.find((v) => v.lang.toLowerCase().startsWith('en'))
-      if (exactVoice || langVoice) {
-        utterance.voice = exactVoice || langVoice || null
+      const { voice, exactMatch } = selectBestSpeechVoice(voices, accent)
+      if (voice) {
+        utterance.voice = voice
       }
 
       if (isPhoneCallMode) {
@@ -241,7 +322,7 @@ export class TtsAudioEngine {
 
       utterance.onstart = () => {
         if (this.playbackToken !== token) return
-        onFallbackUsed?.(true)
+        onFallbackUsed?.(true, exactMatch)
         onStart?.()
       }
 
@@ -267,7 +348,7 @@ export class TtsAudioEngine {
         onEnd?.()
       }
 
-      onFallbackUsed?.(true)
+      onFallbackUsed?.(true, exactMatch)
       onStart?.()
       window.speechSynthesis.speak(utterance)
       return true
@@ -362,7 +443,7 @@ export class TtsAudioEngine {
       mainSrc.start(mainStartAt)
     } catch (err) {
       if (this.playbackToken !== token) return
-      const fallbackStarted = this.playWithSpeechSynthesisFallback(options, token)
+      const fallbackStarted = await this.playWithSpeechSynthesisFallback(options, token)
       if (!fallbackStarted) {
         const message = err instanceof Error ? err.message : 'Unable to play synthesized audio'
         onError?.(message)

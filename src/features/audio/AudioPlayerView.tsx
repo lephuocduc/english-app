@@ -22,6 +22,7 @@ interface AudioPlayerViewProps {
   isPhoneCallMode?: boolean
   hasLeadIn?: boolean
   usingFallbackSpeech?: boolean
+  fallbackAccentMissing?: boolean
   audioError: string | null
   currentSpeed: number
   voiceAccent: VoiceAccent
@@ -51,6 +52,7 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   isPhoneCallMode = false,
   hasLeadIn = true,
   usingFallbackSpeech = false,
+  fallbackAccentMissing = false,
   audioError,
   currentSpeed,
   voiceAccent,
@@ -166,10 +168,21 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
         {/* Bottom Accent Selector */}
         <div className="w-full flex items-center justify-between gap-2 z-10 text-[11px]">
           <div className="flex items-center gap-1">
-            {usingFallbackSpeech && (
-              <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300 text-[10px]">
-                Browser Speech Voice
+            {usingFallbackSpeech && fallbackAccentMissing ? (
+              <span
+                className="px-2 py-0.5 rounded bg-amber-900/70 border border-amber-500/40 text-amber-200 text-[10px] font-medium"
+                title="Trình duyệt đang dùng giọng hệ thống và chưa cài gói giọng vùng này; hãy chạy server /api/tts để nghe đủ giọng US/UK/AU."
+              >
+                Browser Voice (thiếu giọng{' '}
+                {voiceAccent === 'en-GB' ? 'UK' : voiceAccent === 'en-AU' ? 'AU' : 'US'} — cần
+                /api/tts)
               </span>
+            ) : (
+              usingFallbackSpeech && (
+                <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300 text-[10px]">
+                  Browser Speech Voice
+                </span>
+              )
             )}
           </div>
 
@@ -181,6 +194,7 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
                   key={opt.value}
                   type="button"
                   onClick={() => onChangeAccent(opt.value)}
+                  aria-pressed={voiceAccent === opt.value}
                   title={opt.title}
                   className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
                     voiceAccent === opt.value

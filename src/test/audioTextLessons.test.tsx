@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, renderHook, act } from '@testing-library/react'
 import {
   splitTextIntoSentences,
   estimateAudioDurationSeconds,
   createAudioLessonFromText,
   isAudioLesson,
 } from '../lib/audio/textToLesson'
+import { TtsAudioEngine, sharedTtsAudioEngine } from '../lib/audio/ttsAudioPlayer'
+import { useAudioLessonPlayer } from '../features/audio/useAudioLessonPlayer'
 import {
   DEFAULT_B1_B2_AUDIO_LESSONS,
   RETIRED_PRESET_AUDIO_IDS,
@@ -147,7 +149,11 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       fireEvent.click(phoneBtn)
       expect(onTogglePhoneCallMode).toHaveBeenCalledTimes(1)
 
+      const usBtn = screen.getByRole('button', { name: 'US' })
       const ukBtn = screen.getByRole('button', { name: 'UK' })
+      expect(usBtn).toHaveAttribute('aria-pressed', 'true')
+      expect(ukBtn).toHaveAttribute('aria-pressed', 'false')
+
       fireEvent.click(ukBtn)
       expect(onChangeAccent).toHaveBeenCalledWith('en-GB')
 
@@ -160,6 +166,8 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
           isLooping={false}
           isPhoneCallMode={true}
           hasLeadIn={true}
+          usingFallbackSpeech={true}
+          fallbackAccentMissing={true}
           audioError={null}
           currentSpeed={1.0}
           voiceAccent="en-GB"
@@ -185,6 +193,108 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
         'aria-pressed',
         'true'
       )
+      expect(screen.getByRole('button', { name: 'UK' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'US' })).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByText(/Browser Voice \(thiếu giọng UK — cần \/api\/tts\)/i)).toBeInTheDocument()
+    })
+
+    it('matches en_GB browser speech synthesis voice when /api/tts falls back', async () => {
+      const prevFetch = globalThis.fetch
+      const prevUtterance = globalThis.SpeechSynthesisUtterance
+      const prevSpeechDescriptor = Object.getOwnPropertyDescriptor(window, 'speechSynthesis')
+
+      let spokenUtterance: any = null
+      class StubSpeechSynthesisUtterance {
+        text: string
+        lang = ''
+        rate = 1
+        voice: any = null
+        onstart: (() => void) | null = null
+        onend: (() => void) | null = null
+        onerror: (() => void) | null = null
+        constructor(text: string) {
+          this.text = text
+        }
+      }
+
+      try {
+        ;(globalThis as any).SpeechSynthesisUtterance = StubSpeechSynthesisUtterance
+        Object.defineProperty(window, 'speechSynthesis', {
+          configurable: true,
+          writable: true,
+          value: {
+            getVoices: () => [
+              { name: 'Microsoft David', lang: 'en-US' },
+              { name: 'Google UK English Female', lang: 'en_GB' },
+            ],
+            cancel: vi.fn(),
+            speak: vi.fn((u: any) => {
+              spokenUtterance = u
+              u.onstart?.()
+              u.onend?.()
+            }),
+          },
+        })
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 401,
+          headers: new Headers({ 'content-type': 'application/json' }),
+        }) as unknown as typeof fetch
+
+        const onFallbackUsed = vi.fn()
+        const engine = new TtsAudioEngine()
+        await engine.playSegment({
+          text: 'Hello server.',
+          accent: 'en-GB',
+          onFallbackUsed,
+        })
+
+        expect(spokenUtterance).not.toBeNull()
+        expect(spokenUtterance.lang).toBe('en-GB')
+        expect(spokenUtterance.voice?.name).toBe('Google UK English Female')
+        expect(onFallbackUsed).toHaveBeenCalledWith(true, true)
+      } finally {
+        globalThis.fetch = prevFetch
+        ;(globalThis as any).SpeechSynthesisUtterance = prevUtterance
+        if (prevSpeechDescriptor) {
+          Object.defineProperty(window, 'speechSynthesis', prevSpeechDescriptor)
+        } else {
+          delete (window as any).speechSynthesis
+        }
+      }
+    })
+
+    it('updates live accent ref in useAudioLessonPlayer before subsequent playback', async () => {
+      const playSpy = vi
+        .spyOn(sharedTtsAudioEngine, 'playSegment')
+        .mockImplementation(async (opts) => {
+          opts.onStart?.()
+          opts.onEnd?.()
+        })
+
+      try {
+        const { result } = renderHook(() => useAudioLessonPlayer({ initialAccent: 'en-US' }))
+        expect(result.current.voiceAccent).toBe('en-US')
+
+        act(() => {
+          result.current.changeVoiceAccent('en-GB')
+        })
+        expect(result.current.voiceAccent).toBe('en-GB')
+
+        await act(async () => {
+          await result.current.playTextSegment({ text: 'Hello.' })
+        })
+
+        expect(playSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            text: 'Hello.',
+            accent: 'en-GB',
+          })
+        )
+      } finally {
+        playSpy.mockRestore()
+      }
     })
   })
 

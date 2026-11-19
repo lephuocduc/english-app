@@ -458,9 +458,15 @@ export function App() {
   useEffect(() => {
     audioPlayer.stopAudio()
     if (activeIsAudio && activeLesson?.voiceAccent) {
-      audioPlayer.setVoiceAccent(activeLesson.voiceAccent)
+      audioPlayer.changeVoiceAccent(activeLesson.voiceAccent)
     }
-  }, [activeLesson?.id, activeLesson?.voiceAccent, activeIsAudio, audioPlayer.stopAudio, audioPlayer.setVoiceAccent])
+  }, [
+    activeLesson?.id,
+    activeLesson?.voiceAccent,
+    activeIsAudio,
+    audioPlayer.stopAudio,
+    audioPlayer.changeVoiceAccent,
+  ])
 
   const effectiveIsPlaying = activeIsAudio ? audioPlayer.isPlaying : isPlaying
   const effectiveIsLooping = activeIsAudio ? audioPlayer.isLooping : isLooping
@@ -480,8 +486,14 @@ export function App() {
       const newPrefs = { ...preferences, ttsAccent: accent }
       setPreferences(newPrefs)
       storage.savePreferences(newPrefs)
+      if (activeIsAudio && activeSegment) {
+        void audioPlayer.playTextSegment({
+          text: activeSegment.text,
+          accent,
+        })
+      }
     },
-    [audioPlayer, preferences]
+    [audioPlayer, preferences, activeIsAudio, activeSegment]
   )
 
   const handleToggleLoop = useCallback(() => {
@@ -504,7 +516,6 @@ export function App() {
         void audioPlayer.playTextSegment({
           text: activeSegment.text,
           leadInText,
-          accent: audioPlayer.voiceAccent,
         })
       }
     } else {
@@ -578,7 +589,6 @@ export function App() {
           void audioPlayer.playTextSegment({
             text: seg.text,
             leadInText,
-            accent: audioPlayer.voiceAccent,
           })
         } else if (isPlayerReady) {
           const leadIn = hasAudioLeadIn && index > 0 ? 1.0 : 0
@@ -600,7 +610,6 @@ export function App() {
       void audioPlayer.playTextSegment({
         text: activeSegment.text,
         leadInText,
-        accent: audioPlayer.voiceAccent,
       })
     } else if (isPlayerReady) {
       const leadIn = hasAudioLeadIn && activeSegmentIndex > 0 ? 1.0 : 0
@@ -625,7 +634,6 @@ export function App() {
       if (isAudioLesson(activeLesson)) {
         void audioPlayer.playTextSegment({
           text: prevSeg.text,
-          accent: audioPlayer.voiceAccent,
         })
       } else if (isPlayerReady) {
         playSegment(prevSeg.startTime, prevSeg.endTime, 0)
@@ -1208,7 +1216,6 @@ export function App() {
         if (targetSeg) {
           void audioPlayer.playTextSegment({
             text: targetSeg.text,
-            accent: matchingVideo.voiceAccent || audioPlayer.voiceAccent,
           })
         }
       } else if (isSameVideoAndVisible) {
@@ -1601,6 +1608,7 @@ export function App() {
                       isPhoneCallMode={audioPlayer.isPhoneCallMode}
                       hasLeadIn={hasAudioLeadIn}
                       usingFallbackSpeech={audioPlayer.usingFallbackSpeech}
+                      fallbackAccentMissing={audioPlayer.fallbackAccentMissing}
                       audioError={audioPlayer.audioError}
                       currentSpeed={audioPlayer.playbackRate}
                       voiceAccent={audioPlayer.voiceAccent}
