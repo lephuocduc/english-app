@@ -34,6 +34,7 @@ import { YouTubePlayerView } from './features/youtube/YouTubePlayerView'
 import { useAudioLessonPlayer } from './features/audio/useAudioLessonPlayer'
 import { AudioPlayerView } from './features/audio/AudioPlayerView'
 import { isAudioLesson } from './lib/audio/textToLesson'
+import { buildLessonSpeakerMap } from './lib/audio/dialogueVoices'
 import { SentenceList } from './features/dictation/SentenceList'
 import { DictationStudio } from './features/dictation/DictationStudio'
 import { CompletedLessonTranscript } from './features/dictation/CompletedLessonTranscript'
@@ -436,6 +437,22 @@ export function App() {
 
   const activeIsAudio = isAudioLesson(activeLesson)
 
+  const activeLessonSpeakers = useMemo(
+    () => buildLessonSpeakerMap(activeLesson?.sentences),
+    [activeLesson?.sentences]
+  )
+
+  const getSegmentSpeakerIndex = useCallback(
+    (lessonObj?: Lesson, seg?: SentenceSegment | null): number => {
+      if (!seg) return 0
+      if (!lessonObj || lessonObj.id === activeLesson?.id) {
+        return activeLessonSpeakers.bySegmentId[seg.id]?.speakerIndex ?? 0
+      }
+      return buildLessonSpeakerMap(lessonObj.sentences).bySegmentId[seg.id]?.speakerIndex ?? 0
+    },
+    [activeLesson?.id, activeLessonSpeakers]
+  )
+
   // Setup YouTube IFrame Player hook (only active for YouTube video lessons)
   const {
     isReady: isPlayerReady,
@@ -508,10 +525,11 @@ export function App() {
         void audioPlayer.playTextSegment({
           text: activeSegment.text,
           accent,
+          speakerIndex: getSegmentSpeakerIndex(activeLesson, activeSegment),
         })
       }
     },
-    [audioPlayer, preferences, activeIsAudio, activeSegment]
+    [audioPlayer, preferences, activeIsAudio, activeSegment, activeLesson, getSegmentSpeakerIndex]
   )
 
   const handleToggleLoop = useCallback(() => {
@@ -527,13 +545,17 @@ export function App() {
       if (audioPlayer.isPlaying) {
         audioPlayer.stopAudio()
       } else if (activeSegment) {
-        const leadInText =
+        const prevSeg =
           hasAudioLeadIn && activeSegmentIndex > 0 && activeLesson
-            ? activeLesson.sentences[activeSegmentIndex - 1]?.text
+            ? activeLesson.sentences[activeSegmentIndex - 1]
             : undefined
         void audioPlayer.playTextSegment({
           text: activeSegment.text,
-          leadInText,
+          leadInText: prevSeg?.text,
+          speakerIndex: getSegmentSpeakerIndex(activeLesson, activeSegment),
+          leadInSpeakerIndex: prevSeg
+            ? getSegmentSpeakerIndex(activeLesson, prevSeg)
+            : undefined,
         })
       }
     } else {
@@ -546,6 +568,7 @@ export function App() {
     hasAudioLeadIn,
     activeSegmentIndex,
     activeLesson,
+    getSegmentSpeakerIndex,
     togglePlayPause,
   ])
 
@@ -602,11 +625,14 @@ export function App() {
         if (!seg) return
 
         if (isAudioLesson(activeLesson)) {
-          const leadInText =
-            hasAudioLeadIn && index > 0 ? activeLesson.sentences[index - 1]?.text : undefined
+          const prevSeg = hasAudioLeadIn && index > 0 ? activeLesson.sentences[index - 1] : undefined
           void audioPlayer.playTextSegment({
             text: seg.text,
-            leadInText,
+            leadInText: prevSeg?.text,
+            speakerIndex: getSegmentSpeakerIndex(activeLesson, seg),
+            leadInSpeakerIndex: prevSeg
+              ? getSegmentSpeakerIndex(activeLesson, prevSeg)
+              : undefined,
           })
         } else if (isPlayerReady) {
           const leadIn = hasAudioLeadIn && index > 0 ? 1.0 : 0
@@ -614,20 +640,24 @@ export function App() {
         }
       }
     },
-    [activeLesson, isPlayerReady, playSegment, hasAudioLeadIn, audioPlayer]
+    [activeLesson, isPlayerReady, playSegment, hasAudioLeadIn, audioPlayer, getSegmentSpeakerIndex]
   )
 
   // Replay current segment with optional 1s lead-in
   const handleReplayCurrent = useCallback(() => {
     if (!activeSegment) return
     if (activeIsAudio) {
-      const leadInText =
+      const prevSeg =
         hasAudioLeadIn && activeSegmentIndex > 0 && activeLesson
-          ? activeLesson.sentences[activeSegmentIndex - 1]?.text
+          ? activeLesson.sentences[activeSegmentIndex - 1]
           : undefined
       void audioPlayer.playTextSegment({
         text: activeSegment.text,
-        leadInText,
+        leadInText: prevSeg?.text,
+        speakerIndex: getSegmentSpeakerIndex(activeLesson, activeSegment),
+        leadInSpeakerIndex: prevSeg
+          ? getSegmentSpeakerIndex(activeLesson, prevSeg)
+          : undefined,
       })
     } else if (isPlayerReady) {
       const leadIn = hasAudioLeadIn && activeSegmentIndex > 0 ? 1.0 : 0
@@ -642,6 +672,7 @@ export function App() {
     activeSegmentIndex,
     activeLesson,
     audioPlayer,
+    getSegmentSpeakerIndex,
   ])
 
   // Play previous segment explicitly for context comparison
@@ -652,12 +683,20 @@ export function App() {
       if (isAudioLesson(activeLesson)) {
         void audioPlayer.playTextSegment({
           text: prevSeg.text,
+          speakerIndex: getSegmentSpeakerIndex(activeLesson, prevSeg),
         })
       } else if (isPlayerReady) {
         playSegment(prevSeg.startTime, prevSeg.endTime, 0)
       }
     }
-  }, [activeLesson, activeSegmentIndex, isPlayerReady, playSegment, audioPlayer])
+  }, [
+    activeLesson,
+    activeSegmentIndex,
+    isPlayerReady,
+    playSegment,
+    audioPlayer,
+    getSegmentSpeakerIndex,
+  ])
 
   // Select another lesson and automatically resume to the next uncompleted sentence
   const handleSelectLesson = (lessonId: string) => {
@@ -1234,6 +1273,7 @@ export function App() {
         if (targetSeg) {
           void audioPlayer.playTextSegment({
             text: targetSeg.text,
+            speakerIndex: getSegmentSpeakerIndex(matchingVideo, targetSeg),
           })
         }
       } else if (isSameVideoAndVisible) {
@@ -1627,6 +1667,17 @@ export function App() {
                       hasLeadIn={hasAudioLeadIn}
                       usingFallbackSpeech={audioPlayer.usingFallbackSpeech}
                       fallbackAccentMissing={audioPlayer.fallbackAccentMissing}
+                      activeSpeaker={
+                        activeSegment
+                          ? activeLessonSpeakers.bySegmentId[activeSegment.id]?.speaker ?? null
+                          : null
+                      }
+                      activeSpeakerIndex={
+                        activeSegment
+                          ? activeLessonSpeakers.bySegmentId[activeSegment.id]?.speakerIndex ?? 0
+                          : 0
+                      }
+                      speakerCount={activeLessonSpeakers.speakers.length}
                       audioError={audioPlayer.audioError}
                       currentSpeed={audioPlayer.playbackRate}
                       voiceAccent={audioPlayer.voiceAccent}

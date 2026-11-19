@@ -23,6 +23,9 @@ interface AudioPlayerViewProps {
   hasLeadIn?: boolean
   usingFallbackSpeech?: boolean
   fallbackAccentMissing?: boolean
+  activeSpeaker?: string | null
+  activeSpeakerIndex?: number
+  speakerCount?: number
   audioError: string | null
   currentSpeed: number
   voiceAccent: VoiceAccent
@@ -43,6 +46,25 @@ const ACCENT_OPTIONS: { value: VoiceAccent; label: string; title: string }[] = [
   { value: 'en-AU', label: 'AU', title: 'Australian English (AU)' },
 ]
 
+const SPEAKER_STAGE_PILLS = [
+  {
+    badge: 'bg-sky-500/20 border-sky-400/40 text-sky-200',
+    voiceLabel: 'Giọng A',
+  },
+  {
+    badge: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200',
+    voiceLabel: 'Giọng B',
+  },
+  {
+    badge: 'bg-violet-500/20 border-violet-400/40 text-violet-200',
+    voiceLabel: 'Giọng C',
+  },
+  {
+    badge: 'bg-amber-500/20 border-amber-400/40 text-amber-200',
+    voiceLabel: 'Giọng D',
+  },
+]
+
 export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   lessonTitle,
   level = 'Intermediate',
@@ -53,6 +75,9 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   hasLeadIn = true,
   usingFallbackSpeech = false,
   fallbackAccentMissing = false,
+  activeSpeaker,
+  activeSpeakerIndex = 0,
+  speakerCount = 0,
   audioError,
   currentSpeed,
   voiceAccent,
@@ -135,6 +160,26 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
           <h3 className="text-sm sm:text-base font-bold text-white line-clamp-1 px-2">
             {lessonTitle}
           </h3>
+
+          {speakerCount >= 2 && activeSpeaker && (
+            <div className="flex items-center justify-center">
+              {(() => {
+                const style =
+                  SPEAKER_STAGE_PILLS[
+                    Math.abs(activeSpeakerIndex) % SPEAKER_STAGE_PILLS.length
+                  ]
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${style.badge}`}
+                  >
+                    <span>
+                      Người nói: {activeSpeaker} • {style.voiceLabel}
+                    </span>
+                  </span>
+                )
+              })()}
+            </div>
+          )}
 
           {/* Audio Equalizer Bars */}
           <div className="flex items-end justify-center gap-1 h-9 px-4" aria-hidden="true">

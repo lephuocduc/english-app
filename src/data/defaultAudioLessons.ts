@@ -1,5 +1,6 @@
 import type { Lesson, SentenceSegment, VoiceAccent } from '../types'
 import { estimateSentenceDuration } from '../lib/audio/textToLesson'
+import { extractSpeakerFromSegment } from '../lib/audio/dialogueVoices'
 
 interface RawAudioSentence {
   text: string
@@ -51,6 +52,10 @@ function buildLesson(spec: RawAudioLessonSpec): Lesson {
     const startTime = Math.round(cursor * 10) / 10
     const endTime = Math.round((cursor + duration) * 10) / 10
     cursor = endTime
+    const detectedSpeaker = extractSpeakerFromSegment({
+      translation: item.translation,
+      hint: item.hint,
+    })
     return {
       id: `${spec.videoId}-seg-${idx + 1}`,
       startTime,
@@ -58,6 +63,7 @@ function buildLesson(spec: RawAudioLessonSpec): Lesson {
       text: item.text,
       translation: item.translation,
       hint: item.hint,
+      ...(detectedSpeaker ? { speaker: detectedSpeaker } : {}),
     }
   })
 

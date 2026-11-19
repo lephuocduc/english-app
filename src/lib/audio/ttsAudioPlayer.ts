@@ -1,10 +1,14 @@
 import type { VoiceAccent } from '../../types'
 import { apiClient } from '../api/client'
+import { getSpeakerVoiceProfile } from './dialogueVoices'
+import { pitchShiftAudioBuffer } from './voicePitchShift'
 
 export interface PlayAudioSegmentOptions {
   text: string
   accent?: VoiceAccent
   speed?: number
+  speakerIndex?: number
+  leadInSpeakerIndex?: number
   isPhoneCallMode?: boolean
   leadInText?: string
   loop?: boolean
@@ -27,14 +31,59 @@ const HIGH_QUALITY_VOICE_HINTS = [
   'samantha',
 ]
 
+const FEMALE_VOICE_HINTS = [
+  'female',
+  'sonia',
+  'libby',
+  'serena',
+  'martha',
+  'hazel',
+  'aria',
+  'samantha',
+  'zira',
+  'karen',
+  'natasha',
+  'jenny',
+  'ava',
+  'emma',
+]
+
+const MALE_VOICE_HINTS = [
+  'male',
+  'ryan',
+  'thomas',
+  'daniel',
+  'arthur',
+  'george',
+  'oliver',
+  'guy',
+  'david',
+  'william',
+  'james',
+  'christopher',
+  'andrew',
+  'brian',
+]
+
+function detectVoiceGender(name: string): 'female' | 'male' | null {
+  const lower = (name || '').toLowerCase()
+  const hasFemale = FEMALE_VOICE_HINTS.some((h) => new RegExp(`(?:^|\\b)${h}(?:\\b|$)`).test(lower))
+  const hasMale = MALE_VOICE_HINTS.some((h) => new RegExp(`(?:^|\\b)${h}(?:\\b|$)`).test(lower))
+  if (hasFemale && !hasMale) return 'female'
+  if (hasMale && !hasFemale) return 'male'
+  return null
+}
+
 function selectBestSpeechVoice(
   voices: SpeechSynthesisVoice[],
-  accent: VoiceAccent
-): { voice: SpeechSynthesisVoice | null; exactMatch: boolean } {
+  accent: VoiceAccent,
+  speakerIndex = 0
+): { voice: SpeechSynthesisVoice | null; exactMatch: boolean; matchedDistinctVoice: boolean } {
   if (!voices || voices.length === 0) {
-    return { voice: null, exactMatch: false }
+    return { voice: null, exactMatch: false, matchedDistinctVoice: false }
   }
 
+  const profile = getSpeakerVoiceProfile(speakerIndex)
   const norm = (s: string) => s.replace(/_/g, '-').toLowerCase()
   const target = norm(accent)
 
@@ -48,7 +97,14 @@ function selectBestSpeechVoice(
     const lowerName = (v.name || '').toLowerCase()
     const idx = HIGH_QUALITY_VOICE_HINTS.findIndex((hint) => lowerName.includes(hint))
     const langBonus = norm(v.lang) === target ? 100 : 0
-    return langBonus + (idx >= 0 ? 50 - idx : 0)
+    const gender = detectVoiceGender(lowerName)
+    const genderBonus =
+      gender === profile.preferredGender
+        ? 200
+        : gender && gender !== profile.preferredGender
+          ? -80
+          : 0
+    return langBonus + genderBonus + (idx >= 0 ? 50 - idx : 0)
   }
 
   const matching = voices.filter((v) => {
@@ -58,11 +114,41 @@ function selectBestSpeechVoice(
 
   if (matching.length > 0) {
     matching.sort((a, b) => qualityScore(b) - qualityScore(a))
-    return { voice: matching[0], exactMatch: true }
+    const topVoice = matching[0]
+    const topGender = detectVoiceGender(topVoice.name || '')
+    let chosen = topVoice
+
+    if (speakerIndex > 0 && topGender !== profile.preferredGender && matching.length > 1) {
+      chosen = matching[speakerIndex % matching.length]
+    }
+
+    const chosenGender = detectVoiceGender(chosen.name || '')
+    const matchedDistinctVoice =
+      speakerIndex === 0 ||
+      chosenGender === profile.preferredGender ||
+      (chosenGender === null && matching.length > 1)
+
+    return { voice: chosen, exactMatch: true, matchedDistinctVoice }
   }
 
-  const fallbackEn = voices.find((v) => norm(v.lang || '').startsWith('en')) || null
-  return { voice: fallbackEn, exactMatch: false }
+  const fallbackPool = voices.filter((v) => norm(v.lang || '').startsWith('en'))
+  if (fallbackPool.length > 0) {
+    fallbackPool.sort((a, b) => qualityScore(b) - qualityScore(a))
+    let chosen = fallbackPool[0]
+    const topGender = detectVoiceGender(chosen.name || '')
+    if (speakerIndex > 0 && topGender !== profile.preferredGender && fallbackPool.length > 1) {
+      chosen = fallbackPool[speakerIndex % fallbackPool.length]
+    }
+    const chosenGender = detectVoiceGender(chosen.name || '')
+    const matchedDistinctVoice =
+      speakerIndex === 0 ||
+      chosenGender === profile.preferredGender ||
+      (chosenGender === null && fallbackPool.length > 1)
+
+    return { voice: chosen, exactMatch: false, matchedDistinctVoice }
+  }
+
+  return { voice: null, exactMatch: false, matchedDistinctVoice: false }
 }
 
 const bufferCache = new Map<string, AudioBuffer>()
@@ -189,36 +275,81 @@ export class TtsAudioEngine {
     }
   }
 
-  async fetchSegmentBuffer(text: string, accent: VoiceAccent = 'en-GB'): Promise<AudioBuffer> {
+  async fetchSegmentBuffer(
+    text: string,
+    accent: VoiceAccent = 'en-GB',
+    speakerIndex = 0
+  ): Promise<AudioBuffer> {
     const cleanText = text.trim()
-    const cacheKey = `${accent}:::${cleanText}`
-    const cached = bufferCache.get(cacheKey)
-    if (cached) return cached
+    const profile = getSpeakerVoiceProfile(speakerIndex)
+    const baseCacheKey = `${accent}:::${cleanText}`
+    const targetCacheKey =
+      profile.id === 'voice-a' ? baseCacheKey : `${accent}:::${profile.id}:::${cleanText}`
+
+    const cachedTarget = bufferCache.get(targetCacheKey)
+    if (cachedTarget) return cachedTarget
 
     const ctx = this.getAudioContext()
     if (!ctx) {
       throw new Error('Web Audio API is unavailable in this environment')
     }
 
-    const url = apiClient.getTtsAudioUrl(cleanText, accent)
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`TTS HTTP ${response.status}`)
+    let baseBuffer = bufferCache.get(baseCacheKey)
+    if (!baseBuffer) {
+      const url = apiClient.getTtsAudioUrl(cleanText, accent)
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`TTS HTTP ${response.status}`)
+      }
+
+      const contentType = (response.headers?.get?.('content-type') || '').toLowerCase()
+      if (contentType.includes('text/html') || contentType.includes('application/json')) {
+        throw new Error('TTS endpoint did not return audio')
+      }
+
+      const arrayBuf = await response.arrayBuffer()
+      if (arrayBuf.byteLength < 64) {
+        throw new Error('TTS returned empty audio data')
+      }
+
+      baseBuffer = await ctx.decodeAudioData(arrayBuf)
+      bufferCache.set(baseCacheKey, baseBuffer)
     }
 
-    const contentType = (response.headers?.get?.('content-type') || '').toLowerCase()
-    if (contentType.includes('text/html') || contentType.includes('application/json')) {
-      throw new Error('TTS endpoint did not return audio')
+    if (Math.abs(profile.pitchRatio - 1.0) >= 0.01) {
+      const shifted = pitchShiftAudioBuffer(ctx, baseBuffer, profile.pitchRatio)
+      bufferCache.set(targetCacheKey, shifted)
+      return shifted
     }
 
-    const arrayBuf = await response.arrayBuffer()
-    if (arrayBuf.byteLength < 64) {
-      throw new Error('TTS returned empty audio data')
+    return baseBuffer
+  }
+
+  private connectWithSpeakerEq(
+    ctx: AudioContext,
+    src: AudioNode,
+    target: AudioNode,
+    speakerIndex = 0
+  ): void {
+    const profile = getSpeakerVoiceProfile(speakerIndex)
+    if (profile.lowShelfGainDb === 0 && profile.highShelfGainDb === 0) {
+      src.connect(target)
+      return
     }
 
-    const decoded = await ctx.decodeAudioData(arrayBuf)
-    bufferCache.set(cacheKey, decoded)
-    return decoded
+    const lowShelf = ctx.createBiquadFilter()
+    lowShelf.type = 'lowshelf'
+    lowShelf.frequency.value = 220
+    lowShelf.gain.value = profile.lowShelfGainDb
+
+    const highShelf = ctx.createBiquadFilter()
+    highShelf.type = 'highshelf'
+    highShelf.frequency.value = 3800
+    highShelf.gain.value = profile.highShelfGainDb
+
+    src.connect(lowShelf)
+    lowShelf.connect(highShelf)
+    highShelf.connect(target)
   }
 
   stop(): void {
@@ -292,6 +423,7 @@ export class TtsAudioEngine {
       text,
       accent = 'en-GB',
       speed = 1.0,
+      speakerIndex = 0,
       isPhoneCallMode = false,
       onStart,
       onEnd,
@@ -307,9 +439,17 @@ export class TtsAudioEngine {
       utterance.lang = accent
       utterance.rate = speed
 
-      const { voice, exactMatch } = selectBestSpeechVoice(voices, accent)
+      const profile = getSpeakerVoiceProfile(speakerIndex)
+      const { voice, exactMatch, matchedDistinctVoice } = selectBestSpeechVoice(
+        voices,
+        accent,
+        speakerIndex
+      )
       if (voice) {
         utterance.voice = voice
+      }
+      if (speakerIndex > 0 && !matchedDistinctVoice) {
+        utterance.pitch = Math.min(1.25, Math.max(0.75, profile.pitchRatio))
       }
 
       if (isPhoneCallMode) {
@@ -365,6 +505,8 @@ export class TtsAudioEngine {
       text,
       accent = 'en-GB',
       speed = 1.0,
+      speakerIndex = 0,
+      leadInSpeakerIndex,
       isPhoneCallMode = false,
       leadInText,
       onStart,
@@ -383,9 +525,12 @@ export class TtsAudioEngine {
       const ctx = this.getAudioContext()
       if (!ctx) throw new Error('AudioContext unavailable')
 
-      const mainBufferPromise = this.fetchSegmentBuffer(cleanText, accent)
+      const effectiveLeadInSpeaker = leadInSpeakerIndex ?? speakerIndex
+      const mainBufferPromise = this.fetchSegmentBuffer(cleanText, accent, speakerIndex)
       const leadInBufferPromise = leadInText?.trim()
-        ? this.fetchSegmentBuffer(leadInText.trim(), accent).catch(() => null)
+        ? this.fetchSegmentBuffer(leadInText.trim(), accent, effectiveLeadInSpeaker).catch(
+            () => null
+          )
         : Promise.resolve(null)
 
       const [mainBuffer, leadInBuffer] = await Promise.all([
@@ -411,7 +556,7 @@ export class TtsAudioEngine {
         const leadInSrc = ctx.createBufferSource()
         leadInSrc.buffer = leadInBuffer
         leadInSrc.playbackRate.value = speed
-        leadInSrc.connect(inputNode)
+        this.connectWithSpeakerEq(ctx, leadInSrc, inputNode, effectiveLeadInSpeaker)
 
         const sliceDuration = Math.min(1.1, leadInBuffer.duration)
         const offset = Math.max(0, leadInBuffer.duration - sliceDuration)
@@ -425,7 +570,7 @@ export class TtsAudioEngine {
       const mainSrc = ctx.createBufferSource()
       mainSrc.buffer = mainBuffer
       mainSrc.playbackRate.value = speed
-      mainSrc.connect(inputNode)
+      this.connectWithSpeakerEq(ctx, mainSrc, inputNode, speakerIndex)
       this.activeSource = mainSrc
 
       mainSrc.onended = () => {

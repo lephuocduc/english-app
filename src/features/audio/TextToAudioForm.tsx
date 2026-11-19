@@ -13,6 +13,7 @@ import {
 import type { Lesson, VoiceAccent } from '../../types'
 import {
   createAudioLessonFromText,
+  detectDialogueSpeakersInText,
   estimateAudioDurationSeconds,
   splitTextIntoSentences,
 } from '../../lib/audio/textToLesson'
@@ -35,10 +36,12 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
 
   const stats = useMemo(() => {
     const sentences = splitTextIntoSentences(rawText)
+    const speakers = detectDialogueSpeakersInText(rawText)
     const words = rawText.trim().split(/\s+/).filter(Boolean).length
     const durationSec = estimateAudioDurationSeconds(rawText)
     return {
       sentenceCount: sentences.length,
+      speakers,
       wordCount: words,
       durationSec,
       firstSentence: sentences[0] || '',
@@ -168,7 +171,13 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
             <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Nội dung đoạn văn tiếng Anh (tự động tách câu &amp; chuyển thành Audio)</span>
           </label>
-          <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            {stats.speakers.length >= 2 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold">
+                Hội thoại {stats.speakers.length} vai ({stats.speakers.join(', ')}) • Tự động phân
+                giọng
+              </span>
+            )}
             <span>{stats.sentenceCount} câu</span>
             <span>•</span>
             <span>{stats.wordCount} từ</span>
@@ -187,7 +196,7 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
             setRawText(e.target.value)
             if (error) setError(null)
           }}
-          placeholder="Paste or type your English passage here (recommended ~120-160 words for a 1-minute listening exercise)..."
+          placeholder="Dán đoạn văn tiếng Anh hoặc hội thoại (mỗi dòng dạng 'Alice: ...' và 'Bob: ...' sẽ tự động gán giọng khác nhau cho từng người)..."
           className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 leading-relaxed resize-y transition"
         />
       </div>

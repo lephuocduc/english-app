@@ -5,6 +5,7 @@ export interface SentenceSegment {
   text: string
   translation?: string
   hint?: string
+  speaker?: string
 }
 
 export type LessonSourceType = 'youtube' | 'audio'

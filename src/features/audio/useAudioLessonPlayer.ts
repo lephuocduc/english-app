@@ -12,6 +12,8 @@ export interface PlayAudioTextParams {
   text: string
   leadInText?: string
   accent?: VoiceAccent
+  speakerIndex?: number
+  leadInSpeakerIndex?: number
 }
 
 export function useAudioLessonPlayer({
@@ -72,6 +74,8 @@ export function useAudioLessonPlayer({
       lastPlayedRef.current = {
         text: params.text,
         leadInText: params.leadInText,
+        speakerIndex: params.speakerIndex,
+        leadInSpeakerIndex: params.leadInSpeakerIndex,
       }
       setAudioError(null)
       setIsLoadingAudio(true)
@@ -82,6 +86,8 @@ export function useAudioLessonPlayer({
           leadInText: withLeadIn ? params.leadInText : undefined,
           accent: withLeadIn && params.accent ? params.accent : accentRef.current,
           speed: speedRef.current,
+          speakerIndex: params.speakerIndex ?? 0,
+          leadInSpeakerIndex: params.leadInSpeakerIndex,
           isPhoneCallMode: phoneCallModeRef.current,
           onFallbackUsed: (used, exactMatch) => {
             setUsingFallbackSpeech(used)

@@ -13,6 +13,14 @@ import {
 } from 'lucide-react'
 import type { Lesson, SentenceSegment, UserSentenceProgress } from '../../types'
 import { cleanWord } from '../../lib/translation/translator'
+import { buildLessonSpeakerMap } from '../../lib/audio/dialogueVoices'
+
+const SPEAKER_BADGE_CLASSES = [
+  'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+  'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  'bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800',
+  'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+]
 
 interface CompletedLessonTranscriptProps {
   lesson: Lesson
@@ -110,6 +118,11 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
 
   const hasAnyTranslation = useMemo(
     () => lesson.sentences.some((s) => Boolean(s.translation?.trim())),
+    [lesson.sentences]
+  )
+
+  const speakerInfo = useMemo(
+    () => buildLessonSpeakerMap(lesson.sentences),
     [lesson.sentences]
   )
 
@@ -241,6 +254,9 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
                 const score = savedProgressMap[seg.id]?.score
                 const hasScore = typeof score === 'number'
                 const tokens = seg.text.trim().split(/(\s+)/)
+                const speakerAssignment = speakerInfo.isDialogue
+                  ? speakerInfo.bySegmentId[seg.id]
+                  : undefined
 
                 return (
                   <div
@@ -270,10 +286,21 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
 
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                          <div className="flex items-center gap-2 font-mono">
+                          <div className="flex flex-wrap items-center gap-2 font-mono">
                             <span className="font-bold text-slate-700 dark:text-slate-200">
                               #{idx + 1}
                             </span>
+                            {speakerAssignment && (
+                              <span
+                                className={`font-sans text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                  SPEAKER_BADGE_CLASSES[
+                                    speakerAssignment.speakerIndex % SPEAKER_BADGE_CLASSES.length
+                                  ]
+                                }`}
+                              >
+                                {speakerAssignment.speaker}
+                              </span>
+                            )}
                             <span>
                               {formatTime(seg.startTime)} - {formatTime(seg.endTime)}
                             </span>

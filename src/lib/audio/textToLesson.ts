@@ -30,11 +30,98 @@ export function estimateSentenceDuration(text: string): number {
  * Estimates total spoken audio duration in seconds for a block of text.
  */
 export function estimateAudioDurationSeconds(rawText: string): number {
-  const sentences = splitTextIntoSentences(rawText)
-  if (sentences.length === 0) return 0
+  const turns = parseDialogueTurns(rawText)
+  if (turns.length === 0) return 0
   return Math.round(
-    sentences.reduce((sum, sentence) => sum + estimateSentenceDuration(sentence), 0)
+    turns.reduce((sum, turn) => sum + estimateSentenceDuration(turn.text), 0)
   )
+}
+
+export interface ParsedDialogueTurn {
+  text: string
+  speaker?: string
+}
+
+const BRACKET_SPEAKER_REGEX = /^\[([^\]]{1,32})\]\s+(.+)$/
+const COLON_SPEAKER_REGEX = /^([A-Za-zÀ-ỹ0-9 _.-]{1,28}):\s+(.+)$/
+
+function matchSpeakerLine(line: string): { speaker: string; body: string } | null {
+  const bracketMatch = line.match(BRACKET_SPEAKER_REGEX)
+  if (bracketMatch) {
+    const label = bracketMatch[1].trim()
+    if (/[A-Za-zÀ-ỹ]/.test(label)) {
+      return { speaker: label, body: bracketMatch[2].trim() }
+    }
+  }
+
+  const colonMatch = line.match(COLON_SPEAKER_REGEX)
+  if (colonMatch) {
+    const label = colonMatch[1].trim()
+    const body = colonMatch[2].trim()
+    if (/[A-Za-zÀ-ỹ]/.test(label) && body && !/^https?$/i.test(label)) {
+      return { speaker: label, body }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Returns distinct speaker names when input contains >= 2 dialogue speakers (e.g., `Alice: ... / Bob: ...`).
+ */
+export function detectDialogueSpeakersInText(rawText: string): string[] {
+  const lines = rawText
+    .replace(/\r\n/g, '\n')
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const seen = new Map<string, string>()
+  for (const line of lines) {
+    const matched = matchSpeakerLine(line)
+    if (matched) {
+      const key = matched.speaker.toLowerCase()
+      if (!seen.has(key)) {
+        seen.set(key, matched.speaker)
+      }
+    }
+  }
+
+  return seen.size >= 2 ? Array.from(seen.values()) : []
+}
+
+/**
+ * Parses dialogue lines (`Speaker: text` or `[Speaker] text`) into speaker-tagged sentence turns
+ * when 2+ distinct speakers exist; falls back to standard sentence splitting for monologues.
+ */
+export function parseDialogueTurns(rawText: string): ParsedDialogueTurn[] {
+  const speakers = detectDialogueSpeakersInText(rawText)
+  if (speakers.length < 2) {
+    return splitTextIntoSentences(rawText).map((text) => ({ text }))
+  }
+
+  const lines = rawText
+    .replace(/\r\n/g, '\n')
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const turns: ParsedDialogueTurn[] = []
+  let activeSpeaker: string | undefined
+
+  for (const line of lines) {
+    const matched = matchSpeakerLine(line)
+    const body = matched ? matched.body : line
+    if (matched) {
+      activeSpeaker = matched.speaker
+    }
+
+    for (const sentence of splitTextIntoSentences(body)) {
+      turns.push(activeSpeaker ? { text: sentence, speaker: activeSpeaker } : { text: sentence })
+    }
+  }
+
+  return turns
 }
 
 /**
@@ -86,12 +173,22 @@ export function buildTimedSegmentsFromSentences(
   sentences: string[],
   idPrefix: string
 ): SentenceSegment[] {
+  return buildTimedSegmentsFromTurns(
+    sentences.map((text) => ({ text })),
+    idPrefix
+  )
+}
+
+function buildTimedSegmentsFromTurns(
+  turns: ParsedDialogueTurn[],
+  idPrefix: string
+): SentenceSegment[] {
   let cursor = 0
-  return sentences
-    .map((text) => text.trim())
-    .filter(Boolean)
-    .map((text, idx) => {
-      const duration = estimateSentenceDuration(text)
+  return turns
+    .map((turn) => ({ text: turn.text.trim(), speaker: turn.speaker?.trim() }))
+    .filter((turn) => Boolean(turn.text))
+    .map((turn, idx) => {
+      const duration = estimateSentenceDuration(turn.text)
       const startTime = Math.round(cursor * 10) / 10
       const endTime = Math.round((cursor + duration) * 10) / 10
       cursor = endTime
@@ -99,7 +196,13 @@ export function buildTimedSegmentsFromSentences(
         id: `${idPrefix}-seg-${idx + 1}`,
         startTime,
         endTime,
-        text,
+        text: turn.text,
+        ...(turn.speaker
+          ? {
+              speaker: turn.speaker,
+              hint: `[Speaker: ${turn.speaker}]`,
+            }
+          : {}),
       }
     })
 }
@@ -125,9 +228,13 @@ export function createAudioLessonFromText({
   const uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
   // Keep videoId <= 32 chars for Cloudflare D1 schema compatibility
   const audioId = `audio-${uniqueSuffix}`.slice(0, 32)
-  const sentenceTexts = splitTextIntoSentences(rawText)
-  const sentences = buildTimedSegmentsFromSentences(sentenceTexts, audioId)
-  const wordCount = sentenceTexts.join(' ').split(/\s+/).filter(Boolean).length
+  const turns = parseDialogueTurns(rawText)
+  const sentences = buildTimedSegmentsFromTurns(turns, audioId)
+  const wordCount = turns
+    .map((t) => t.text)
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean).length
   const durationSec = Math.round(
     sentences.length > 0 ? sentences[sentences.length - 1].endTime : 0
   )
