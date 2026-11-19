@@ -41,13 +41,17 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
 }) => {
   const [videoToDelete, setVideoToDelete] = useState<Lesson | null>(null)
   const [createMode, setCreateMode] = useState<'youtube' | 'audio'>('youtube')
-  const [libraryFilter, setLibraryFilter] = useState<'all' | 'audio' | 'youtube'>('all')
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'audio-a2' | 'audio-b1' | 'youtube'>('all')
 
-  const audioLessonsCount = useMemo(
-    () => lessons.filter((l) => isAudioLesson(l)).length,
+  const a2AudioCount = useMemo(
+    () => lessons.filter((l) => isAudioLesson(l) && l.level === 'Beginner').length,
     [lessons]
   )
-  const youtubeLessonsCount = lessons.length - audioLessonsCount
+  const b1AudioCount = useMemo(
+    () => lessons.filter((l) => isAudioLesson(l) && l.level !== 'Beginner').length,
+    [lessons]
+  )
+  const youtubeLessonsCount = lessons.length - a2AudioCount - b1AudioCount
 
   const missingPresetAudioCount = useMemo(() => {
     const existingIds = new Set(lessons.map((l) => l.id))
@@ -55,7 +59,12 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
   }, [lessons])
 
   const filteredLessons = useMemo(() => {
-    if (libraryFilter === 'audio') return lessons.filter((l) => isAudioLesson(l))
+    if (libraryFilter === 'audio-a2') {
+      return lessons.filter((l) => isAudioLesson(l) && l.level === 'Beginner')
+    }
+    if (libraryFilter === 'audio-b1') {
+      return lessons.filter((l) => isAudioLesson(l) && l.level !== 'Beginner')
+    }
     if (libraryFilter === 'youtube') return lessons.filter((l) => !isAudioLesson(l))
     return lessons
   }, [lessons, libraryFilter])
@@ -161,14 +170,25 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setLibraryFilter('audio')}
+                onClick={() => setLibraryFilter('audio-a2')}
                 className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer ${
-                  libraryFilter === 'audio'
+                  libraryFilter === 'audio-a2'
                     ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Audio IT Ops ({audioLessonsCount})
+                Audio A2-B1 ({a2AudioCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLibraryFilter('audio-b1')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer ${
+                  libraryFilter === 'audio-b1'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Audio B1-B2 ({b1AudioCount})
               </button>
               <button
                 type="button"
@@ -228,7 +248,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/25 border border-indigo-400/40 text-indigo-200 text-[10px] font-bold">
                           <Volume2 className="w-3 h-3" />
-                          <span>Audio TTS • {lesson.voiceAccent || 'en-US'}</span>
+                          <span>Audio TTS • {lesson.voiceAccent || 'en-GB'}</span>
                         </span>
                         <span className="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-mono font-semibold text-slate-200">
                           ~{totalSec}s
@@ -247,7 +267,11 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
 
                       <div className="flex items-center justify-between text-[11px] text-slate-300 font-mono">
                         <span className="px-1.5 py-0.5 bg-black/40 rounded">
-                          {lesson.level || 'Intermediate'}
+                          {lesson.level === 'Beginner'
+                            ? 'A2-B1'
+                            : lesson.level === 'Advanced'
+                              ? 'C1'
+                              : 'B1-B2'}
                         </span>
                         <span className="text-[10px] text-amber-300 font-sans font-semibold">
                           Phone Mode Ready

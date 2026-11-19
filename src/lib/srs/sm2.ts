@@ -251,7 +251,7 @@ export function createClozeSentence(sentence: string, targetWord: string): strin
 /**
  * Pronounce word using Web Speech API
  */
-export function speakWord(word: string, lang = 'en-US'): void {
+export function speakWord(word: string, lang = 'en-GB'): void {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel()

@@ -17,7 +17,7 @@ export interface PlayAudioTextParams {
 export function useAudioLessonPlayer({
   initialSpeed = 1.0,
   initialPhoneCallMode = false,
-  initialAccent = 'en-US',
+  initialAccent = 'en-GB',
 }: UseAudioLessonPlayerOptions = {}) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoadingAudio, setIsLoadingAudio] = useState(false)

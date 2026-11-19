@@ -40,8 +40,8 @@ function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array<ArrayBuffer> {
 
 ttsRouter.get('/', async (c) => {
   const rawText = (c.req.query('text') || '').trim()
-  const rawLang = (c.req.query('lang') || 'en-US').trim()
-  const lang = ALLOWED_LANGS.has(rawLang) ? rawLang : 'en-US'
+  const rawLang = (c.req.query('lang') || 'en-GB').trim()
+  const lang = ALLOWED_LANGS.has(rawLang) ? rawLang : 'en-GB'
 
   if (!rawText) {
     return c.json({ success: false, error: 'Missing required query parameter: text' }, 400)

@@ -119,7 +119,7 @@ export function createAudioLessonFromText({
   title,
   rawText,
   level = 'Intermediate',
-  voiceAccent = 'en-US',
+  voiceAccent = 'en-GB',
   description,
 }: CreateAudioLessonOptions): Lesson {
   const uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`

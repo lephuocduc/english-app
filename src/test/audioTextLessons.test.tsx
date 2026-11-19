@@ -9,9 +9,11 @@ import {
 import { TtsAudioEngine, sharedTtsAudioEngine } from '../lib/audio/ttsAudioPlayer'
 import { useAudioLessonPlayer } from '../features/audio/useAudioLessonPlayer'
 import {
+  DEFAULT_A2_B1_AUDIO_LESSONS,
   DEFAULT_B1_B2_AUDIO_LESSONS,
   RETIRED_PRESET_AUDIO_IDS,
 } from '../data/defaultAudioLessons'
+import { apiClient } from '../lib/api/client'
 import { storage } from '../lib/storage/storage'
 import { AudioPlayerView } from '../features/audio/AudioPlayerView'
 import { TextToAudioForm } from '../features/audio/TextToAudioForm'
@@ -53,16 +55,24 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
     })
   })
 
-  describe('2. 10 IT System Operations B1-B2 Audio Conversations (~1 minute each)', () => {
-    it('provides 10 complete IT Ops B1-B2 conversations with translations, hints, and ~1-minute duration', () => {
-      expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(10)
+  describe('2. 16 IT System Operations Audio Conversations (6 A2-B1 + 10 B1-B2, ~1 minute each)', () => {
+    it('provides 6 A2-B1 and 10 B1-B2 UK-default IT Ops conversations with translations, hints, and ~1-minute duration', () => {
+      expect(DEFAULT_A2_B1_AUDIO_LESSONS).toHaveLength(6)
+      for (const lesson of DEFAULT_A2_B1_AUDIO_LESSONS) {
+        expect(lesson.level).toBe('Beginner')
+        expect(lesson.id).toMatch(/^lesson-audio-itops-a2-\d{2}$/)
+        expect(lesson.voiceAccent).toBe('en-GB')
+      }
+
+      expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(16)
 
       for (const lesson of DEFAULT_B1_B2_AUDIO_LESSONS) {
         expect(isAudioLesson(lesson)).toBe(true)
-        expect(lesson.id).toMatch(/^lesson-audio-itops-\d{2}$/)
-        expect(lesson.videoId).toMatch(/^audio-itops-\d{2}$/)
+        expect(lesson.id).toMatch(/^lesson-audio-itops-(?:a2-)?\d{2}$/)
+        expect(lesson.videoId).toMatch(/^audio-itops-(?:a2-)?\d{2}$/)
         expect(lesson.videoId.length).toBeLessThanOrEqual(32)
-        expect(lesson.level).toBe('Intermediate')
+        expect(lesson.voiceAccent).toBe('en-GB')
+        expect(['Beginner', 'Intermediate']).toContain(lesson.level)
         expect(lesson.sentences.length).toBeGreaterThanOrEqual(8)
 
         const totalDuration = lesson.sentences[lesson.sentences.length - 1].endTime
@@ -77,6 +87,21 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
           expect(seg.endTime).toBeGreaterThan(seg.startTime)
         }
       }
+    })
+
+    it('uses UK English (en-GB) as default voice accent across preferences, form helpers, API URL, and player hook', () => {
+      window.localStorage.clear()
+      expect(storage.loadPreferences().ttsAccent).toBe('en-GB')
+
+      const customLesson = createAudioLessonFromText({
+        title: 'Quick UK Default Check',
+        rawText: 'First sentence for testing. Second sentence for testing.',
+      })
+      expect(customLesson.voiceAccent).toBe('en-GB')
+      expect(apiClient.getTtsAudioUrl('hello')).toContain('lang=en-GB')
+
+      const { result } = renderHook(() => useAudioLessonPlayer())
+      expect(result.current.voiceAccent).toBe('en-GB')
     })
 
     it('retires legacy general-topic preset conversations from local storage', () => {
@@ -102,7 +127,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
 
       const loaded = storage.loadVideos() || []
       expect(loaded.some((v) => v.id === 'lesson-audio-b1b2-01')).toBe(false)
-      expect(loaded.some((v) => v.id === 'lesson-audio-itops-01')).toBe(true)
+      expect(loaded.some((v) => v.id === DEFAULT_B1_B2_AUDIO_LESSONS[0].id)).toBe(true)
       window.localStorage.clear()
     })
   })
@@ -365,7 +390,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       const json = (await listRes.json()) as { success: boolean; data: any[] }
       expect(json.success).toBe(true)
       expect(json.data).toHaveLength(1)
-      expect(json.data[0].videoId).toBe('audio-itops-01')
+      expect(json.data[0].videoId).toBe(sampleAudio.videoId)
       expect(json.data[0].sentences).toHaveLength(sampleAudio.sentences.length)
       expect(isAudioLesson(json.data[0])).toBe(true)
     })

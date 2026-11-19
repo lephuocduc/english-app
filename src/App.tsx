@@ -451,19 +451,20 @@ export function App() {
   const audioPlayer = useAudioLessonPlayer({
     initialSpeed: preferences.playbackSpeed,
     initialPhoneCallMode: preferences.isPhoneCallMode ?? false,
-    initialAccent: activeLesson?.voiceAccent || preferences.ttsAccent || 'en-US',
+    initialAccent: preferences.ttsAccent || 'en-GB',
   })
 
-  // Sync voice accent when switching between audio lessons
+  // Sync voice accent when switching between audio lessons (without overriding user accent choice)
   useEffect(() => {
     audioPlayer.stopAudio()
-    if (activeIsAudio && activeLesson?.voiceAccent) {
+    if (activeIsAudio && activeLesson?.voiceAccent && !preferences.ttsAccent) {
       audioPlayer.changeVoiceAccent(activeLesson.voiceAccent)
     }
   }, [
     activeLesson?.id,
     activeLesson?.voiceAccent,
     activeIsAudio,
+    preferences.ttsAccent,
     audioPlayer.stopAudio,
     audioPlayer.changeVoiceAccent,
   ])

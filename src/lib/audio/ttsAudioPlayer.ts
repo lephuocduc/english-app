@@ -189,7 +189,7 @@ export class TtsAudioEngine {
     }
   }
 
-  async fetchSegmentBuffer(text: string, accent: VoiceAccent = 'en-US'): Promise<AudioBuffer> {
+  async fetchSegmentBuffer(text: string, accent: VoiceAccent = 'en-GB'): Promise<AudioBuffer> {
     const cleanText = text.trim()
     const cacheKey = `${accent}:::${cleanText}`
     const cached = bufferCache.get(cacheKey)
@@ -290,7 +290,7 @@ export class TtsAudioEngine {
 
     const {
       text,
-      accent = 'en-US',
+      accent = 'en-GB',
       speed = 1.0,
       isPhoneCallMode = false,
       onStart,
@@ -363,7 +363,7 @@ export class TtsAudioEngine {
 
     const {
       text,
-      accent = 'en-US',
+      accent = 'en-GB',
       speed = 1.0,
       isPhoneCallMode = false,
       leadInText,

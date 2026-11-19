@@ -282,7 +282,7 @@ export class ApiClient {
   }
 
   // --- Text-to-Speech Audio URL Builder ---
-  getTtsAudioUrl(text: string, lang = 'en-US'): string {
+  getTtsAudioUrl(text: string, lang = 'en-GB'): string {
     const isLocalDev =
       typeof window !== 'undefined' &&
       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')

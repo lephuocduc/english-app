@@ -38,8 +38,8 @@ interface AudioPlayerViewProps {
 }
 
 const ACCENT_OPTIONS: { value: VoiceAccent; label: string; title: string }[] = [
-  { value: 'en-US', label: 'US', title: 'American English (US)' },
   { value: 'en-GB', label: 'UK', title: 'British English (UK)' },
+  { value: 'en-US', label: 'US', title: 'American English (US)' },
   { value: 'en-AU', label: 'AU', title: 'Australian English (AU)' },
 ]
 

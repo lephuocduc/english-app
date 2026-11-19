@@ -32,8 +32,8 @@ function createListenFlowApiMiddleware() {
 
       if (urlObj.pathname.endsWith('/api/tts')) {
         const text = (urlObj.searchParams.get('text') || '').trim()
-        const rawLang = (urlObj.searchParams.get('lang') || 'en-US').trim()
-        const lang = ALLOWED_TTS_LANGS.has(rawLang) ? rawLang : 'en-US'
+        const rawLang = (urlObj.searchParams.get('lang') || 'en-GB').trim()
+        const lang = ALLOWED_TTS_LANGS.has(rawLang) ? rawLang : 'en-GB'
 
         if (!text) {
           res.statusCode = 400

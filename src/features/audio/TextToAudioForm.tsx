@@ -28,7 +28,7 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
   const [title, setTitle] = useState('')
   const [rawText, setRawText] = useState('')
   const [level, setLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate')
-  const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>('en-US')
+  const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>('en-GB')
   const [previewPhoneMode, setPreviewPhoneMode] = useState(false)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -131,8 +131,8 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
             onChange={(e) => setVoiceAccent(e.target.value as VoiceAccent)}
             className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-indigo-500 outline-none text-slate-800 dark:text-slate-100"
           >
+            <option value="en-GB">UK English (British — Mặc định)</option>
             <option value="en-US">US English (American)</option>
-            <option value="en-GB">UK English (British)</option>
             <option value="en-AU">AU English (Australian)</option>
           </select>
         </div>

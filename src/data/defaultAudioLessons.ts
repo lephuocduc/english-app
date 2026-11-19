@@ -83,7 +83,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '01. High CPU Alert & Memory Leak Triage (IT Ops)',
     description:
       'On-call bridge call between a NOC analyst and an SRE triaging a production CPU spike, heap dump capture, and safe rollback (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -207,7 +207,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '03. Root Disk Full & Log Rotation Fix (IT Ops)',
     description:
       'Night-shift Linux troubleshooting call resolving a 100% full root partition, open file handles, and automated log rotation (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -266,7 +266,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '04. Slow Queries & Database Connection Pool (IT Ops)',
     description:
       'Incident call between Application Support and a DBA diagnosing checkout timeouts, full table scans, and read replicas (~1 min, B1-B2).',
-    voiceAccent: 'en-AU',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -384,7 +384,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '06. Kubernetes Pod Crash Loop & Rollback (IT Ops)',
     description:
       'Release call between a Release Manager and DevOps engineer diagnosing CrashLoopBackOff, OOM kills, ConfigMap errors, and instant rollback (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -508,7 +508,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '08. Suspicious SSH Login & Firewall Hardening (IT Ops)',
     description:
       'Security escalation call between a SOC analyst and a SysOps engineer blocking SSH brute-force attacks and hardening bastion access (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -567,7 +567,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '09. Maintenance Window & Kernel Patching (IT Ops)',
     description:
       'Change Advisory Board call coordinating a low-risk Linux kernel security patch with snapshots, rolling updates, and smoke tests (~1 min, B1-B2).',
-    voiceAccent: 'en-AU',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -626,7 +626,7 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
     title: '10. Blameless Postmortem & SLA Review (IT Ops)',
     description:
       'Post-incident review between an SRE Lead and Operations Engineer covering root cause analysis, SLA error budgets, alert fatigue, and runbooks (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
+    voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
@@ -687,5 +687,377 @@ const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
   },
 ]
 
-export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_SPECS.map(buildLesson)
+const RAW_IT_OPS_A2_B1_SPECS: RawAudioLessonSpec[] = [
+  {
+    id: 'lesson-audio-itops-a2-01',
+    videoId: 'audio-itops-a2-01',
+    title: 'A2-B1 | 01. Morning Server Check & Handover (IT Ops)',
+    description:
+      'Simple shift handover between two junior operators checking server status, alerts, and daily tickets (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Good morning Ben, how was the night shift in the server room?',
+        translation:
+          '[Ca sáng] Chào buổi sáng Ben, ca trực đêm ở phòng máy chủ thế nào?',
+        hint: 'night shift, server room',
+      },
+      {
+        text: 'It was very quiet, and all main servers are running normally today.',
+        translation:
+          '[Ca đêm] Rất yên tĩnh, và tất cả máy chủ chính hôm nay đều đang chạy bình thường.',
+        hint: 'quiet, running normally',
+      },
+      {
+        text: 'Did we get any red alerts on the monitoring screen last night?',
+        translation:
+          '[Ca sáng] Đêm qua màn hình giám sát có báo cảnh báo đỏ nào không?',
+        hint: 'alerts, monitoring screen',
+      },
+      {
+        text: 'We had one yellow warning on mail server two around three in the morning.',
+        translation:
+          '[Ca đêm] Ta có một cảnh báo vàng ở máy chủ thư số hai vào khoảng ba giờ sáng.',
+        hint: 'warning, mail server',
+      },
+      {
+        text: 'What caused that warning, and did you need to restart the machine?',
+        translation:
+          '[Ca sáng] Nguyên nhân cảnh báo là gì, cậu có cần khởi động lại máy không?',
+        hint: 'caused, restart',
+      },
+      {
+        text: 'The memory was briefly high during a backup job, then it went back to normal.',
+        translation:
+          '[Ca đêm] Bộ nhớ tăng cao một lúc khi chạy sao lưu, sau đó tự trở lại bình thường.',
+        hint: 'briefly, backup job, normal',
+      },
+      {
+        text: 'Great, are there any open support tickets waiting for the morning team?',
+        translation:
+          '[Ca sáng] Tốt quá, còn phiếu hỗ trợ nào đang mở chờ ca sáng xử lý không?',
+        hint: 'support tickets, waiting',
+      },
+      {
+        text: 'Only two small printer requests, and I already wrote short notes in our logbook.',
+        translation:
+          '[Ca đêm] Chỉ còn hai yêu cầu máy in nhỏ thôi, mình đã ghi chú ngắn vào sổ trực rồi.',
+        hint: 'requests, notes, logbook',
+      },
+      {
+        text: 'Thanks for the clear handover, Ben; go home and get some good rest.',
+        translation:
+          '[Ca sáng] Cảm ơn bàn giao rõ ràng nhé Ben; về nhà nghỉ ngơi cho khỏe đi.',
+        hint: 'handover, rest',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-02',
+    videoId: 'audio-itops-a2-02',
+    title: 'A2-B1 | 02. Locked Account & Password Reset Call (IT Support)',
+    description:
+      'Everyday IT helpdesk phone call helping a staff member unlock an account and set a safe password (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hello, IT helpdesk speaking; how can I help you this morning?',
+        translation:
+          '[Helpdesk] Xin chào, bộ phận hỗ trợ IT nghe ạ; sáng nay tôi có thể giúp gì cho bạn?',
+        hint: 'helpdesk, speaking',
+      },
+      {
+        text: 'Hi, I cannot sign in to my work email because my account is locked.',
+        translation:
+          '[Nhân viên] Chào bạn, tôi không đăng nhập được email công ty vì tài khoản bị khóa rồi.',
+        hint: 'sign in, locked',
+      },
+      {
+        text: 'Do not worry, I can unlock it for you in just a few minutes.',
+        translation:
+          '[Helpdesk] Đừng lo, tôi có thể mở khóa giúp bạn chỉ trong vài phút.',
+        hint: 'unlock, a few minutes',
+      },
+      {
+        text: 'First, could you please tell me your full name and employee number?',
+        translation:
+          '[Helpdesk] Trước tiên, bạn vui lòng cho tôi biết họ tên đầy đủ và mã nhân viên nhé?',
+        hint: 'full name, employee number',
+      },
+      {
+        text: 'Sure, my name is Claire Evans, and my number is four zero eight two.',
+        translation: '[Nhân viên] Được ạ, tôi tên Claire Evans, mã nhân viên là 4082.',
+        hint: 'number',
+      },
+      {
+        text: 'Thank you Claire; I see five wrong password attempts on your login screen.',
+        translation:
+          '[Helpdesk] Cảm ơn Claire; tôi thấy có năm lần nhập sai mật khẩu trên màn hình đăng nhập của bạn.',
+        hint: 'wrong password, attempts, login screen',
+      },
+      {
+        text: 'Yes, my keyboard had caps lock turned on, so I typed it wrong.',
+        translation:
+          '[Nhân viên] Đúng rồi, bàn phím tôi đang bật phím viết hoa nên tôi gõ sai.',
+        hint: 'keyboard, caps lock, typed',
+      },
+      {
+        text: 'I have unlocked your account and sent a temporary link to your phone.',
+        translation:
+          '[Helpdesk] Tôi đã mở khóa tài khoản và gửi một đường dẫn tạm thời tới điện thoại của bạn.',
+        hint: 'temporary link',
+      },
+      {
+        text: 'Please choose a strong new password with letters and numbers, then try again.',
+        translation:
+          '[Helpdesk] Bạn hãy chọn mật khẩu mới mạnh có cả chữ và số rồi thử đăng nhập lại nhé.',
+        hint: 'strong password, letters, numbers',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-03',
+    videoId: 'audio-itops-a2-03',
+    title: 'A2-B1 | 03. Slow Office WiFi & Router Restart (IT Support)',
+    description:
+      'Practical workplace call diagnosing slow internet on the third floor, checking cables, and restarting the router (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Sam, the internet on the third floor is very slow this afternoon.',
+        translation: '[Nhân viên] Chào Sam, mạng internet ở tầng ba chiều nay rất chậm.',
+        hint: 'third floor, slow',
+      },
+      {
+        text: 'Is it slow only on your laptop, or are your colleagues having trouble too?',
+        translation:
+          '[IT Support] Chỉ chậm trên máy tính xách tay của bạn hay đồng nghiệp cũng gặp trục trặc?',
+        hint: 'laptop, colleagues, having trouble',
+      },
+      {
+        text: 'Everyone near the meeting room keeps losing their video calls every few minutes.',
+        translation:
+          '[Nhân viên] Mọi người gần phòng họp đều cứ bị rớt cuộc gọi video sau vài phút.',
+        hint: 'meeting room, losing, video calls',
+      },
+      {
+        text: 'Let me check the network panel; the wireless router on your floor looks busy.',
+        translation:
+          '[IT Support] Để tôi kiểm tra bảng điều khiển mạng; bộ phát WiFi ở tầng bạn có vẻ đang quá tải.',
+        hint: 'network panel, wireless router, busy',
+      },
+      {
+        text: 'Could you look at the small white box on the wall and check the lights?',
+        translation:
+          '[IT Support] Bạn có thể nhìn hộp trắng nhỏ trên tường và kiểm tra các đèn báo giúp tôi không?',
+        hint: 'box on the wall, lights',
+      },
+      {
+        text: 'The power light is green, but the network light is blinking orange very fast.',
+        translation:
+          '[Nhân viên] Đèn nguồn màu xanh lá, nhưng đèn mạng đang nhấp nháy màu cam rất nhanh.',
+        hint: 'power light, blinking orange',
+      },
+      {
+        text: 'I will restart that access point remotely now, so WiFi will drop for one minute.',
+        translation:
+          '[IT Support] Tôi sẽ khởi động lại điểm phát sóng đó từ xa ngay, nên WiFi sẽ ngắt khoảng một phút.',
+        hint: 'access point, remotely, drop',
+      },
+      {
+        text: 'The orange light turned solid green, and our pages are loading fast again now.',
+        translation:
+          '[Nhân viên] Đèn cam chuyển sang xanh đứng yên rồi, các trang web cũng tải nhanh lại ngay.',
+        hint: 'solid green, loading fast',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-04',
+    videoId: 'audio-itops-a2-04',
+    title: 'A2-B1 | 04. Daily Backup Check & Free Disk Space (IT Ops)',
+    description:
+      "Simple operations chat about checking last night's backup status and cleaning up old temporary files (~1 min, A2-B1, UK English).",
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hey Anna, did the nightly backup finish safely on our main file server?',
+        translation:
+          '[Ops] Chào Anna, bản sao lưu hằng đêm trên máy chủ tệp chính có hoàn tất an toàn không?',
+        hint: 'nightly backup, file server',
+      },
+      {
+        text: 'Not completely; the backup stopped halfway because the storage drive ran out of space.',
+        translation:
+          '[Junior Ops] Chưa hoàn toàn; bản sao lưu dừng giữa chừng vì ổ đĩa lưu trữ bị hết dung lượng.',
+        hint: 'stopped halfway, storage drive, ran out of space',
+      },
+      {
+        text: 'Let us check which folder is taking up the most room on that drive.',
+        translation:
+          '[Ops] Hãy kiểm tra xem thư mục nào đang chiếm nhiều chỗ nhất trên ổ đĩa đó.',
+        hint: 'folder, taking up, room',
+      },
+      {
+        text: 'I see hundreds of old temporary files from last month still sitting inside the folder.',
+        translation:
+          '[Junior Ops] Mình thấy hàng trăm tệp tạm cũ từ tháng trước vẫn còn nằm trong thư mục.',
+        hint: 'temporary files, sitting inside',
+      },
+      {
+        text: 'Are any active users or programs still using those old files right now?',
+        translation:
+          '[Ops] Có người dùng hay chương trình nào đang hoạt động còn dùng các tệp cũ đó không?',
+        hint: 'active users, programs',
+      },
+      {
+        text: 'No, they are just finished export files that we only keep for seven days.',
+        translation:
+          '[Junior Ops] Không, đó chỉ là các tệp xuất dữ liệu đã xong mà ta chỉ giữ lại bảy ngày.',
+        hint: 'export files, keep',
+      },
+      {
+        text: 'Okay, delete the files older than two weeks and run the backup job again.',
+        translation:
+          '[Ops] Được rồi, hãy xóa các tệp cũ hơn hai tuần rồi chạy lại tác vụ sao lưu nhé.',
+        hint: 'older than, backup job',
+      },
+      {
+        text: 'We now have forty percent free space, and the new backup finished with zero errors.',
+        translation:
+          '[Junior Ops] Giờ ta đã có 40% dung lượng trống, và bản sao lưu mới vừa chạy xong không lỗi nào.',
+        hint: 'free space, zero errors',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-05',
+    videoId: 'audio-itops-a2-05',
+    title: 'A2-B1 | 05. Website Down? Basic First Checks (IT Ops)',
+    description:
+      'Clear beginner IT Ops conversation walking through the first steps when a customer reports the company website is down (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Tom, a client just messaged us saying our company website will not open.',
+        translation:
+          '[Support] Tom ơi, một khách hàng vừa nhắn tin báo trang web công ty không mở được.',
+        hint: 'messaged, website',
+      },
+      {
+        text: 'Let me test the address from my browser and check our public status page first.',
+        translation:
+          '[Ops] Để mình thử mở địa chỉ từ trình duyệt và kiểm tra trang trạng thái công khai trước.',
+        hint: 'browser, status page',
+      },
+      {
+        text: 'I see an error page too, so the problem is definitely on our side.',
+        translation:
+          '[Ops] Mình cũng thấy trang báo lỗi, vậy chắc chắn sự cố nằm ở phía hệ thống của mình.',
+        hint: 'error page, definitely, on our side',
+      },
+      {
+        text: 'Should we tell the manager right away, or check the web service logs first?',
+        translation:
+          '[Support] Ta nên báo quản lý ngay lập tức, hay kiểm tra nhật ký dịch vụ web trước?',
+        hint: 'right away, service logs',
+      },
+      {
+        text: 'Always check the service status first so we can share useful facts in our update.',
+        translation:
+          '[Ops] Luôn kiểm tra trạng thái dịch vụ trước để ta chia sẻ thông tin hữu ích khi cập nhật.',
+        hint: 'service status, useful facts',
+      },
+      {
+        text: 'Look here, the web service stopped five minutes ago right after a small setting change.',
+        translation:
+          '[Ops] Nhìn đây này, dịch vụ web đã dừng năm phút trước ngay sau một thay đổi cài đặt nhỏ.',
+        hint: 'setting change',
+      },
+      {
+        text: 'I will undo that setting change and start the web service back up cleanly.',
+        translation:
+          '[Ops] Mình sẽ hoàn tác thay đổi cài đặt đó và khởi động lại dịch vụ web thật gọn.',
+        hint: 'undo, start back up',
+      },
+      {
+        text: 'The homepage is online again, and I will reply to the client with a quick apology.',
+        translation:
+          '[Support] Trang chủ lên mạng lại rồi, để mình nhắn trả lời xin lỗi nhanh cho khách hàng.',
+        hint: 'homepage, online, apology',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-06',
+    videoId: 'audio-itops-a2-06',
+    title: 'A2-B1 | 06. Planning a Weekend Software Update (IT Ops)',
+    description:
+      'Clear A2-B1 workplace chat planning a Saturday night server update, notifying users, saving a backup, and running quick tests (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Maya, when should we install the new security update on our office servers?',
+        translation:
+          '[SysAdmin] Chào Maya, khi nào ta nên cài bản cập nhật bảo mật mới trên các máy chủ văn phòng?',
+        hint: 'install, security update',
+      },
+      {
+        text: 'Saturday night at eleven is best because nobody is working in the office then.',
+        translation:
+          '[Ops Lead] Tối thứ Bảy lúc mười một giờ là tốt nhất vì lúc đó không ai làm việc ở văn phòng.',
+        hint: 'nobody, working',
+      },
+      {
+        text: 'How long will the systems be offline while the servers install and restart?',
+        translation:
+          '[SysAdmin] Các hệ thống sẽ tạm ngưng bao lâu trong lúc máy chủ cài đặt và khởi động lại?',
+        hint: 'offline, restart',
+      },
+      {
+        text: 'Usually around twenty minutes, though we should tell staff to expect thirty minutes.',
+        translation:
+          '[Ops Lead] Thường khoảng hai mươi phút, nhưng ta nên báo nhân viên dự phòng ba mươi phút.',
+        hint: 'usually, expect',
+      },
+      {
+        text: 'I will send a short reminder email to every department on Friday morning.',
+        translation:
+          '[SysAdmin] Tôi sẽ gửi một email nhắc nhở ngắn cho mọi phòng ban vào sáng thứ Sáu.',
+        hint: 'reminder email, department',
+      },
+      {
+        text: 'Please also make a fresh backup copy before you press the update button.',
+        translation:
+          '[Ops Lead] Nhớ tạo thêm một bản sao lưu mới trước khi bạn bấm nút cập nhật nhé.',
+        hint: 'fresh backup copy, press',
+      },
+      {
+        text: 'Of course, if anything breaks, we can restore the old version very quickly.',
+        translation:
+          '[SysAdmin] Chắc chắn rồi, nếu có gì hỏng ta có thể khôi phục phiên bản cũ rất nhanh.',
+        hint: 'breaks, restore, old version',
+      },
+      {
+        text: 'After the restart finishes, test login and email once, then post a green check in chat.',
+        translation:
+          '[Ops Lead] Sau khi khởi động lại xong, hãy thử đăng nhập và email một lần rồi nhắn báo xanh vào nhóm chat nhé.',
+        hint: 'test login, post',
+      },
+    ],
+  },
+]
+
+export const DEFAULT_A2_B1_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_A2_B1_SPECS.map(buildLesson)
+export const DEFAULT_IT_OPS_B1_B2_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_SPECS.map(buildLesson)
+export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = [
+  ...DEFAULT_A2_B1_AUDIO_LESSONS,
+  ...DEFAULT_IT_OPS_B1_B2_AUDIO_LESSONS,
+]
 export const DEFAULT_IT_OPS_AUDIO_LESSONS = DEFAULT_B1_B2_AUDIO_LESSONS

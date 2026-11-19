@@ -92,6 +92,7 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   isFocusMode: false,
   showSubtitles: false,
   hasAudioLeadIn: true,
+  ttsAccent: 'en-GB',
 }
 
 /**
@@ -438,6 +439,9 @@ export const storage = {
       .filter((item) => !DUMMY_TEST_IDS.has(item.id) && !DUMMY_TEST_IDS.has(item.videoId))
       .map((item) => ({
         ...item,
+        voiceAccent:
+          item.voiceAccent ||
+          (item.id.startsWith('lesson-audio-itops-') ? 'en-GB' : item.voiceAccent),
         title: item.title || `YouTube: ${item.videoId}`,
         sentences: normalizeSentenceBoundaries(Array.isArray(item.sentences) ? item.sentences : []),
       }))
