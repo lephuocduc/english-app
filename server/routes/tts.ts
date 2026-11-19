@@ -56,25 +56,57 @@ ttsRouter.get('/', async (c) => {
     const audioBuffers: Uint8Array[] = []
 
     for (const chunk of chunks) {
-      const upstreamUrl = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${encodeURIComponent(lang)}&q=${encodeURIComponent(chunk)}`
-      const upstreamRes = await fetch(upstreamUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      })
+      const upstreamCandidates = [
+        `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${encodeURIComponent(lang)}&q=${encodeURIComponent(chunk)}`,
+        `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(lang)}&q=${encodeURIComponent(chunk)}`,
+      ]
 
-      if (!upstreamRes.ok) {
+      let chunkBuf: Uint8Array | null = null
+      let lastStatus = 502
+
+      for (const upstreamUrl of upstreamCandidates) {
+        try {
+          const upstreamRes = await fetch(upstreamUrl, {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+              Referer: 'https://translate.google.com/',
+              Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8',
+            },
+          })
+
+          if (!upstreamRes.ok) {
+            lastStatus = upstreamRes.status
+            continue
+          }
+
+          const contentType = (upstreamRes.headers.get('content-type') || '').toLowerCase()
+          if (contentType.includes('text/html')) {
+            lastStatus = 502
+            continue
+          }
+
+          const buf = new Uint8Array(await upstreamRes.arrayBuffer())
+          if (buf.byteLength === 0) {
+            lastStatus = 502
+            continue
+          }
+
+          chunkBuf = buf
+          break
+        } catch {
+          // Try next upstream candidate
+        }
+      }
+
+      if (!chunkBuf) {
         return c.json(
-          { success: false, error: `Upstream TTS provider returned HTTP ${upstreamRes.status}` },
+          { success: false, error: `Upstream TTS provider returned HTTP ${lastStatus}` },
           502
         )
       }
 
-      const buf = new Uint8Array(await upstreamRes.arrayBuffer())
-      if (buf.byteLength === 0) {
-        return c.json({ success: false, error: 'Upstream TTS returned empty audio buffer' }, 502)
-      }
-      audioBuffers.push(buf)
+      audioBuffers.push(chunkBuf)
     }
 
     const merged = concatUint8Arrays(audioBuffers)
@@ -84,6 +116,7 @@ ttsRouter.get('/', async (c) => {
       headers: {
         'Content-Type': 'audio/mpeg',
         'Access-Control-Allow-Origin': '*',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
         'Cache-Control': 'public, max-age=86400',
       },
     })
