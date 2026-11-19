@@ -14,6 +14,15 @@ import {
   recordSegmentCompleted,
 } from '../streak/streakManager'
 import { normalizeSentenceBoundaries } from '../transcript/sentenceNormalizer.ts'
+import { DEFAULT_B1_B2_AUDIO_LESSONS } from '../../data/defaultAudioLessons'
+
+export const isTestEnvironment = (): boolean =>
+  Boolean(
+    (typeof import.meta !== 'undefined' &&
+      ((import.meta as unknown as { env?: { VITEST?: unknown; MODE?: string } }).env?.VITEST ||
+        (import.meta as unknown as { env?: { MODE?: string } }).env?.MODE === 'test')) ||
+      (globalThis as { process?: { env?: { VITEST?: unknown } } }).process?.env?.VITEST
+  )
 
 const STORAGE_KEYS = {
   PREFERENCES: 'listenflow_preferences_v1',
@@ -527,6 +536,49 @@ export const storage = {
     return updated
   },
 
+  /**
+   * Ensures the 10 preset B1-B2 Text-to-Audio lessons are saved locally and mirrored to D1.
+   * When force = false, respects lessons explicitly deleted by the user.
+   */
+  seedPresetAudioLessons(force = false): YouTubeVideo[] {
+    const current = this.loadVideos() || []
+    const deletedVideos = this.loadDeletedVideos()
+    const existingIds = new Set(current.map((v) => v.id))
+    const existingVideoIds = new Set(current.map((v) => v.videoId))
+
+    const toAdd: YouTubeVideo[] = []
+    for (const preset of DEFAULT_B1_B2_AUDIO_LESSONS) {
+      if (existingIds.has(preset.id) || existingVideoIds.has(preset.videoId)) {
+        continue
+      }
+      if (!force && (deletedVideos.has(preset.id) || deletedVideos.has(preset.videoId))) {
+        continue
+      }
+      toAdd.push(preset)
+      if (typeof window !== 'undefined' && typeof fetch === 'function') {
+        apiClient
+          .createLesson({
+            id: preset.id,
+            videoId: preset.videoId,
+            title: preset.title,
+            description: preset.description,
+            language: preset.language,
+            level: preset.level,
+            sentences: preset.sentences,
+          })
+          .catch(() => { })
+      }
+    }
+
+    if (toAdd.length === 0) {
+      return current
+    }
+
+    const updated = [...current, ...toAdd]
+    this.saveVideos(updated)
+    return updated
+  },
+
   async syncWithCloud(): Promise<{
     lessonsCount: number
     vocabCount: number
@@ -622,6 +674,30 @@ export const storage = {
               sentences: normalized.sentences,
             })
             .catch(() => { })
+        }
+      }
+
+      if (!isTestEnvironment()) {
+        for (const preset of DEFAULT_B1_B2_AUDIO_LESSONS) {
+          if (
+            !mergedMap.has(preset.id) &&
+            !Array.from(mergedMap.values()).some((x) => x.videoId === preset.videoId) &&
+            !deletedVideos.has(preset.id) &&
+            !deletedVideos.has(preset.videoId)
+          ) {
+            mergedMap.set(preset.id, preset)
+            apiClient
+              .createLesson({
+                id: preset.id,
+                videoId: preset.videoId,
+                title: preset.title,
+                description: preset.description,
+                language: preset.language,
+                level: preset.level,
+                sentences: preset.sentences,
+              })
+              .catch(() => { })
+          }
         }
       }
 

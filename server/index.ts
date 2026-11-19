@@ -9,6 +9,7 @@ import { progressRouter } from './routes/progress'
 import { vocabularyRouter } from './routes/vocabulary'
 import { transcriptRouter } from './routes/transcript'
 import { streakRouter } from './routes/streak'
+import { ttsRouter } from './routes/tts'
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -46,7 +47,11 @@ app.get('/api/health', async (c) => {
 
 // 3. Mount Authentication Middleware on protected /api/* routes
 app.use('/api/*', async (c, next) => {
-  if (c.req.path === '/api/health' || c.req.path.startsWith('/api/transcript')) {
+  if (
+    c.req.path === '/api/health' ||
+    c.req.path.startsWith('/api/transcript') ||
+    c.req.path.startsWith('/api/tts')
+  ) {
     return next()
   }
   return authMiddleware(c, next)
@@ -60,6 +65,7 @@ app.route('/api/progress', progressRouter)
 app.route('/api/vocabulary', vocabularyRouter)
 app.route('/api/transcript', transcriptRouter)
 app.route('/api/streak', streakRouter)
+app.route('/api/tts', ttsRouter)
 
 // 5. Global 404 Not Found Handler
 app.notFound((c) => {

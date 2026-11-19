@@ -7,10 +7,16 @@ export interface SentenceSegment {
   hint?: string
 }
 
+export type LessonSourceType = 'youtube' | 'audio'
+
+export type VoiceAccent = 'en-US' | 'en-GB' | 'en-AU'
+
 export interface Lesson {
   id: string
   title: string
   videoId: string
+  sourceType?: LessonSourceType
+  voiceAccent?: VoiceAccent
   language?: string
   transcriptSource?: string
   isVerified?: boolean
@@ -86,6 +92,8 @@ export interface StudyPreferences {
   isFocusMode?: boolean
   showSubtitles?: boolean
   hasAudioLeadIn?: boolean
+  isPhoneCallMode?: boolean
+  ttsAccent?: VoiceAccent
 }
 
 export type SRSRating = 1 | 2 | 3 | 4 // 1: Again, 2: Hard, 3: Good, 4: Easy

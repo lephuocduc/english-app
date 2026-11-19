@@ -280,6 +280,15 @@ export class ApiClient {
     })
     return res.success && res.data ? res.data : null
   }
+
+  // --- Text-to-Speech Audio URL Builder ---
+  getTtsAudioUrl(text: string, lang = 'en-US'): string {
+    const isLocalDev =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    const base = isLocalDev ? '/api' : this.baseUrl
+    return `${base}/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`
+  }
 }
 
 export const apiClient = new ApiClient()

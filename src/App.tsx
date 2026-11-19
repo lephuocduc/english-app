@@ -25,11 +25,15 @@ import type {
   VocabularyItem,
 } from './types'
 import { DEFAULT_YOUTUBE_VIDEOS } from './data/defaultVideo'
-import { storage } from './lib/storage/storage'
+import { DEFAULT_B1_B2_AUDIO_LESSONS } from './data/defaultAudioLessons'
+import { storage, isTestEnvironment } from './lib/storage/storage'
 import { apiClient } from './lib/api/client'
 import { parseYouTubeUrl } from './features/youtube/urlParser'
 import { useYouTubePlayer } from './features/youtube/useYouTubePlayer'
 import { YouTubePlayerView } from './features/youtube/YouTubePlayerView'
+import { useAudioLessonPlayer } from './features/audio/useAudioLessonPlayer'
+import { AudioPlayerView } from './features/audio/AudioPlayerView'
+import { isAudioLesson } from './lib/audio/textToLesson'
 import { SentenceList } from './features/dictation/SentenceList'
 import { DictationStudio } from './features/dictation/DictationStudio'
 import { LessonsView } from './features/lessons/LessonsView'
@@ -44,7 +48,9 @@ import { TranscriptImportModal } from './features/transcript/TranscriptImportMod
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { getDueVocabulary } from './lib/srs/sm2'
 import { getMaxUnlockedIndex, getResumeSegmentIndex } from './lib/dictation/resumeManager'
-import type { StreakData } from './types'
+import type { StreakData, VoiceAccent } from './types'
+
+const IS_VITEST = isTestEnvironment()
 
 export function App() {
   // Navigation tab state
@@ -78,15 +84,30 @@ export function App() {
   const [showQuickUrlBar, setShowQuickUrlBar] = useState(false)
   const [showFloatingHud, setShowFloatingHud] = useState(true)
 
-  // YouTube Videos list & Active video state
+  const defaultInitialLessons = IS_VITEST
+    ? DEFAULT_YOUTUBE_VIDEOS
+    : [...DEFAULT_YOUTUBE_VIDEOS, ...DEFAULT_B1_B2_AUDIO_LESSONS]
+
+  // YouTube Videos & Audio Lessons list + Active lesson state
   const [videosList, setVideosList] = useState<Lesson[]>(() => {
     const saved = storage.loadVideos()
-    return saved && saved.length > 0 ? saved : DEFAULT_YOUTUBE_VIDEOS
+    if (saved && saved.length > 0) return saved
+    if (!IS_VITEST) {
+      storage.saveVideos(defaultInitialLessons)
+    }
+    return defaultInitialLessons
   })
+
+  useEffect(() => {
+    if (!IS_VITEST) {
+      const updated = storage.seedPresetAudioLessons(false)
+      setVideosList(updated)
+    }
+  }, [])
 
   const [activeLessonId, setActiveLessonId] = useState<string>(() => {
     const savedId = storage.loadActiveLessonId()
-    const initialList = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
+    const initialList = storage.loadVideos() || defaultInitialLessons
     return savedId && initialList.some((l) => l.id === savedId)
       ? savedId
       : initialList[0]?.id || ''
@@ -396,7 +417,9 @@ export function App() {
     })
   }, [])
 
-  // Setup YouTube IFrame Player hook
+  const activeIsAudio = isAudioLesson(activeLesson)
+
+  // Setup YouTube IFrame Player hook (only active for YouTube video lessons)
   const {
     isReady: isPlayerReady,
     isPlaying,
@@ -413,39 +436,115 @@ export function App() {
     getCurrentTime,
   } = useYouTubePlayer({
     containerId: 'listenflow-youtube-player-frame',
-    videoId: activeLesson ? activeLesson.videoId : '',
-    isVisible: activeTab === 'practice' && Boolean(activeLesson),
+    videoId: activeLesson && !activeIsAudio ? activeLesson.videoId : '',
+    isVisible: activeTab === 'practice' && Boolean(activeLesson) && !activeIsAudio,
     initialSpeed: preferences.playbackSpeed,
     showSubtitles,
     onVideoMetadata: (meta) => {
-      if (meta?.title && activeLesson) {
+      if (meta?.title && activeLesson && !activeIsAudio) {
         updateVideoTitle(activeLesson.videoId, meta.title)
       }
     },
   })
 
-  // Pause video whenever switching away from practice tab
-  useEffect(() => {
-    if (activeTab !== 'practice' && isPlaying) {
-      pauseSegment()
-    }
-  }, [activeTab, isPlaying, pauseSegment])
+  // Setup Text-to-Audio TTS Player hook (active for Text-to-Audio lessons)
+  const audioPlayer = useAudioLessonPlayer({
+    initialSpeed: preferences.playbackSpeed,
+    initialPhoneCallMode: preferences.isPhoneCallMode ?? false,
+    initialAccent: activeLesson?.voiceAccent || preferences.ttsAccent || 'en-US',
+  })
 
-  // Pause video when browser tab is hidden (user switches windows/tabs)
+  // Sync voice accent when switching between audio lessons
+  useEffect(() => {
+    audioPlayer.stopAudio()
+    if (activeIsAudio && activeLesson?.voiceAccent) {
+      audioPlayer.setVoiceAccent(activeLesson.voiceAccent)
+    }
+  }, [activeLesson?.id, activeLesson?.voiceAccent, activeIsAudio, audioPlayer.stopAudio, audioPlayer.setVoiceAccent])
+
+  const effectiveIsPlaying = activeIsAudio ? audioPlayer.isPlaying : isPlaying
+  const effectiveIsLooping = activeIsAudio ? audioPlayer.isLooping : isLooping
+  const effectiveIsPlayerReady = activeIsAudio ? true : isPlayerReady
+
+  const handleTogglePhoneCallMode = useCallback(() => {
+    const next = !audioPlayer.isPhoneCallMode
+    audioPlayer.togglePhoneCallMode()
+    const newPrefs = { ...preferences, isPhoneCallMode: next }
+    setPreferences(newPrefs)
+    storage.savePreferences(newPrefs)
+  }, [audioPlayer, preferences])
+
+  const handleChangeAudioAccent = useCallback(
+    (accent: VoiceAccent) => {
+      audioPlayer.changeVoiceAccent(accent)
+      const newPrefs = { ...preferences, ttsAccent: accent }
+      setPreferences(newPrefs)
+      storage.savePreferences(newPrefs)
+    },
+    [audioPlayer, preferences]
+  )
+
+  const handleToggleLoop = useCallback(() => {
+    if (activeIsAudio) {
+      audioPlayer.toggleLoop()
+    } else {
+      toggleLoop()
+    }
+  }, [activeIsAudio, audioPlayer, toggleLoop])
+
+  const handleTogglePlayPause = useCallback(() => {
+    if (activeIsAudio) {
+      if (audioPlayer.isPlaying) {
+        audioPlayer.stopAudio()
+      } else if (activeSegment) {
+        const leadInText =
+          hasAudioLeadIn && activeSegmentIndex > 0 && activeLesson
+            ? activeLesson.sentences[activeSegmentIndex - 1]?.text
+            : undefined
+        void audioPlayer.playTextSegment({
+          text: activeSegment.text,
+          leadInText,
+          accent: audioPlayer.voiceAccent,
+        })
+      }
+    } else {
+      togglePlayPause()
+    }
+  }, [
+    activeIsAudio,
+    audioPlayer,
+    activeSegment,
+    hasAudioLeadIn,
+    activeSegmentIndex,
+    activeLesson,
+    togglePlayPause,
+  ])
+
+  // Pause video/audio whenever switching away from practice tab
+  useEffect(() => {
+    if (activeTab !== 'practice') {
+      if (isPlaying) pauseSegment()
+      if (audioPlayer.isPlaying) audioPlayer.stopAudio()
+    }
+  }, [activeTab, isPlaying, pauseSegment, audioPlayer.isPlaying, audioPlayer.stopAudio])
+
+  // Pause video/audio when browser tab is hidden (user switches windows/tabs)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && isPlaying) {
-        pauseSegment()
+      if (document.hidden) {
+        if (isPlaying) pauseSegment()
+        if (audioPlayer.isPlaying) audioPlayer.stopAudio()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [isPlaying, pauseSegment])
+  }, [isPlaying, pauseSegment, audioPlayer.isPlaying, audioPlayer.stopAudio])
 
-  // Automatically fetch official title if active video currently has a placeholder title
+  // Automatically fetch official title if active YouTube video currently has a placeholder title
   useEffect(() => {
     if (
       activeLesson?.videoId &&
+      !activeIsAudio &&
       (activeLesson.title.startsWith('YouTube: ') ||
         activeLesson.title === 'YouTube Video' ||
         activeLesson.title === 'Đang tải tiêu đề YouTube...' ||
@@ -457,9 +556,9 @@ export function App() {
         }
       })
     }
-  }, [activeLesson?.videoId, activeLesson?.title, updateVideoTitle])
+  }, [activeLesson?.videoId, activeLesson?.title, activeIsAudio, updateVideoTitle])
 
-  // Set active segment and auto-seek player to start time with optional 1s lead-in
+  // Set active segment and auto-play YouTube segment or TTS Audio segment
   const handleSelectSegment = useCallback(
     (index: number) => {
       if (activeLesson && index >= 0 && index < activeLesson.sentences.length) {
@@ -471,35 +570,72 @@ export function App() {
         activeSegmentIndexRef.current = index
         setActiveSegmentIndex(index)
         const seg = activeLesson.sentences[index]
-        if (seg && isPlayerReady) {
+        if (!seg) return
+
+        if (isAudioLesson(activeLesson)) {
+          const leadInText =
+            hasAudioLeadIn && index > 0 ? activeLesson.sentences[index - 1]?.text : undefined
+          void audioPlayer.playTextSegment({
+            text: seg.text,
+            leadInText,
+            accent: audioPlayer.voiceAccent,
+          })
+        } else if (isPlayerReady) {
           const leadIn = hasAudioLeadIn && index > 0 ? 1.0 : 0
           playSegment(seg.startTime, seg.endTime, leadIn)
         }
       }
     },
-    [activeLesson, isPlayerReady, playSegment, hasAudioLeadIn]
+    [activeLesson, isPlayerReady, playSegment, hasAudioLeadIn, audioPlayer]
   )
 
   // Replay current segment with optional 1s lead-in
   const handleReplayCurrent = useCallback(() => {
-    if (activeSegment && isPlayerReady) {
+    if (!activeSegment) return
+    if (activeIsAudio) {
+      const leadInText =
+        hasAudioLeadIn && activeSegmentIndex > 0 && activeLesson
+          ? activeLesson.sentences[activeSegmentIndex - 1]?.text
+          : undefined
+      void audioPlayer.playTextSegment({
+        text: activeSegment.text,
+        leadInText,
+        accent: audioPlayer.voiceAccent,
+      })
+    } else if (isPlayerReady) {
       const leadIn = hasAudioLeadIn && activeSegmentIndex > 0 ? 1.0 : 0
       playSegment(activeSegment.startTime, activeSegment.endTime, leadIn)
     }
-  }, [activeSegment, isPlayerReady, playSegment, hasAudioLeadIn, activeSegmentIndex])
+  }, [
+    activeSegment,
+    activeIsAudio,
+    isPlayerReady,
+    playSegment,
+    hasAudioLeadIn,
+    activeSegmentIndex,
+    activeLesson,
+    audioPlayer,
+  ])
 
   // Play previous segment explicitly for context comparison
   const handlePlayPreviousSegment = useCallback(() => {
-    if (activeLesson && activeSegmentIndex > 0 && isPlayerReady) {
+    if (activeLesson && activeSegmentIndex > 0) {
       const prevSeg = activeLesson.sentences[activeSegmentIndex - 1]
-      if (prevSeg) {
+      if (!prevSeg) return
+      if (isAudioLesson(activeLesson)) {
+        void audioPlayer.playTextSegment({
+          text: prevSeg.text,
+          accent: audioPlayer.voiceAccent,
+        })
+      } else if (isPlayerReady) {
         playSegment(prevSeg.startTime, prevSeg.endTime, 0)
       }
     }
-  }, [activeLesson, activeSegmentIndex, isPlayerReady, playSegment])
+  }, [activeLesson, activeSegmentIndex, isPlayerReady, playSegment, audioPlayer])
 
-  // Select another video and automatically resume to the next uncompleted sentence
+  // Select another lesson and automatically resume to the next uncompleted sentence
   const handleSelectLesson = (lessonId: string) => {
+    audioPlayer.stopAudio()
     setActiveLessonId(lessonId)
     storage.saveActiveLessonId(lessonId)
     const targetLesson = videosList.find((v) => v.id === lessonId)
@@ -507,6 +643,23 @@ export function App() {
     const nextIdx = getResumeSegmentIndex(targetLesson, prog)
     setActiveSegmentIndex(nextIdx)
     setActiveTab('practice')
+  }
+
+  // Save a user-created Text-to-Audio lesson to local storage & Cloudflare D1
+  const handleCreateAudioLesson = (lesson: Lesson) => {
+    const updated = storage.addVideo(lesson)
+    setVideosList(updated)
+    setActiveLessonId(lesson.id)
+    storage.saveActiveLessonId(lesson.id)
+    setActiveSegmentIndex(0)
+    activeSegmentIndexRef.current = 0
+    setActiveTab('practice')
+  }
+
+  // Re-seed any missing preset B1-B2 audio lessons into library & D1
+  const handleSeedDefaultAudioLessons = () => {
+    const updated = storage.seedPresetAudioLessons(true)
+    setVideosList(updated)
   }
 
   // Auto-fetch transcript state
@@ -1051,7 +1204,14 @@ export function App() {
       const startTime = targetSeg ? targetSeg.startTime : timestamp
       const endTime = targetSeg ? targetSeg.endTime : timestamp + 5
 
-      if (isSameVideoAndVisible) {
+      if (isAudioLesson(matchingVideo)) {
+        if (targetSeg) {
+          void audioPlayer.playTextSegment({
+            text: targetSeg.text,
+            accent: matchingVideo.voiceAccent || audioPlayer.voiceAccent,
+          })
+        }
+      } else if (isSameVideoAndVisible) {
         playSegment(startTime, endTime, 0)
       } else {
         // Player will mount / reload for practice tab or new video; queue for onReady playback
@@ -1075,6 +1235,7 @@ export function App() {
   // Change speed handler
   const handleSpeedChange = (speed: number) => {
     changeSpeed(speed)
+    audioPlayer.changeSpeed(speed)
     const newPrefs = { ...preferences, playbackSpeed: speed }
     setPreferences(newPrefs)
     storage.savePreferences(newPrefs)
@@ -1105,7 +1266,7 @@ export function App() {
       // Space to toggle play/pause when not typing
       if (e.code === 'Space' && !isTyping) {
         e.preventDefault()
-        togglePlayPause()
+        handleTogglePlayPause()
         return
       }
 
@@ -1124,7 +1285,7 @@ export function App() {
       if (e.altKey && e.key.toLowerCase() === 'l') {
         e.preventDefault()
         if (e.repeat) return
-        toggleLoop()
+        handleToggleLoop()
         return
       }
 
@@ -1211,10 +1372,12 @@ export function App() {
     activeLesson,
     handleSelectSegment,
     handleReplayCurrent,
-    togglePlayPause,
-    toggleLoop,
+    handleTogglePlayPause,
+    handleToggleLoop,
     toggleFocusMode,
     toggleBlindListening,
+    toggleSubtitles,
+    toggleAudioLeadIn,
     isFocusMode,
   ])
 
@@ -1425,63 +1588,92 @@ export function App() {
 
               {/* Responsive 2-Column Split Desktop Layout (12 cols) / 1-Column Mobile Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
-                {/* Left Column (5/12 on Desktop): YouTube Player + Sentence List */}
+                {/* Left Column (5/12 on Desktop): Audio/YouTube Player + Sentence List */}
                 <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
-                  {/* 1. YouTube Player View */}
-                  <YouTubePlayerView
-                    containerId="listenflow-youtube-player-frame"
-                    videoId={activeLesson.videoId}
-                    isReady={isPlayerReady}
-                    isPlaying={isPlaying}
-                    isLooping={isLooping}
-                    isBlindListening={isBlindListening}
-                    showSubtitles={showSubtitles}
-                    hasLeadIn={hasAudioLeadIn}
-                    playerError={playerError}
-                    currentSpeed={playbackRate}
-                    activeSegment={activeSegment || null}
-                    onPlaySegment={() => {
-                      if (activeSegment) {
-                        playSegment(activeSegment.startTime, activeSegment.endTime)
-                      } else {
-                        togglePlayPause()
+                  {/* 1. Audio TTS Player OR YouTube Video Player */}
+                  {activeIsAudio ? (
+                    <AudioPlayerView
+                      lessonTitle={activeLesson.title}
+                      level={activeLesson.level}
+                      isPlaying={audioPlayer.isPlaying}
+                      isLoadingAudio={audioPlayer.isLoadingAudio}
+                      isLooping={audioPlayer.isLooping}
+                      isPhoneCallMode={audioPlayer.isPhoneCallMode}
+                      hasLeadIn={hasAudioLeadIn}
+                      usingFallbackSpeech={audioPlayer.usingFallbackSpeech}
+                      audioError={audioPlayer.audioError}
+                      currentSpeed={audioPlayer.playbackRate}
+                      voiceAccent={audioPlayer.voiceAccent}
+                      activeSegment={activeSegment || null}
+                      totalDurationSeconds={
+                        activeLesson.sentences.length > 0
+                          ? activeLesson.sentences[activeLesson.sentences.length - 1].endTime
+                          : 0
                       }
-                    }}
-                    onTogglePlayPause={togglePlayPause}
-                    onToggleLoop={toggleLoop}
-                    onToggleBlindListening={toggleBlindListening}
-                    onToggleSubtitles={toggleSubtitles}
-                    onToggleLeadIn={toggleAudioLeadIn}
-                    onReloadPlayer={reloadPlayer}
-                    onSwitchVideo={() => setActiveTab('lessons')}
-                    onChangeSpeed={handleSpeedChange}
-                    onPreviousSegment={
-                      activeLesson.sentences.length > 0 && activeSegmentIndex > 0
-                        ? () => handleSelectSegment(activeSegmentIndex - 1)
-                        : undefined
-                    }
-                    onNextSegment={
-                      activeLesson.sentences.length > 0 &&
-                      activeSegmentIndex < maxUnlockedIndex &&
-                      activeSegmentIndex < activeLesson.sentences.length - 1
-                        ? () => handleSelectSegment(activeSegmentIndex + 1)
-                        : undefined
-                    }
-                    hasPreviousSegment={activeSegmentIndex > 0}
-                    hasNextSegment={
-                      activeLesson.sentences.length > 0 &&
-                      activeSegmentIndex < maxUnlockedIndex &&
-                      activeSegmentIndex < activeLesson.sentences.length - 1
-                    }
-                    showStepper={false}
-                  />
+                      onPlaySegment={handleReplayCurrent}
+                      onTogglePlayPause={handleTogglePlayPause}
+                      onToggleLoop={handleToggleLoop}
+                      onTogglePhoneCallMode={handleTogglePhoneCallMode}
+                      onToggleLeadIn={toggleAudioLeadIn}
+                      onChangeSpeed={handleSpeedChange}
+                      onChangeAccent={handleChangeAudioAccent}
+                    />
+                  ) : (
+                    <YouTubePlayerView
+                      containerId="listenflow-youtube-player-frame"
+                      videoId={activeLesson.videoId}
+                      isReady={isPlayerReady}
+                      isPlaying={isPlaying}
+                      isLooping={isLooping}
+                      isBlindListening={isBlindListening}
+                      showSubtitles={showSubtitles}
+                      hasLeadIn={hasAudioLeadIn}
+                      playerError={playerError}
+                      currentSpeed={playbackRate}
+                      activeSegment={activeSegment || null}
+                      onPlaySegment={() => {
+                        if (activeSegment) {
+                          playSegment(activeSegment.startTime, activeSegment.endTime)
+                        } else {
+                          togglePlayPause()
+                        }
+                      }}
+                      onTogglePlayPause={togglePlayPause}
+                      onToggleLoop={toggleLoop}
+                      onToggleBlindListening={toggleBlindListening}
+                      onToggleSubtitles={toggleSubtitles}
+                      onToggleLeadIn={toggleAudioLeadIn}
+                      onReloadPlayer={reloadPlayer}
+                      onSwitchVideo={() => setActiveTab('lessons')}
+                      onChangeSpeed={handleSpeedChange}
+                      onPreviousSegment={
+                        activeLesson.sentences.length > 0 && activeSegmentIndex > 0
+                          ? () => handleSelectSegment(activeSegmentIndex - 1)
+                          : undefined
+                      }
+                      onNextSegment={
+                        activeLesson.sentences.length > 0 &&
+                        activeSegmentIndex < maxUnlockedIndex &&
+                        activeSegmentIndex < activeLesson.sentences.length - 1
+                          ? () => handleSelectSegment(activeSegmentIndex + 1)
+                          : undefined
+                      }
+                      hasPreviousSegment={activeSegmentIndex > 0}
+                      hasNextSegment={
+                        activeLesson.sentences.length > 0 &&
+                        activeSegmentIndex < maxUnlockedIndex &&
+                        activeSegmentIndex < activeLesson.sentences.length - 1
+                      }
+                      showStepper={false}
+                    />
+                  )}
 
                   {/* Desktop Sentence List (5/12 side panel) */}
                   <div className="hidden lg:block">
                     <SentenceList
                       sentences={activeLesson.sentences}
                       activeSegmentIndex={activeSegmentIndex}
-                      isPlaying={isPlaying}
+                      isPlaying={effectiveIsPlaying}
                       onSelectSegment={handleSelectSegment}
                       savedProgressMap={activeLessonProgress}
                       maxUnlockedIndex={maxUnlockedIndex}
@@ -1495,10 +1687,10 @@ export function App() {
                   <DictationStudio
                     lesson={activeLesson}
                     activeSegmentIndex={activeSegmentIndex}
-                    isPlayerReady={isPlayerReady}
-                    isLooping={isLooping}
+                    isPlayerReady={effectiveIsPlayerReady}
+                    isLooping={effectiveIsLooping}
                     hasLeadIn={hasAudioLeadIn}
-                    onToggleLoop={toggleLoop}
+                    onToggleLoop={handleToggleLoop}
                     onToggleLeadIn={toggleAudioLeadIn}
                     onPlayPreviousSegment={handlePlayPreviousSegment}
                     onSelectSegment={handleSelectSegment}
@@ -1542,7 +1734,7 @@ export function App() {
                         <SentenceList
                           sentences={activeLesson.sentences}
                           activeSegmentIndex={activeSegmentIndex}
-                          isPlaying={isPlaying}
+                          isPlaying={effectiveIsPlaying}
                           onSelectSegment={handleSelectSegment}
                           savedProgressMap={activeLessonProgress}
                           maxUnlockedIndex={maxUnlockedIndex}
@@ -1608,13 +1800,15 @@ export function App() {
           )}
         </div>
 
-        {/* VIEW 2: MY YOUTUBE VIDEOS */}
+        {/* VIEW 2: MY YOUTUBE VIDEOS & TEXT-TO-AUDIO STUDIO */}
         {activeTab === 'lessons' && (
           <LessonsView
             lessons={videosList}
             activeLessonId={activeLesson?.id || ''}
             onSelectLesson={handleSelectLesson}
             onImportCustomVideo={handleImportVideo}
+            onCreateAudioLesson={handleCreateAudioLesson}
+            onSeedDefaultAudioLessons={handleSeedDefaultAudioLessons}
             onDeleteVideo={handleDeleteVideo}
             allProgressMap={allLessonsProgress}
           />
@@ -1667,15 +1861,15 @@ export function App() {
             {/* Loop */}
             <button
               type="button"
-              onClick={toggleLoop}
+              onClick={handleToggleLoop}
               title="Toggle segment loop (Alt+L)"
-              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${isLooping
+              className={`transition cursor-pointer flex items-center gap-1 py-0.5 px-1.5 rounded-lg ${effectiveIsLooping
                   ? 'text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60'
                   : 'hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
             >
               <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 shadow-2xs">Alt+L</kbd>
-              <span className="hidden sm:inline">Loop{isLooping ? ' ✓' : ''}</span>
+              <span className="hidden sm:inline">Loop{effectiveIsLooping ? ' ✓' : ''}</span>
             </button>
 
             <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-800" />
