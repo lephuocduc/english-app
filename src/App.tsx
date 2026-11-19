@@ -36,6 +36,7 @@ import { AudioPlayerView } from './features/audio/AudioPlayerView'
 import { isAudioLesson } from './lib/audio/textToLesson'
 import { SentenceList } from './features/dictation/SentenceList'
 import { DictationStudio } from './features/dictation/DictationStudio'
+import { CompletedLessonTranscript } from './features/dictation/CompletedLessonTranscript'
 import { LessonsView } from './features/lessons/LessonsView'
 import { VocabularyView } from './features/vocabulary/VocabularyView'
 import { ProgressView } from './features/progress/ProgressView'
@@ -47,7 +48,11 @@ import { AutoStartModal } from './components/AutoStartModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { getDueVocabulary } from './lib/srs/sm2'
-import { getMaxUnlockedIndex, getResumeSegmentIndex } from './lib/dictation/resumeManager'
+import {
+  getMaxUnlockedIndex,
+  getResumeSegmentIndex,
+  isLessonFinished,
+} from './lib/dictation/resumeManager'
 import type { StreakData, VoiceAccent } from './types'
 
 const IS_VITEST = isTestEnvironment()
@@ -260,6 +265,18 @@ export function App() {
   const maxUnlockedIndex = useMemo(() => {
     return getMaxUnlockedIndex(activeLesson?.sentences, activeLessonProgress)
   }, [activeLesson?.sentences, activeLessonProgress])
+
+  const activeLessonFinished = useMemo(
+    () => isLessonFinished(activeLesson?.sentences, activeLessonProgress),
+    [activeLesson?.sentences, activeLessonProgress]
+  )
+
+  const handleJumpToFullTranscript = useCallback(() => {
+    const el = document.getElementById('full-transcript-review')
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [])
 
   // Refresh all state from local storage after cloud sync
   const refreshAllData = useCallback(() => {
@@ -1717,7 +1734,20 @@ export function App() {
                     streak={streakData}
                     onOpenStreakModal={() => setShowDailyStreakModal(true)}
                     maxUnlockedIndex={maxUnlockedIndex}
+                    isLessonFinished={activeLessonFinished}
+                    onJumpToFullTranscript={handleJumpToFullTranscript}
                   />
+
+                  {activeLessonFinished && (
+                    <CompletedLessonTranscript
+                      lesson={activeLesson}
+                      activeSegmentIndex={activeSegmentIndex}
+                      isPlaying={effectiveIsPlaying}
+                      savedProgressMap={activeLessonProgress}
+                      onSelectSegment={handleSelectSegment}
+                      onBookmarkVocabulary={handleBookmarkVocabulary}
+                    />
+                  )}
 
                   {/* Mobile & Tablet Collapsible Sentence List (< lg) */}
                   <div className="lg:hidden">

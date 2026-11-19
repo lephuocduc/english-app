@@ -93,3 +93,20 @@ export function isLessonCompleted(
   return lesson.sentences.every((s) => Boolean(progress.sentenceProgress[s.id]?.completed))
 }
 
+/**
+ * Checks whether every sentence in a lesson has been finished
+ * (completed / score >= 80% / or revealed) so the full transcript can be unlocked safely.
+ */
+export function isLessonFinished(
+  sentences?: SentenceSegment[],
+  sentenceProgress?: Record<string, UserSentenceProgress> | null
+): boolean {
+  if (!sentences || sentences.length === 0 || !sentenceProgress) {
+    return false
+  }
+  return sentences.every((s) => {
+    const p = sentenceProgress[s.id]
+    return Boolean(p?.completed || (p?.score ?? 0) >= 80 || p?.isRevealed)
+  })
+}
+

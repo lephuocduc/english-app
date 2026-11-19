@@ -69,6 +69,8 @@ interface DictationStudioProps {
   getCurrentPlayerTime?: () => number
   streak?: StreakData
   onOpenStreakModal?: () => void
+  isLessonFinished?: boolean
+  onJumpToFullTranscript?: () => void
 }
 
 export const DictationStudio: React.FC<DictationStudioProps> = ({
@@ -95,6 +97,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   getCurrentPlayerTime,
   streak: _streak,
   onOpenStreakModal: _onOpenStreakModal,
+  isLessonFinished,
+  onJumpToFullTranscript,
 }) => {
   const currentSegment: SentenceSegment | undefined = lesson?.sentences?.[activeSegmentIndex]
   const saved = currentSegment ? savedProgressMap[currentSegment.id] : undefined
@@ -734,6 +738,14 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     (s) => (savedProgressMap[s.id]?.score ?? 0) >= 80
   ).length
   const progressPercent = Math.round((completedCount / totalSentences) * 100)
+  const lessonDone =
+    typeof isLessonFinished === 'boolean'
+      ? isLessonFinished
+      : totalSentences > 0 &&
+        lesson.sentences.every((s) => {
+          const p = savedProgressMap[s.id]
+          return Boolean(p?.completed || (p?.score ?? 0) >= 80 || p?.isRevealed)
+        })
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col divide-y divide-slate-100 dark:divide-slate-800 transition-colors">
@@ -772,6 +784,18 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             >
               <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>Tiếp tục câu hiện tại (#{maxUnlocked + 1})</span>
+            </button>
+          )}
+
+          {lessonDone && onJumpToFullTranscript && (
+            <button
+              type="button"
+              onClick={onJumpToFullTranscript}
+              title="Xem toàn bộ transcript của bài học"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl border border-emerald-200/80 dark:border-emerald-800 shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Full Transcript</span>
             </button>
           )}
 
@@ -1515,7 +1539,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                 </button>
               </div>
 
-              {activeSegmentIndex < totalSentences - 1 && (
+              {activeSegmentIndex < totalSentences - 1 ? (
                 <button
                   type="button"
                   onClick={handleNext}
@@ -1546,6 +1570,18 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                     </>
                   )}
                 </button>
+              ) : (
+                lessonDone &&
+                onJumpToFullTranscript && (
+                  <button
+                    type="button"
+                    onClick={onJumpToFullTranscript}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Xem Full Transcript</span>
+                  </button>
+                )
               )}
             </div>
 
