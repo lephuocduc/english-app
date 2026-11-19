@@ -113,7 +113,7 @@ export const TextToAudioForm: React.FC<TextToAudioFormProps> = ({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ví dụ: Ordering Coffee in London (B1-B2)"
+            placeholder="Ví dụ: Production Database Failover Call (IT Ops)"
             className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none text-slate-800 dark:text-slate-100 transition"
           />
         </div>

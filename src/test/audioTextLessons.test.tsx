@@ -6,7 +6,11 @@ import {
   createAudioLessonFromText,
   isAudioLesson,
 } from '../lib/audio/textToLesson'
-import { DEFAULT_B1_B2_AUDIO_LESSONS } from '../data/defaultAudioLessons'
+import {
+  DEFAULT_B1_B2_AUDIO_LESSONS,
+  RETIRED_PRESET_AUDIO_IDS,
+} from '../data/defaultAudioLessons'
+import { storage } from '../lib/storage/storage'
 import { AudioPlayerView } from '../features/audio/AudioPlayerView'
 import { TextToAudioForm } from '../features/audio/TextToAudioForm'
 import { app as serverApp } from '../../server'
@@ -47,12 +51,14 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
     })
   })
 
-  describe('2. 10 Creative B1-B2 Preset Audio Lessons (~1 minute each)', () => {
-    it('provides 10 complete B1-B2 audio lessons with translations and ~1-minute duration', () => {
+  describe('2. 10 IT System Operations B1-B2 Audio Conversations (~1 minute each)', () => {
+    it('provides 10 complete IT Ops B1-B2 conversations with translations, hints, and ~1-minute duration', () => {
       expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(10)
 
       for (const lesson of DEFAULT_B1_B2_AUDIO_LESSONS) {
         expect(isAudioLesson(lesson)).toBe(true)
+        expect(lesson.id).toMatch(/^lesson-audio-itops-\d{2}$/)
+        expect(lesson.videoId).toMatch(/^audio-itops-\d{2}$/)
         expect(lesson.videoId.length).toBeLessThanOrEqual(32)
         expect(lesson.level).toBe('Intermediate')
         expect(lesson.sentences.length).toBeGreaterThanOrEqual(8)
@@ -65,9 +71,37 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
         for (const seg of lesson.sentences) {
           expect(seg.text.trim().length).toBeGreaterThan(10)
           expect(seg.translation?.trim().length).toBeGreaterThan(5)
+          expect(seg.hint?.trim().length).toBeGreaterThan(2)
           expect(seg.endTime).toBeGreaterThan(seg.startTime)
         }
       }
+    })
+
+    it('retires legacy general-topic preset conversations from local storage', () => {
+      for (let i = 1; i <= 10; i++) {
+        const suffix = String(i).padStart(2, '0')
+        expect(RETIRED_PRESET_AUDIO_IDS.has(`lesson-audio-b1b2-${suffix}`)).toBe(true)
+        expect(RETIRED_PRESET_AUDIO_IDS.has(`audio-b1b2-${suffix}`)).toBe(true)
+      }
+
+      storage.saveVideos([
+        {
+          id: 'lesson-audio-b1b2-01',
+          videoId: 'audio-b1b2-01',
+          sourceType: 'audio',
+          title: 'Legacy Lesson',
+          language: 'en',
+          sentences: [
+            { id: 'legacy-seg-1', startTime: 0, endTime: 4, text: 'Legacy sentence.' },
+          ],
+        },
+        DEFAULT_B1_B2_AUDIO_LESSONS[0],
+      ])
+
+      const loaded = storage.loadVideos() || []
+      expect(loaded.some((v) => v.id === 'lesson-audio-b1b2-01')).toBe(false)
+      expect(loaded.some((v) => v.id === 'lesson-audio-itops-01')).toBe(true)
+      window.localStorage.clear()
     })
   })
 
@@ -79,7 +113,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
 
       const { rerender } = render(
         <AudioPlayerView
-          lessonTitle="03. A Phone Call That Changed My Career (B1-B2)"
+          lessonTitle="01. High CPU Alert & Memory Leak Triage (IT Ops)"
           level="Intermediate"
           isPlaying={false}
           isLoadingAudio={false}
@@ -119,7 +153,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
 
       rerender(
         <AudioPlayerView
-          lessonTitle="03. A Phone Call That Changed My Career (B1-B2)"
+          lessonTitle="01. High CPU Alert & Memory Leak Triage (IT Ops)"
           level="Intermediate"
           isPlaying={true}
           isLoadingAudio={false}
@@ -221,7 +255,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       const json = (await listRes.json()) as { success: boolean; data: any[] }
       expect(json.success).toBe(true)
       expect(json.data).toHaveLength(1)
-      expect(json.data[0].videoId).toBe('audio-b1b2-01')
+      expect(json.data[0].videoId).toBe('audio-itops-01')
       expect(json.data[0].sentences).toHaveLength(sampleAudio.sentences.length)
       expect(isAudioLesson(json.data[0])).toBe(true)
     })

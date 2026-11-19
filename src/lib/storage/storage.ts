@@ -14,7 +14,10 @@ import {
   recordSegmentCompleted,
 } from '../streak/streakManager'
 import { normalizeSentenceBoundaries } from '../transcript/sentenceNormalizer.ts'
-import { DEFAULT_B1_B2_AUDIO_LESSONS } from '../../data/defaultAudioLessons'
+import {
+  DEFAULT_B1_B2_AUDIO_LESSONS,
+  RETIRED_PRESET_AUDIO_IDS,
+} from '../../data/defaultAudioLessons'
 
 export const isTestEnvironment = (): boolean =>
   Boolean(
@@ -48,6 +51,7 @@ export const DUMMY_TEST_IDS = new Set([
   'sWG6uVp6DkQ',
   'video-sWGGuVp6DkQ',
   'video-sWG6uVp6DkQ',
+  ...RETIRED_PRESET_AUDIO_IDS,
 ])
 
 // Automatically purge legacy localStorage keys and dummy test video IDs

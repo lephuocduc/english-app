@@ -17,6 +17,33 @@ interface RawAudioLessonSpec {
   items: RawAudioSentence[]
 }
 
+/**
+ * Legacy preset IDs retired in favor of IT System Operations conversations.
+ * Automatically purged from LocalStorage & Cloud D1 during app startup/sync.
+ */
+export const RETIRED_PRESET_AUDIO_IDS: ReadonlySet<string> = new Set([
+  'lesson-audio-b1b2-01',
+  'lesson-audio-b1b2-02',
+  'lesson-audio-b1b2-03',
+  'lesson-audio-b1b2-04',
+  'lesson-audio-b1b2-05',
+  'lesson-audio-b1b2-06',
+  'lesson-audio-b1b2-07',
+  'lesson-audio-b1b2-08',
+  'lesson-audio-b1b2-09',
+  'lesson-audio-b1b2-10',
+  'audio-b1b2-01',
+  'audio-b1b2-02',
+  'audio-b1b2-03',
+  'audio-b1b2-04',
+  'audio-b1b2-05',
+  'audio-b1b2-06',
+  'audio-b1b2-07',
+  'audio-b1b2-08',
+  'audio-b1b2-09',
+  'audio-b1b2-10',
+])
+
 function buildLesson(spec: RawAudioLessonSpec): Lesson {
   let cursor = 0
   const sentences: SentenceSegment[] = spec.items.map((item, idx) => {
@@ -43,548 +70,622 @@ function buildLesson(spec: RawAudioLessonSpec): Lesson {
     description: spec.description,
     language: 'en',
     level: spec.level,
-    transcriptSource: 'ListenFlow B1-B2 Audio Studio',
+    transcriptSource: 'ListenFlow IT Ops Audio Studio',
     isVerified: true,
     sentences,
   }
 }
 
-const RAW_B1_B2_SPECS: RawAudioLessonSpec[] = [
+const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
   {
-    id: 'lesson-audio-b1b2-01',
-    videoId: 'audio-b1b2-01',
-    title: '01. The Midnight Bakery on Elm Street (B1-B2)',
+    id: 'lesson-audio-itops-01',
+    videoId: 'audio-itops-01',
+    title: '01. High CPU Alert & Memory Leak Triage (IT Ops)',
     description:
-      'A short creative story about an unusual late-night bakery that brings lonely neighbors together (~1 min, B1-B2).',
+      'On-call bridge call between a NOC analyst and an SRE triaging a production CPU spike, heap dump capture, and safe rollback (~1 min, B1-B2).',
     voiceAccent: 'en-US',
     level: 'Intermediate',
     items: [
       {
-        text: 'Every Friday at eleven, a warm scent of cinnamon drifted down Elm Street.',
-        translation: 'Mỗi thứ Sáu lúc mười một giờ, mùi hương quế ấm áp lại lan tỏa dọc con phố Elm.',
-        hint: 'scent of cinnamon, drifted down',
+        text: 'Hi Mark, sorry to wake you, but production web server three just crossed ninety percent CPU.',
+        translation:
+          '[NOC] Chào Mark, xin lỗi đã đánh thức anh, nhưng máy chủ web production số ba vừa vượt ngưỡng 90% CPU.',
+        hint: 'production, crossed, ninety percent CPU',
       },
       {
-        text: 'Unlike ordinary shops, the corner bakery only unlocked its door after midnight.',
-        translation: 'Không giống những cửa tiệm bình thường, tiệm bánh góc phố chỉ mở cửa sau nửa đêm.',
-        hint: 'ordinary, unlocked',
+        text: 'I am logging into the monitoring dashboard now; are customer requests starting to time out?',
+        translation:
+          '[SRE] Tôi đang đăng nhập bảng điều khiển giám sát; yêu cầu của khách hàng có bắt đầu bị quá thời gian chờ không?',
+        hint: 'monitoring dashboard, time out',
       },
       {
-        text: 'Daniel, a tired software engineer, finally decided to investigate the glowing window.',
-        translation: 'Daniel, một kỹ sư phần mềm mệt mỏi, cuối cùng quyết định tìm hiểu ô cửa sổ rực sáng ấy.',
-        hint: 'investigate, glowing',
+        text: 'Yes, average latency jumped above two seconds, and memory usage keeps climbing without dropping.',
+        translation:
+          '[NOC] Có, độ trễ trung bình nhảy vọt lên trên hai giây và mức dùng bộ nhớ cứ tăng liên tục không giảm.',
+        hint: 'average latency, memory usage, climbing',
       },
       {
-        text: 'Inside, an elderly baker named Clara was kneading dough with remarkable precision.',
-        translation: 'Bên trong, một thợ làm bánh lớn tuổi tên Clara đang nhào bột với sự chính xác đáng kinh ngạc.',
-        hint: 'kneading dough, remarkable precision',
+        text: 'That looks like a classic memory leak triggering heavy garbage collection cycles.',
+        translation:
+          '[SRE] Nghe giống lỗi rò rỉ bộ nhớ kinh điển gây ra các chu kỳ thu gom rác nặng nề.',
+        hint: 'memory leak, garbage collection cycles',
       },
       {
-        text: 'She explained that night-shift workers rarely had access to freshly baked bread.',
-        translation: 'Bà giải thích rằng những người làm ca đêm hiếm khi có cơ hội thưởng thức bánh mì mới nướng.',
-        hint: 'night-shift, rarely, access',
+        text: 'Should I restart the application service immediately to bring the CPU back down?',
+        translation:
+          '[NOC] Tôi có nên khởi động lại dịch vụ ứng dụng ngay để hạ CPU xuống không?',
+        hint: 'restart, application service, immediately',
       },
       {
-        text: 'Nurses, taxi drivers, and restless students gradually gathered around the wooden counter.',
-        translation: 'Các y tá, tài xế taxi và những sinh viên trằn trọc dần tụ họp quanh quầy gỗ.',
-        hint: 'restless, gradually, gathered',
+        text: 'Wait one minute; drain that server from the load balancer first so we preserve a heap dump.',
+        translation:
+          '[SRE] Khoan một phút; hãy rút lưu lượng khỏi máy chủ đó ở bộ cân bằng tải trước để giữ lại bản chụp bộ nhớ heap.',
+        hint: 'drain, load balancer, preserve, heap dump',
       },
       {
-        text: 'Rather than rushing home, strangers began exchanging stories over cups of herbal tea.',
-        translation: 'Thay vì vội vã về nhà, những người xa lạ bắt đầu trao đổi câu chuyện bên tách trà thảo mộc.',
-        hint: 'rather than, exchanging stories, herbal tea',
+        text: 'Got it, traffic is drained and the diagnostic snapshot finished writing to storage.',
+        translation:
+          '[NOC] Rõ rồi, lưu lượng đã được chuyển hướng và bản chụp chẩn đoán đã ghi xong vào bộ lưu trữ.',
+        hint: 'diagnostic snapshot, storage',
       },
       {
-        text: 'Daniel realized that loneliness could dissolve surprisingly quickly in the right atmosphere.',
-        translation: 'Daniel nhận ra rằng sự cô đơn có thể tan biến nhanh đến bất ngờ trong bầu không khí phù hợp.',
-        hint: 'dissolve, surprisingly, atmosphere',
+        text: "Great, now roll back tonight's release to the previous stable build while I analyze the dump.",
+        translation:
+          '[SRE] Tuyệt, giờ hãy hoàn tác bản phát hành tối nay về bản dựng ổn định trước đó trong lúc tôi phân tích file dump.',
+        hint: 'roll back, release, stable build, analyze',
       },
       {
-        text: 'By sunrise, the little bakery had quietly transformed an isolated neighborhood into a genuine community.',
-        translation: 'Khi bình minh lên, tiệm bánh nhỏ đã lặng lẽ biến khu phố tách biệt thành một cộng đồng thực thụ.',
-        hint: 'transformed, isolated, genuine community',
+        text: 'Rollback is complete, CPU dropped to twenty percent, and response times are healthy again.',
+        translation:
+          '[NOC] Hoàn tác xong rồi, CPU đã giảm xuống 20% và thời gian phản hồi đã ổn định trở lại.',
+        hint: 'rollback, response times, healthy',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-02',
-    videoId: 'audio-b1b2-02',
-    title: '02. Why Micro-Breaks Boost Your Focus (B1-B2)',
+    id: 'lesson-audio-itops-02',
+    videoId: 'audio-itops-02',
+    title: '02. Expired SSL Certificate Outage (IT Ops)',
     description:
-      'Discover how brief 2-minute pauses prevent cognitive fatigue and sustain productivity throughout the day (~1 min, B1-B2).',
+      'Urgent call between a Helpdesk lead and an Infrastructure engineer fixing an expired TLS certificate on the API gateway (~1 min, B1-B2).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Many ambitious professionals believe that working nonstop guarantees higher productivity.',
-        translation: 'Nhiều người đi làm đầy tham vọng tin rằng làm việc không ngừng nghỉ sẽ đảm bảo năng suất cao hơn.',
-        hint: 'ambitious, guarantees, productivity',
+        text: 'Hello Sarah, customers are calling because browsers show a security warning on our main portal.',
+        translation:
+          '[Helpdesk] Chào Sarah, khách hàng đang gọi báo trình duyệt hiện cảnh báo bảo mật trên cổng thông tin chính.',
+        hint: 'security warning, main portal',
       },
       {
-        text: 'However, cognitive researchers have discovered that continuous concentration rapidly drains mental energy.',
-        translation: 'Tuy nhiên, các nhà nghiên cứu nhận thức phát hiện rằng sự tập trung liên tục nhanh chóng làm cạn kiệt năng lượng tinh thần.',
-        hint: 'cognitive, continuous, drains',
+        text: 'Let me inspect the TLS handshake; oh no, the public SSL certificate expired ten minutes ago.',
+        translation:
+          '[Infra] Để tôi kiểm tra quá trình bắt tay TLS; ôi không, chứng chỉ SSL công khai vừa hết hạn mười phút trước.',
+        hint: 'inspect, TLS handshake, SSL certificate, expired',
       },
       {
-        text: 'When you ignore early signs of fatigue, subtle mistakes become far more frequent.',
-        translation: 'Khi bạn phớt lờ những dấu hiệu mệt mỏi ban đầu, các sai sót nhỏ trở nên thường xuyên hơn nhiều.',
-        hint: 'fatigue, subtle, frequent',
+        text: 'I thought our automation script renewed every certificate automatically before expiration.',
+        translation:
+          '[Helpdesk] Tôi tưởng kịch bản tự động hóa của chúng ta gia hạn mọi chứng chỉ trước khi hết hạn chứ.',
+        hint: 'automation script, renewed, expiration',
       },
       {
-        text: 'Surprisingly, taking a two-minute micro-break every hour can restore your attention span.',
-        translation: 'Đáng ngạc nhiên là việc nghỉ ngắn hai phút mỗi giờ có thể phục hồi khả năng tập trung của bạn.',
-        hint: 'micro-break, restore, attention span',
+        text: 'A recent firewall change blocked the validation challenge, so the renewal job silently failed.',
+        translation:
+          '[Infra] Một thay đổi tường lửa gần đây đã chặn bước xác thực, nên tác vụ gia hạn bị lỗi âm thầm.',
+        hint: 'firewall, validation challenge, silently failed',
       },
       {
-        text: 'The secret is stepping away from bright screens rather than scrolling through social media.',
-        translation: 'Bí quyết là rời khỏi màn hình sáng thay vì lướt mạng xã hội.',
-        hint: 'stepping away, scrolling',
+        text: 'How fast can we restore encrypted traffic without disconnecting active mobile users?',
+        translation:
+          '[Helpdesk] Chúng ta có thể khôi phục lưu lượng mã hóa nhanh cỡ nào mà không ngắt kết nối người dùng di động đang hoạt động?',
+        hint: 'restore, encrypted traffic, disconnecting',
       },
       {
-        text: 'Stretching your shoulders, gazing out a window, or sipping water allows the brain to reset.',
-        translation: 'Vươn vai, nhìn ra ngoài cửa sổ hoặc nhấp ngụm nước giúp não bộ thiết lập lại trạng thái.',
-        hint: 'gazing, sipping, reset',
+        text: 'I am uploading the renewed certificate and full intermediate chain to the reverse proxy right now.',
+        translation:
+          '[Infra] Tôi đang tải chứng chỉ mới gia hạn cùng chuỗi chứng chỉ trung gian đầy đủ lên reverse proxy ngay đây.',
+        hint: 'intermediate chain, reverse proxy',
       },
       {
-        text: 'During these brief pauses, your subconscious mind continues organizing complex information quietly.',
-        translation: 'Trong những quãng nghỉ ngắn này, tiềm thức của bạn tiếp tục sắp xếp thông tin phức tạp một cách lặng lẽ.',
-        hint: 'subconscious, organizing, complex',
+        text: 'Next, I will reload the web server gracefully so existing connections finish cleanly.',
+        translation:
+          '[Infra] Tiếp theo, tôi sẽ nạp lại cấu hình máy chủ web một cách êm ái để các kết nối hiện có hoàn tất trọn vẹn.',
+        hint: 'reload gracefully, existing connections',
       },
       {
-        text: 'As a result, you return to challenging tasks with renewed clarity and creative perspective.',
-        translation: 'Kết quả là bạn quay lại các nhiệm vụ khó với sự minh mẫn mới và góc nhìn sáng tạo.',
-        hint: 'renewed clarity, perspective',
-      },
-      {
-        text: 'Consistent performance depends not on endless effort, but on sustainable rhythm.',
-        translation: 'Hiệu suất ổn định không phụ thuộc vào nỗ lực vô tận, mà dựa vào nhịp độ bền vững.',
-        hint: 'consistent, sustainable rhythm',
+        text: 'The portal is green again, and let us add a thirty day expiry alert immediately.',
+        translation:
+          '[Helpdesk] Cổng thông tin đã xanh trở lại, và chúng ta hãy thêm ngay cảnh báo hết hạn trước 30 ngày nhé.',
+        hint: 'expiry alert, immediately',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-03',
-    videoId: 'audio-b1b2-03',
-    title: '03. A Phone Call That Changed My Career (B1-B2)',
+    id: 'lesson-audio-itops-03',
+    videoId: 'audio-itops-03',
+    title: '03. Root Disk Full & Log Rotation Fix (IT Ops)',
     description:
-      'A personal story about picking up an unexpected phone call and overcoming hesitation (~1 min, B1-B2 — great with Phone Mode!).',
+      'Night-shift Linux troubleshooting call resolving a 100% full root partition, open file handles, and automated log rotation (~1 min, B1-B2).',
     voiceAccent: 'en-US',
     level: 'Intermediate',
     items: [
       {
-        text: 'Last Tuesday, my phone vibrated with an unfamiliar international number during lunch.',
-        translation: 'Thứ Ba tuần trước, điện thoại tôi rung lên với một số quốc tế lạ đúng vào giờ ăn trưa.',
-        hint: 'vibrated, unfamiliar',
+        text: 'Hey Kevin, our billing database just stopped accepting writes and triggered a critical disk alert.',
+        translation:
+          '[Monitoring] Chào Kevin, cơ sở dữ liệu thanh toán vừa ngừng nhận dữ liệu ghi và phát cảnh báo đầy ổ đĩa nghiêm trọng.',
+        hint: 'accepting writes, critical disk alert',
       },
       {
-        text: 'I normally let unknown callers go to voicemail, yet something urged me to answer.',
-        translation: 'Tôi thường để các cuộc gọi lạ chuyển vào hộp thư thoại, nhưng điều gì đó đã thôi thúc tôi bắt máy.',
-        hint: 'voicemail, urged',
+        text: 'I checked disk usage, and the root partition reached one hundred percent capacity.',
+        translation:
+          '[SysAdmin] Tôi vừa kiểm tra dung lượng đĩa, phân vùng root đã chạm ngưỡng 100% sức chứa.',
+        hint: 'disk usage, root partition, capacity',
       },
       {
-        text: 'Due to background traffic noise, I had to concentrate carefully on every single syllable.',
-        translation: 'Vì tiếng ồn giao thông xung quanh, tôi phải tập trung kỹ vào từng âm tiết một.',
-        hint: 'background noise, concentrate, syllable',
+        text: 'Did the database grow unexpectedly, or is something else consuming all that space?',
+        translation:
+          '[Monitoring] Do cơ sở dữ liệu phình to bất ngờ, hay có thứ gì khác đang chiếm hết dung lượng đó?',
+        hint: 'unexpectedly, consuming',
       },
       {
-        text: 'It turned out to be the hiring director from a design studio in Melbourne.',
-        translation: 'Hóa ra đó là giám đốc tuyển dụng của một studio thiết kế tại Melbourne.',
-        hint: 'turned out to be, hiring director',
+        text: 'Someone left verbose debug logging enabled, creating a single forty gigabyte text file.',
+        translation:
+          '[SysAdmin] Có ai đó quên tắt chế độ ghi log gỡ lỗi chi tiết, tạo ra một tệp văn bản duy nhất nặng 40 gigabyte.',
+        hint: 'verbose debug logging, enabled',
       },
       {
-        text: 'She had reviewed my online portfolio and wanted to discuss an urgent freelance project.',
-        translation: 'Cô ấy đã xem hồ sơ năng lực trực tuyến của tôi và muốn trao đổi về một dự án tự do khẩn cấp.',
-        hint: 'portfolio, urgent, freelance',
+        text: 'Can we just delete that huge log file right away to recover storage?',
+        translation:
+          '[Monitoring] Chúng ta có thể xóa thẳng tệp log khổng lồ đó ngay lập tức để lấy lại dung lượng không?',
+        hint: 'recover storage',
       },
       {
-        text: 'Initially, I hesitated because the tight deadline sounded somewhat overwhelming.',
-        translation: 'Ban đầu, tôi do dự vì hạn chót gấp gáp nghe có vẻ hơi quá sức.',
-        hint: 'hesitated, tight deadline, overwhelming',
+        text: 'Deleting an open file will not free disk space while the running service holds its handle.',
+        translation:
+          '[SysAdmin] Xóa một tệp đang mở sẽ không giải phóng dung lượng đĩa khi dịch vụ đang chạy vẫn giữ bộ mô tả tệp đó.',
+        hint: 'free disk space, holds its handle',
       },
       {
-        text: 'Nevertheless, we negotiated reasonable milestones and clarified every technical requirement over the call.',
-        translation: 'Tuy nhiên, chúng tôi đã thương lượng các mốc thời gian hợp lý và làm rõ mọi yêu cầu kỹ thuật qua cuộc gọi.',
-        hint: 'nevertheless, negotiated, milestones, clarified',
+        text: 'Instead, I will truncate the active file safely and disable verbose logging in configuration.',
+        translation:
+          '[SysAdmin] Thay vào đó, tôi sẽ cắt rỗng tệp đang mở một cách an toàn và tắt log gỡ lỗi chi tiết trong cấu hình.',
+        hint: 'truncate, active file, configuration',
       },
       {
-        text: 'Delivering that assignment on schedule eventually led to a permanent remote position.',
-        translation: 'Hoàn thành nhiệm vụ đó đúng tiến độ cuối cùng đã mang lại một vị trí làm việc từ xa chính thức.',
-        hint: 'on schedule, eventually, permanent',
-      },
-      {
-        text: 'Sometimes a single conversation on a noisy line can redirect your entire future.',
-        translation: 'Đôi khi chỉ một cuộc trò chuyện qua đường dây nhiễu sóng cũng có thể chuyển hướng cả tương lai của bạn.',
-        hint: 'redirect, entire',
+        text: 'Database writes resumed immediately; tomorrow let us enforce daily log rotation with automatic compression.',
+        translation:
+          '[Monitoring] Ghi dữ liệu vào database đã chạy lại ngay; ngày mai chúng ta nhớ áp dụng xoay vòng log hằng ngày kèm nén tự động nhé.',
+        hint: 'resumed, enforce, log rotation, compression',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-04',
-    videoId: 'audio-b1b2-04',
-    title: '04. The Hidden Cost of Fast Fashion (B1-B2)',
+    id: 'lesson-audio-itops-04',
+    videoId: 'audio-itops-04',
+    title: '04. Slow Queries & Database Connection Pool (IT Ops)',
     description:
-      'An insightful look at why ultra-cheap clothing carries an environmental price tag and how consumers adapt (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Scrolling through online catalogs, consumers are constantly tempted by rock-bottom clothing prices.',
-        translation: 'Khi lướt các danh mục trực tuyến, người tiêu dùng liên tục bị cám dỗ bởi mức giá quần áo rẻ mạt.',
-        hint: 'catalogs, constantly, tempted, rock-bottom',
-      },
-      {
-        text: 'Fast-fashion brands release thousands of trendy items every week to encourage impulse buying.',
-        translation: 'Các thương hiệu thời trang nhanh tung ra hàng nghìn mẫu hợp mốt mỗi tuần để kích thích mua sắm bốc đồng.',
-        hint: 'trendy, encourage, impulse buying',
-      },
-      {
-        text: 'Unfortunately, this rapid production cycle relies heavily on synthetic fabrics and excessive water.',
-        translation: 'Đáng tiếc là chu kỳ sản xuất thần tốc này phụ thuộc nặng nề vào vải tổng hợp và lượng nước khổng lồ.',
-        hint: 'cycle, relies heavily, synthetic, excessive',
-      },
-      {
-        text: 'Because garments are cheaply stitched, many buyers discard them after only a handful of wears.',
-        translation: 'Vì trang phục được may ẩu với chi phí thấp, nhiều người mua vứt bỏ chúng chỉ sau vài lần mặc.',
-        hint: 'garments, discard, a handful of',
-      },
-      {
-        text: 'Millions of tons of textile waste end up polluting landfills and coastal ecosystems annually.',
-        translation: 'Hàng triệu tấn rác thải dệt may kết thúc bằng việc gây ô nhiễm bãi rác và hệ sinh thái ven biển hằng năm.',
-        hint: 'textile waste, landfills, ecosystems',
-      },
-      {
-        text: 'Growing awareness has recently inspired younger shoppers to embrace secondhand boutiques.',
-        translation: 'Nhận thức ngày càng tăng gần đây đã truyền cảm hứng cho người mua trẻ đón nhận các cửa hàng đồ cũ.',
-        hint: 'awareness, inspired, embrace, secondhand',
-      },
-      {
-        text: 'Investing in durable, timeless pieces often saves money over the long run.',
-        translation: 'Đầu tư vào những món đồ bền bỉ, vượt thời gian thường giúp tiết kiệm tiền về lâu dài.',
-        hint: 'durable, timeless, over the long run',
-      },
-      {
-        text: 'Choosing quality over quantity is a practical step toward a more sustainable wardrobe.',
-        translation: 'Chọn chất lượng hơn số lượng là một bước đi thiết thực hướng tới tủ đồ bền vững hơn.',
-        hint: 'quality over quantity, sustainable wardrobe',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-b1b2-05',
-    videoId: 'audio-b1b2-05',
-    title: '05. Lost in Kyoto Without a Map (B1-B2)',
-    description:
-      'What happens when your phone battery dies in a historic Japanese neighborhood and you rely on kindness (~1 min, B1-B2).',
+      'Incident call between Application Support and a DBA diagnosing checkout timeouts, full table scans, and read replicas (~1 min, B1-B2).',
     voiceAccent: 'en-AU',
     level: 'Intermediate',
     items: [
       {
-        text: 'When my smartphone battery suddenly died in Kyoto, I felt completely disoriented at first.',
-        translation: 'Khi pin điện thoại đột ngột cạn sạch ở Kyoto, ban đầu tôi cảm thấy hoàn toàn mất phương hướng.',
-        hint: 'disoriented, suddenly',
+        text: 'Hi Priya, checkout requests are timing out and the application logs show connection pool exhaustion.',
+        translation:
+          '[App Support] Chào Priya, các yêu cầu thanh toán đang bị quá thời gian và log ứng dụng báo cạn kiệt bể kết nối.',
+        hint: 'timing out, connection pool exhaustion',
       },
       {
-        text: 'Narrow cobblestone alleys twisted in every direction, lined with traditional wooden teahouses.',
-        translation: 'Những con hẻm lát đá hẹp uốn lượn về mọi hướng, hai bên là các quán trà gỗ truyền thống.',
-        hint: 'cobblestone alleys, twisted, teahouses',
+        text: 'I see dozens of queued queries waiting because a heavy analytics report is locking shared resources.',
+        translation:
+          '[DBA] Tôi thấy hàng chục truy vấn đang xếp hàng chờ vì một báo cáo phân tích nặng đang chiếm dụng tài nguyên dùng chung.',
+        hint: 'queued queries, analytics report, shared resources',
       },
       {
-        text: 'Without GPS navigation, I had no choice but to slow down and observe my surroundings.',
-        translation: 'Không có chỉ đường GPS, tôi không còn cách nào khác ngoài việc đi chậm lại và quan sát xung quanh.',
-        hint: 'navigation, surroundings',
+        text: 'Why is that report taking almost forty seconds to finish today?',
+        translation:
+          '[App Support] Tại sao hôm nay báo cáo đó lại mất gần bốn mươi giây mới chạy xong vậy?',
+        hint: 'almost forty seconds',
       },
       {
-        text: 'At a quiet crossroads, a local shopkeeper noticed my puzzled expression and stepped outside.',
-        translation: 'Tại một ngã tư yên tĩnh, một chủ tiệm địa phương nhận ra vẻ bối rối của tôi và bước ra ngoài.',
-        hint: 'crossroads, puzzled expression',
+        text: 'The execution plan reveals a full table scan across five million rows without an index.',
+        translation:
+          '[DBA] Kế hoạch thực thi cho thấy đang xảy ra quét toàn bộ bảng qua năm triệu dòng vì thiếu chỉ mục.',
+        hint: 'execution plan, full table scan, index',
       },
       {
-        text: 'Although we shared few common words, she sketched clear landmarks on a paper napkin.',
-        translation: 'Dù chúng tôi ít vốn từ chung, cô ấy vẫn phác thảo các địa điểm nổi bật rõ ràng lên tờ khăn giấy.',
-        hint: 'sketched, landmarks',
+        text: 'Can we cancel the stuck reporting queries first so checkout traffic recovers?',
+        translation:
+          '[App Support] Mình hủy các truy vấn báo cáo bị treo trước để lưu lượng thanh toán phục hồi được không?',
+        hint: 'cancel, stuck, recovers',
       },
       {
-        text: 'Following her handwritten directions, I stumbled upon a hidden bamboo courtyard untouched by crowds.',
-        translation: 'Đi theo chỉ dẫn viết tay của cô ấy, tôi tình cờ phát hiện một khoảng sân tre ẩn mình vắng bóng đám đông.',
-        hint: 'stumbled upon, courtyard, untouched',
+        text: 'Done, active connections just dropped by half, and I am routing reports to the read replica.',
+        translation:
+          '[DBA] Xong rồi, số kết nối đang mở vừa giảm một nửa, và tôi đang định tuyến các báo cáo sang bản sao chỉ đọc.',
+        hint: 'routing, read replica',
       },
       {
-        text: 'A gentle breeze rustled the leaves while rainwater dripped softly into a stone basin.',
-        translation: 'Một làn gió nhẹ làm xào xạc tán lá trong khi nước mưa nhỏ giọt êm ái xuống bồn đá.',
-        hint: 'breeze, rustled, stone basin',
+        text: 'Should we add the missing composite index during off peak hours tonight?',
+        translation:
+          '[App Support] Chúng ta có nên thêm chỉ mục kết hợp còn thiếu vào giờ thấp điểm tối nay không?',
+        hint: 'composite index, off peak hours',
       },
       {
-        text: 'By the time I reached the main station, getting lost had become my favorite memory.',
-        translation: 'Vào lúc tôi quay lại được ga chính, việc bị lạc đường đã trở thành kỷ niệm yêu thích nhất của tôi.',
-        hint: 'reached, memory',
+        text: 'Even better, we can build it online concurrently without blocking production writes.',
+        translation:
+          '[DBA] Tốt hơn nữa, ta có thể tạo chỉ mục trực tuyến song song mà không làm nghẽn thao tác ghi trên production.',
+        hint: 'concurrently, blocking, production writes',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-06',
-    videoId: 'audio-b1b2-06',
-    title: '06. The Art of Polite Disagreement (B1-B2)',
+    id: 'lesson-audio-itops-05',
+    videoId: 'audio-itops-05',
+    title: '05. Load Balancer Health Checks & DNS Failover (IT Ops)',
     description:
-      'Learn diplomatic phrases and mindset shifts for expressing opposing viewpoints at work without conflict (~1 min, B1-B2).',
-    voiceAccent: 'en-US',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Disagreeing with a colleague in a meeting can feel awkward if not handled thoughtfully.',
-        translation: 'Bất đồng quan điểm với đồng nghiệp trong cuộc họp có thể gây khó xử nếu không được xử lý khéo léo.',
-        hint: 'colleague, awkward, thoughtfully',
-      },
-      {
-        text: 'Many people either stay silent to preserve harmony or argue aggressively to win.',
-        translation: 'Nhiều người hoặc chọn im lặng để giữ hòa khí, hoặc tranh luận gay gắt để giành phần thắng.',
-        hint: 'preserve harmony, aggressively',
-      },
-      {
-        text: 'Neither approach fosters genuine collaboration or leads to innovative team decisions.',
-        translation: 'Cả hai cách tiếp cận đều không nuôi dưỡng sự hợp tác thực sự hay dẫn tới các quyết định đột phá của nhóm.',
-        hint: 'fosters, collaboration, innovative',
-      },
-      {
-        text: 'Effective communicators begin by acknowledging the valid points in another person’s proposal.',
-        translation: 'Người giao tiếp hiệu quả bắt đầu bằng việc ghi nhận những điểm hợp lý trong đề xuất của người khác.',
-        hint: 'acknowledging, valid points, proposal',
-      },
-      {
-        text: 'Phrases like "I see where you’re coming from, though I have one concern" lower defensiveness.',
-        translation: 'Những cụm từ như "Tôi hiểu góc nhìn của bạn, tuy nhiên tôi có một băn khoăn" giúp giảm thái độ phòng thủ.',
-        hint: 'concern, defensiveness',
-      },
-      {
-        text: 'Focusing strictly on objective evidence rather than personal criticism keeps the discussion productive.',
-        translation: 'Chỉ tập trung vào bằng chứng khách quan thay vì chỉ trích cá nhân giúp cuộc thảo luận hiệu quả.',
-        hint: 'objective evidence, criticism, productive',
-      },
-      {
-        text: 'When teams welcome respectful debate, blind spots are identified before costly errors occur.',
-        translation: 'Khi đội ngũ hoan nghênh tranh luận tôn trọng, các điểm mù được phát hiện trước khi sai lầm tốn kém xảy ra.',
-        hint: 'respectful debate, blind spots, occur',
-      },
-      {
-        text: 'True diplomacy transforms potential conflict into an opportunity for shared growth.',
-        translation: 'Sự khéo léo thực sự biến xung đột tiềm ẩn thành cơ hội cùng phát triển.',
-        hint: 'diplomacy, transforms, potential conflict',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-b1b2-07',
-    videoId: 'audio-b1b2-07',
-    title: '07. Why Cities Are Planting Vertical Forests (B1-B2)',
-    description:
-      'How modern architects cover skyscrapers with thousands of trees to cool concrete cities (~1 min, B1-B2).',
+      'Bridge call between Network Ops and a Cloud engineer coordinating multi-zone failover, draining unhealthy targets, and DNS TTL caching (~1 min, B1-B2).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Concrete skyscrapers trap solar heat, turning densely populated cities into scorching summer ovens.',
-        translation: 'Những tòa nhà chọc trời bằng bê tông giữ nhiệt mặt trời, biến các đô thị đông đúc thành lò nướng mùa hè.',
-        hint: 'concrete, trap, densely populated, scorching',
+        text: 'David, synthetic monitors report intermittent errors from European users after our regional switch.',
+        translation:
+          '[NetOps] David ơi, hệ thống giám sát giả lập báo lỗi chập chờn từ người dùng châu Âu sau khi ta chuyển vùng.',
+        hint: 'synthetic monitors, intermittent errors, regional switch',
       },
       {
-        text: 'To combat rising urban temperatures, visionary architects are designing vertical forests.',
-        translation: 'Để đối phó với nhiệt độ đô thị gia tăng, các kiến trúc sư có tầm nhìn đang thiết kế những khu rừng thẳng đứng.',
-        hint: 'combat, urban, visionary architects',
+        text: 'Let me check the load balancer; two backend nodes are still failing HTTP health checks.',
+        translation:
+          '[Cloud] Để tôi kiểm tra bộ cân bằng tải; hai máy chủ backend vẫn đang trượt kiểm tra sức khỏe HTTP.',
+        hint: 'backend nodes, HTTP health checks',
       },
       {
-        text: 'Instead of plain glass facades, reinforced balconies hold hundreds of resilient shrubs and trees.',
-        translation: 'Thay vì mặt kính trơn, các ban công gia cố chứa hàng trăm cây bụi và cây thân gỗ bền bỉ.',
-        hint: 'facades, reinforced, resilient shrubs',
+        text: 'Why did the balancer keep sending requests to those unhealthy instances?',
+        translation:
+          '[NetOps] Tại sao bộ cân bằng tải vẫn tiếp tục gửi yêu cầu tới các máy chủ không khỏe mạnh đó?',
+        hint: 'unhealthy instances',
       },
       {
-        text: 'Botanists carefully select native species capable of withstanding strong winds at high altitudes.',
-        translation: 'Các nhà thực vật học chọn lọc kỹ những loài bản địa có khả năng chịu gió mạnh ở độ cao lớn.',
-        hint: 'botanists, native species, withstanding, altitudes',
+        text: 'The failure threshold was set too high, so it waited nearly three minutes before draining them.',
+        translation:
+          '[Cloud] Ngưỡng báo lỗi bị đặt quá cao, nên nó chờ gần ba phút mới rút lưu lượng khỏi chúng.',
+        hint: 'failure threshold, draining',
       },
       {
-        text: 'This living curtain naturally filters airborne dust while absorbing substantial carbon dioxide.',
-        translation: 'Bức rèm sống động này tự nhiên lọc bụi trong không khí đồng thời hấp thụ lượng lớn khí carbonic.',
-        hint: 'airborne dust, absorbing, substantial',
+        text: 'I just tightened the health probe interval and shifted all traffic to our healthy availability zone.',
+        translation:
+          '[Cloud] Tôi vừa siết ngắn chu kỳ thăm dò sức khỏe và chuyển toàn bộ lưu lượng sang vùng sẵn sàng đang ổn định.',
+        hint: 'health probe interval, availability zone',
       },
       {
-        text: 'Inside the apartments, natural shade reduces air-conditioning consumption by nearly thirty percent.',
-        translation: 'Bên trong các căn hộ, bóng râm tự nhiên giúp giảm lượng điện tiêu thụ điều hòa gần ba mươi phần trăm.',
-        hint: 'consumption, nearly',
+        text: 'Some offices still see old IP addresses; is DNS caching slowing down the failover?',
+        translation:
+          '[NetOps] Một số văn phòng vẫn thấy địa chỉ IP cũ; có phải bộ nhớ đệm DNS đang làm chậm quá trình chuyển đổi dự phòng không?',
+        hint: 'DNS caching, failover',
       },
       {
-        text: 'Even better, birds and pollinators soon return, restoring fragile biodiversity to crowded districts.',
-        translation: 'Tuyệt vời hơn, chim chóc và côn trùng thụ phấn sớm quay trở lại, khôi phục đa dạng sinh học mong manh cho các quận đông đúc.',
-        hint: 'pollinators, fragile biodiversity',
+        text: 'Exactly, our DNS record had a long TTL, so external resolvers are still holding stale entries.',
+        translation:
+          '[Cloud] Chính xác, bản ghi DNS của mình đặt thời gian sống TTL quá dài nên các máy chủ phân giải ngoài vẫn giữ bản ghi cũ.',
+        hint: 'DNS record, resolvers, stale entries',
       },
       {
-        text: 'Green architecture proves that modern cities and thriving nature can coexist harmoniously.',
-        translation: 'Kiến trúc xanh chứng minh rằng đô thị hiện đại và thiên nhiên trù phú có thể cùng tồn tại hài hòa.',
-        hint: 'thriving, coexist harmoniously',
+        text: 'Once propagation settles, let us lower the TTL to sixty seconds for faster future failovers.',
+        translation:
+          '[NetOps] Khi việc lan truyền DNS ổn định, hãy hạ TTL xuống 60 giây để các lần chuyển đổi dự phòng sau nhanh hơn nhé.',
+        hint: 'propagation settles, lower the TTL',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-08',
-    videoId: 'audio-b1b2-08',
-    title: '08. The Mystery of the Unclaimed Suitcase (B1-B2)',
+    id: 'lesson-audio-itops-06',
+    videoId: 'audio-itops-06',
+    title: '06. Kubernetes Pod Crash Loop & Rollback (IT Ops)',
     description:
-      'A clever short story set in an airport baggage claim with an unexpected coincidence (~1 min, B1-B2).',
+      'Release call between a Release Manager and DevOps engineer diagnosing CrashLoopBackOff, OOM kills, ConfigMap errors, and instant rollback (~1 min, B1-B2).',
     voiceAccent: 'en-US',
     level: 'Intermediate',
     items: [
       {
-        text: 'By midnight, the airport baggage carousel had stopped spinning, leaving only one dark suitcase.',
-        translation: 'Đến nửa đêm, băng chuyền hành lý sân bay đã ngừng quay, chỉ còn lại duy nhất một chiếc vali tối màu.',
-        hint: 'baggage carousel, spinning',
+        text: 'Elena, right after deploying the payment microservice, every new Kubernetes pod entered a crash loop.',
+        translation:
+          '[Release] Elena ơi, ngay sau khi triển khai microservice thanh toán, mọi pod Kubernetes mới đều rơi vào vòng lặp sập nguồn.',
+        hint: 'deploying, microservice, crash loop',
       },
       {
-        text: 'Exhausted from a delayed flight, Maya realized her own matching luggage had vanished.',
-        translation: 'Kiệt sức sau chuyến bay bị hoãn, Maya nhận ra chiếc hành lý giống hệt của mình đã biến mất.',
-        hint: 'exhausted, vanished',
+        text: 'Hold the rollout immediately; are existing stable pods still serving live customer traffic?',
+        translation:
+          '[DevOps] Tạm dừng triển khai ngay; các pod ổn định cũ có còn đang phục vụ lưu lượng khách hàng thực không?',
+        hint: 'rollout, serving live traffic',
       },
       {
-        text: 'She checked the leather tag and discovered the name Leo Vance alongside a phone number.',
-        translation: 'Cô kiểm tra thẻ hành lý bằng da và phát hiện cái tên Leo Vance cùng một số điện thoại.',
-        hint: 'leather tag, alongside',
+        text: 'Yes, the readiness probe kept failed containers out of service, so users have not noticed yet.',
+        translation:
+          '[Release] Có, kiểm tra sẵn sàng đã giữ các container lỗi đứng ngoài dịch vụ nên người dùng vẫn chưa bị ảnh hưởng.',
+        hint: 'readiness probe, containers',
       },
       {
-        text: 'Reluctant to wake a stranger, she hesitated before tapping the call button.',
-        translation: 'Ngần ngại đánh thức một người xa lạ, cô chần chừ trước khi bấm nút gọi.',
-        hint: 'reluctant, hesitated',
+        text: 'I am inspecting the container logs and pod events to find the exact exit code.',
+        translation:
+          '[DevOps] Tôi đang kiểm tra log container và sự kiện của pod để tìm mã thoát chính xác.',
+        hint: 'container logs, pod events, exit code',
       },
       {
-        text: 'Moments later, a relieved voice answered from a taxi twenty minutes away.',
-        translation: 'Vài giây sau, một giọng nói nhẹ nhõm bắt máy từ chiếc taxi cách đó hai mươi phút chạy xe.',
-        hint: 'relieved voice',
+        text: 'Is it hitting the memory limit and getting terminated as out of memory?',
+        translation:
+          '[Release] Có phải nó chạm giới hạn bộ nhớ và bị hệ thống dừng do tràn bộ nhớ không?',
+        hint: 'memory limit, terminated, out of memory',
       },
       {
-        text: 'Leo confessed he had grabbed the identical suitcase without inspecting the label.',
-        translation: 'Leo thú nhận anh đã vội lấy chiếc vali giống hệt mà không kiểm tra nhãn tên.',
-        hint: 'confessed, identical, inspecting',
+        text: 'No, memory looks fine; the container crashed because a required API key is missing from the config map.',
+        translation:
+          '[DevOps] Không, bộ nhớ vẫn ổn; container bị sập vì thiếu một khóa API bắt buộc trong ConfigMap.',
+        hint: 'required API key, config map',
       },
       {
-        text: 'They agreed to meet at a bright terminal café to swap their belongings.',
-        translation: 'Họ hẹn gặp nhau tại một quán cà phê sáng đèn trong nhà ga để trao đổi lại hành lý.',
-        hint: 'terminal, swap, belongings',
+        text: 'Let us trigger a deployment rollback now to clear the failed replica set cleanly.',
+        translation:
+          '[Release] Hãy kích hoạt hoàn tác triển khai ngay để dọn sạch bộ replica bị lỗi một cách gọn gàng.',
+        hint: 'deployment rollback, replica set',
       },
       {
-        text: 'Over coffee, they laughed to discover both were attending the same architecture conference.',
-        translation: 'Bên tách cà phê, họ bật cười khi phát hiện cả hai cùng tham dự một hội nghị kiến trúc.',
-        hint: 'attending, conference',
+        text: 'Rollback succeeded, all replicas are running, and cluster error rates remain completely flat.',
+        translation:
+          '[DevOps] Hoàn tác thành công, mọi bản sao đều đang chạy và tỷ lệ lỗi cụm hoàn toàn bằng phẳng.',
+        hint: 'replicas, cluster error rates',
       },
       {
-        text: 'What began as an irritating travel blunder turned into an unforgettable friendship.',
-        translation: 'Điều khởi đầu như một sự cố du lịch bực mình lại hóa thành một tình bạn khó quên.',
-        hint: 'irritating, blunder, unforgettable',
+        text: 'Before retrying tomorrow, let us add automated configuration validation inside our deployment pipeline.',
+        translation:
+          '[Release] Trước khi thử lại vào ngày mai, hãy thêm bước kiểm tra cấu hình tự động trong quy trình triển khai nhé.',
+        hint: 'configuration validation, deployment pipeline',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-09',
-    videoId: 'audio-b1b2-09',
-    title: '09. Digital Minimalism for Busy Minds (B1-B2)',
+    id: 'lesson-audio-itops-07',
+    videoId: 'audio-itops-07',
+    title: '07. Backup Verification & Disaster Recovery Drill (IT Ops)',
     description:
-      'Practical habits to tame nonstop notifications and reclaim calm, intentional evenings (~1 min, B1-B2).',
+      'Operations review between an Ops Manager and Backup Admin discussing RTO, RPO, point-in-time recovery, and immutable offsite backups (~1 min, B1-B2).',
+    voiceAccent: 'en-GB',
+    level: 'Intermediate',
+    items: [
+      {
+        text: 'Good morning Tom, our compliance audit starts next week; are our disaster recovery metrics up to date?',
+        translation:
+          '[Ops Manager] Chào buổi sáng Tom, đợt kiểm toán tuân thủ bắt đầu tuần tới; các chỉ số phục hồi sau thảm họa của ta đã cập nhật chưa?',
+        hint: 'compliance audit, disaster recovery metrics',
+      },
+      {
+        text: 'Yes, we take full snapshots every Sunday and run incremental backups every single hour.',
+        translation:
+          '[Backup Admin] Rồi ạ, chúng ta chụp bản sao lưu đầy đủ mỗi Chủ nhật và chạy sao lưu gia tăng mỗi giờ.',
+        hint: 'full snapshots, incremental backups',
+      },
+      {
+        text: 'That keeps our recovery point objective under one hour, but what about actual restore speed?',
+        translation:
+          '[Ops Manager] Như vậy giữ mục tiêu điểm phục hồi RPO dưới một giờ, nhưng tốc độ khôi phục thực tế thì sao?',
+        hint: 'recovery point objective, restore speed',
+      },
+      {
+        text: 'We ran an automated restore drill in staging yesterday and verified full database integrity.',
+        translation:
+          '[Backup Admin] Hôm qua tụi em đã chạy diễn tập khôi phục tự động trên môi trường staging và kiểm chứng toàn vẹn dữ liệu.',
+        hint: 'restore drill, staging, database integrity',
+      },
+      {
+        text: 'How long did the entire point in time recovery take from start to finish?',
+        translation:
+          '[Ops Manager] Toàn bộ quá trình khôi phục về đúng thời điểm mất bao lâu từ đầu đến cuối?',
+        hint: 'point in time recovery',
+      },
+      {
+        text: 'Thirty five minutes total, comfortably beating our two hour recovery time objective target.',
+        translation:
+          '[Backup Admin] Tổng cộng 35 phút, vượt xa mục tiêu thời gian phục hồi RTO hai giờ của chúng ta.',
+        hint: 'comfortably beating, recovery time objective',
+      },
+      {
+        text: 'Are offsite copies stored in an immutable bucket to protect against ransomware attacks?',
+        translation:
+          '[Ops Manager] Các bản sao lưu ngoài site có được lưu trong kho bất biến để chống lại tấn công mã độc tống tiền không?',
+        hint: 'offsite copies, immutable bucket, ransomware',
+      },
+      {
+        text: 'Absolutely, object lock prevents any modification or deletion for ninety days, even with admin credentials.',
+        translation:
+          '[Backup Admin] Chắc chắn rồi, khóa đối tượng ngăn mọi chỉnh sửa hay xóa bỏ trong 90 ngày, kể cả với quyền quản trị.',
+        hint: 'object lock, modification, admin credentials',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-08',
+    videoId: 'audio-itops-08',
+    title: '08. Suspicious SSH Login & Firewall Hardening (IT Ops)',
+    description:
+      'Security escalation call between a SOC analyst and a SysOps engineer blocking SSH brute-force attacks and hardening bastion access (~1 min, B1-B2).',
+    voiceAccent: 'en-US',
+    level: 'Intermediate',
+    items: [
+      {
+        text: 'Hi Leo, our intrusion detection system just flagged thousands of failed SSH logins on edge server two.',
+        translation:
+          '[SOC] Chào Leo, hệ thống phát hiện xâm nhập vừa gắn cờ hàng nghìn lượt đăng nhập SSH thất bại trên máy chủ biên số hai.',
+        hint: 'intrusion detection, flagged, SSH logins',
+      },
+      {
+        text: 'Thanks for escalating quickly; did any unauthorized account actually succeed in logging in?',
+        translation:
+          '[SysOps] Cảm ơn đã báo leo thang sớm; có tài khoản trái phép nào thực sự đăng nhập thành công không?',
+        hint: 'escalating, unauthorized account',
+      },
+      {
+        text: 'No interactive sessions opened yet, though the traffic comes from a coordinated range of foreign IP addresses.',
+        translation:
+          '[SOC] Chưa có phiên tương tác nào được mở, nhưng lưu lượng đến từ một dải địa chỉ IP nước ngoài có phối hợp.',
+        hint: 'interactive sessions, coordinated range',
+      },
+      {
+        text: 'I am adding an immediate deny rule at the perimeter firewall to block those subnets.',
+        translation:
+          '[SysOps] Tôi đang thêm quy tắc chặn ngay lập tức trên tường lửa vòng ngoài để khóa các dải mạng con đó.',
+        hint: 'deny rule, perimeter firewall, subnets',
+      },
+      {
+        text: 'Why was the SSH port exposed directly to the public internet in the first place?',
+        translation:
+          '[SOC] Ngay từ đầu tại sao cổng SSH lại bị mở trực tiếp ra internet công cộng vậy?',
+        hint: 'exposed directly, public internet',
+      },
+      {
+        text: 'A contractor opened it briefly during migration and forgot to restrict access to our bastion host.',
+        translation:
+          '[SysOps] Một nhà thầu đã mở tạm lúc di chuyển hệ thống và quên giới hạn truy cập chỉ qua máy chủ trung gian bastion.',
+        hint: 'contractor, migration, bastion host',
+      },
+      {
+        text: 'Please disable password authentication completely so only hardware backed SSH keys are accepted.',
+        translation:
+          '[SOC] Vui lòng tắt hoàn toàn xác thực bằng mật khẩu để chỉ chấp nhận khóa SSH có bảo vệ phần cứng.',
+        hint: 'disable password authentication, SSH keys',
+      },
+      {
+        text: 'Done, firewall rules are locked down, service credentials are rotated, and audit logs are archived.',
+        translation:
+          '[SysOps] Xong rồi, quy tắc tường lửa đã khóa chặt, thông tin xác thực dịch vụ đã xoay mới và nhật ký kiểm toán đã được lưu trữ.',
+        hint: 'locked down, credentials rotated, audit logs',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-09',
+    videoId: 'audio-itops-09',
+    title: '09. Maintenance Window & Kernel Patching (IT Ops)',
+    description:
+      'Change Advisory Board call coordinating a low-risk Linux kernel security patch with snapshots, rolling updates, and smoke tests (~1 min, B1-B2).',
     voiceAccent: 'en-AU',
     level: 'Intermediate',
     items: [
       {
-        text: 'Our smartphones promise convenience, yet constant notifications fragment our daily peace of mind.',
-        translation: 'Điện thoại thông minh hứa hẹn sự tiện lợi, nhưng thông báo liên tục lại làm vụn vỡ sự bình yên hằng ngày.',
-        hint: 'fragment, peace of mind',
+        text: "Thanks for joining the change advisory call; let us review Sunday's Linux kernel security patching.",
+        translation:
+          '[Change Mgr] Cảm ơn đã tham gia cuộc họp hội đồng quản lý thay đổi; cùng rà soát đợt vá bảo mật nhân Linux Chủ nhật này nhé.',
+        hint: 'change advisory, kernel security patching',
       },
       {
-        text: 'Whenever a red badge flashes, our brain anticipates a tiny reward and loses focus.',
-        translation: 'Mỗi khi biểu tượng đỏ nhấp nháy, não bộ lại mong chờ một phần thưởng nhỏ và đánh mất sự tập trung.',
-        hint: 'anticipates, loses focus',
+        text: 'We scheduled the maintenance window for two in the morning when customer traffic is lowest.',
+        translation:
+          '[SysEng] Chúng tôi lên lịch khung thời gian bảo trì lúc hai giờ sáng khi lưu lượng khách hàng thấp nhất.',
+        hint: 'maintenance window, lowest',
       },
       {
-        text: 'Digital minimalism does not require abandoning technology or moving to a remote cabin.',
-        translation: 'Tối giản kỹ thuật số không đòi hỏi bạn phải từ bỏ công nghệ hay chuyển lên một căn nhà gỗ hẻo lánh.',
-        hint: 'minimalism, abandoning, remote cabin',
+        text: 'Will customers experience full downtime while the application servers reboot?',
+        translation:
+          '[Change Mgr] Khách hàng có gặp tình trạng gián đoạn hoàn toàn trong lúc các máy chủ ứng dụng khởi động lại không?',
+        hint: 'full downtime, reboot',
       },
       {
-        text: 'Instead, it invites you to audit which applications genuinely enrich your life.',
-        translation: 'Thay vào đó, nó mời gọi bạn rà soát xem ứng dụng nào thực sự làm phong phú cuộc sống của mình.',
-        hint: 'audit, genuinely enrich',
+        text: 'No, we will perform rolling updates one node at a time across our redundant cluster.',
+        translation:
+          '[SysEng] Không ạ, ta sẽ cập nhật cuốn chiếu từng máy chủ một trong cụm dự phòng.',
+        hint: 'rolling updates, redundant cluster',
       },
       {
-        text: 'Start by muting non-essential alerts and removing distracting apps from your home screen.',
-        translation: 'Hãy bắt đầu bằng việc tắt các cảnh báo không thiết yếu và gỡ bỏ ứng dụng gây xao nhãng khỏi màn hình chính.',
-        hint: 'non-essential alerts, distracting',
+        text: 'Before applying any patches, make sure fresh system snapshots are captured and verified.',
+        translation:
+          '[Change Mgr] Trước khi cài bất kỳ bản vá nào, hãy đảm bảo các bản chụp hệ thống mới đã được tạo và kiểm tra.',
+        hint: 'patches, system snapshots, verified',
       },
       {
-        text: 'Establishing a phone-free hour before bedtime dramatically improves both sleep quality and mood.',
-        translation: 'Thiết lập một giờ không điện thoại trước khi ngủ giúp cải thiện rõ rệt cả chất lượng giấc ngủ lẫn tâm trạng.',
-        hint: 'establishing, dramatically improves',
+        text: 'Agreed, and if automated smoke tests fail on node one, we abort immediately and revert.',
+        translation:
+          '[SysEng] Nhất trí, và nếu kiểm thử nhanh tự động trên node một thất bại, ta hủy ngay lập tức và khôi phục lại.',
+        hint: 'smoke tests, abort, revert',
       },
       {
-        text: 'Without endless scrolling, evenings suddenly stretch longer, leaving room for reading or cooking.',
-        translation: 'Không còn lướt màn hình vô tận, buổi tối bỗng dưng dài ra, nhường chỗ cho việc đọc sách hoặc nấu ăn.',
-        hint: 'stretch longer, leaving room',
+        text: 'Has customer support already published the advance notice on our public status page?',
+        translation:
+          '[Change Mgr] Bộ phận hỗ trợ khách hàng đã đăng thông báo trước lên trang trạng thái công khai chưa?',
+        hint: 'advance notice, status page',
       },
       {
-        text: 'When you control your attention deliberately, technology becomes a helpful servant rather than a master.',
-        translation: 'Khi bạn kiểm soát sự chú ý một cách có chủ đích, công nghệ trở thành trợ thủ đắc lực thay vì làm chủ bạn.',
-        hint: 'deliberately, servant',
+        text: 'Yes, subscribers received email alerts yesterday, and the on call roster is confirmed ready.',
+        translation:
+          '[SysEng] Rồi ạ, người đăng ký đã nhận email thông báo hôm qua và lịch trực ứng cứu đã xác nhận sẵn sàng.',
+        hint: 'subscribers, on call roster, confirmed',
       },
     ],
   },
   {
-    id: 'lesson-audio-b1b2-10',
-    videoId: 'audio-b1b2-10',
-    title: '10. Customer Support Call: Flight Delay (B1-B2)',
+    id: 'lesson-audio-itops-10',
+    videoId: 'audio-itops-10',
+    title: '10. Blameless Postmortem & SLA Review (IT Ops)',
     description:
-      'A realistic customer-service phone call resolving a cancelled flight & rebooking (~1 min, B1-B2 — try Phone Call Mode!).',
+      'Post-incident review between an SRE Lead and Operations Engineer covering root cause analysis, SLA error budgets, alert fatigue, and runbooks (~1 min, B1-B2).',
     voiceAccent: 'en-US',
     level: 'Intermediate',
     items: [
       {
-        text: 'Good evening, thank you for calling Horizon Airlines support; how may I assist you?',
-        translation: 'Chào buổi tối, cảm ơn quý khách đã gọi đến tổng đài Horizon Airlines; tôi có thể hỗ trợ gì cho bạn?',
-        hint: 'assist',
+        text: "Thanks everyone for joining this blameless postmortem for Tuesday's priority one gateway outage.",
+        translation:
+          '[SRE Lead] Cảm ơn mọi người đã tham gia buổi phân tích sau sự cố không đổ lỗi cho sự cố cổng ưu tiên cấp một hôm thứ Ba.',
+        hint: 'blameless postmortem, priority one outage',
       },
       {
-        text: 'Hi, my connecting flight to Chicago was cancelled due to severe storms.',
-        translation: 'Chào bạn, chuyến bay nối chuyến đi Chicago của tôi đã bị hủy do bão lớn.',
-        hint: 'connecting flight, severe storms',
+        text: 'Remember our goal is strengthening system reliability rather than blaming any individual engineer.',
+        translation:
+          '[SRE Lead] Hãy nhớ mục tiêu của ta là củng cố độ tin cậy hệ thống chứ không phải đổ lỗi cho bất kỳ kỹ sư cá nhân nào.',
+        hint: 'strengthening, reliability, individual',
       },
       {
-        text: 'I need to attend an important client presentation tomorrow morning at nine sharp.',
-        translation: 'Tôi cần tham dự một buổi thuyết trình quan trọng với khách hàng vào đúng chín giờ sáng mai.',
-        hint: 'presentation, nine sharp',
+        text: 'Our timeline shows twenty two minutes of partial degradation before automated failover engaged.',
+        translation:
+          '[Ops Eng] Dòng thời gian ghi nhận 22 phút suy giảm hiệu năng một phần trước khi chuyển đổi dự phòng tự động kích hoạt.',
+        hint: 'timeline, partial degradation, engaged',
       },
       {
-        text: 'Certainly, let me pull up your itinerary using your six-letter booking reference.',
-        translation: 'Chắc chắn rồi, để tôi tra cứu lịch trình của bạn bằng mã đặt chỗ sáu ký tự.',
-        hint: 'itinerary, booking reference',
+        text: 'Did that outage breach our monthly service level agreement with enterprise clients?',
+        translation:
+          '[SRE Lead] Sự cố đó có làm vi phạm cam kết mức độ dịch vụ SLA hằng tháng với khách hàng doanh nghiệp không?',
+        hint: 'breach, service level agreement',
       },
       {
-        text: 'I see two available seats on an alternative departure leaving at six-fifteen tomorrow.',
-        translation: 'Tôi thấy còn hai ghế trống trên một chuyến bay thay thế khởi hành lúc sáu giờ mười lăm sáng mai.',
-        hint: 'alternative departure',
+        text: "Fortunately no, we stayed within SLA, though we consumed half of this quarter's error budget.",
+        translation:
+          '[Ops Eng] May mắn là không, ta vẫn nằm trong SLA, dù đã tiêu hết một nửa ngân sách lỗi của quý này.',
+        hint: 'consumed, error budget',
       },
       {
-        text: 'That works well, though could you verify whether my checked luggage will transfer automatically?',
-        translation: 'Giờ đó rất ổn, nhưng bạn có thể xác nhận giúp hành lý ký gửi của tôi có tự động chuyển sang không?',
-        hint: 'verify, checked luggage, transfer',
+        text: 'What was the main contributing factor behind our delayed initial response?',
+        translation:
+          '[SRE Lead] Đâu là yếu tố góp phần chính dẫn đến việc phản hồi ban đầu bị chậm trễ?',
+        hint: 'contributing factor, initial response',
       },
       {
-        text: 'Yes, your baggage is tagged for the final destination, and we are providing a hotel voucher tonight.',
-        translation: 'Có ạ, hành lý đã được gắn thẻ tới điểm đến cuối cùng, và chúng tôi sẽ cấp phiếu khách sạn cho bạn tối nay.',
-        hint: 'final destination, voucher',
+        text: 'Severe alert fatigue; noisy low priority warnings buried the critical page in our incident channel.',
+        translation:
+          '[Ops Eng] Sự quá tải cảnh báo nghiêm trọng; các cảnh báo mức thấp ồn ào đã che lấp thông báo khẩn cấp trong kênh sự cố.',
+        hint: 'alert fatigue, noisy warnings, buried',
       },
       {
-        text: 'I truly appreciate your prompt assistance; could you email the updated boarding pass right away?',
-        translation: 'Tôi thực sự cảm kích sự hỗ trợ nhanh chóng của bạn; bạn có thể gửi thẻ lên máy bay mới qua email ngay không?',
-        hint: 'prompt assistance, boarding pass',
+        text: 'Let us silence non actionable alerts and update the incident runbook with clearer escalation steps.',
+        translation:
+          '[SRE Lead] Hãy tắt các cảnh báo không thể hành động và cập nhật sổ tay xử lý sự cố với các bước leo thang rõ ràng hơn.',
+        hint: 'non actionable, incident runbook, escalation steps',
       },
       {
-        text: 'It is already in your inbox, and we wish you a smooth, punctual journey tomorrow.',
-        translation: 'Thư đã nằm trong hộp thư đến của bạn rồi ạ, chúc bạn ngày mai có một chuyến đi suôn sẻ và đúng giờ.',
-        hint: 'smooth, punctual journey',
+        text: 'I already created tracked tickets with owners and deadlines so every preventive action gets completed.',
+        translation:
+          '[Ops Eng] Tôi đã tạo sẵn các phiếu công việc có người phụ trách và hạn chót để mọi biện pháp phòng ngừa đều được hoàn tất.',
+        hint: 'tracked tickets, preventive action',
       },
     ],
   },
 ]
 
-export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = RAW_B1_B2_SPECS.map(buildLesson)
+export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_SPECS.map(buildLesson)
+export const DEFAULT_IT_OPS_AUDIO_LESSONS = DEFAULT_B1_B2_AUDIO_LESSONS

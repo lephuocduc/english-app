@@ -84,7 +84,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-98 cursor-pointer shrink-0"
           >
             <Download className="w-4 h-4" />
-            <span>Nạp {missingPresetAudioCount} bài nghe B1-B2 mẫu</span>
+            <span>Nạp {missingPresetAudioCount} hội thoại IT Ops mẫu</span>
           </button>
         )}
       </div>
@@ -168,7 +168,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Audio B1-B2 ({audioLessonsCount})
+                Audio IT Ops ({audioLessonsCount})
               </button>
               <button
                 type="button"
