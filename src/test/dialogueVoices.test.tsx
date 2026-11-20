@@ -64,9 +64,9 @@ describe('Dialogue Multi-Speaker Voice Differentiation', () => {
         expect(info.speakers.length).toBeGreaterThanOrEqual(2)
       }
 
-      // Check Lesson 02 where [Infra] has consecutive turns at index 5 & 6
+      // Check A2-B1 Lesson 08 where [Infra] has consecutive turns at index 5 & 6
       const sslLesson = DEFAULT_B1_B2_AUDIO_LESSONS.find(
-        (l) => l.id === 'lesson-audio-itops-02'
+        (l) => l.id === 'lesson-audio-itops-a2-08'
       )!
       const sslMap = buildLessonSpeakerMap(sslLesson.sentences)
       const turn5 = sslMap.bySegmentId[sslLesson.sentences[4].id]

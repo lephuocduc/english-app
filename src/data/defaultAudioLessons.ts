@@ -19,7 +19,7 @@ interface RawAudioLessonSpec {
 }
 
 /**
- * Legacy preset IDs retired in favor of IT System Operations conversations.
+ * Legacy preset IDs retired in favor of A2-B1 IT System Operations conversations.
  * Automatically purged from LocalStorage & Cloud D1 during app startup/sync.
  */
 export const RETIRED_PRESET_AUDIO_IDS: ReadonlySet<string> = new Set([
@@ -43,6 +43,26 @@ export const RETIRED_PRESET_AUDIO_IDS: ReadonlySet<string> = new Set([
   'audio-b1b2-08',
   'audio-b1b2-09',
   'audio-b1b2-10',
+  'lesson-audio-itops-01',
+  'lesson-audio-itops-02',
+  'lesson-audio-itops-03',
+  'lesson-audio-itops-04',
+  'lesson-audio-itops-05',
+  'lesson-audio-itops-06',
+  'lesson-audio-itops-07',
+  'lesson-audio-itops-08',
+  'lesson-audio-itops-09',
+  'lesson-audio-itops-10',
+  'audio-itops-01',
+  'audio-itops-02',
+  'audio-itops-03',
+  'audio-itops-04',
+  'audio-itops-05',
+  'audio-itops-06',
+  'audio-itops-07',
+  'audio-itops-08',
+  'audio-itops-09',
+  'audio-itops-10',
 ])
 
 function buildLesson(spec: RawAudioLessonSpec): Lesson {
@@ -81,617 +101,6 @@ function buildLesson(spec: RawAudioLessonSpec): Lesson {
     sentences,
   }
 }
-
-const RAW_IT_OPS_SPECS: RawAudioLessonSpec[] = [
-  {
-    id: 'lesson-audio-itops-01',
-    videoId: 'audio-itops-01',
-    title: '01. High CPU Alert & Memory Leak Triage (IT Ops)',
-    description:
-      'On-call bridge call between a NOC analyst and an SRE triaging a production CPU spike, heap dump capture, and safe rollback (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Hi Mark, sorry to wake you, but production web server three just crossed ninety percent CPU.',
-        translation:
-          '[NOC] Chào Mark, xin lỗi đã đánh thức anh, nhưng máy chủ web production số ba vừa vượt ngưỡng 90% CPU.',
-        hint: 'production, crossed, ninety percent CPU',
-      },
-      {
-        text: 'I am logging into the monitoring dashboard now; are customer requests starting to time out?',
-        translation:
-          '[SRE] Tôi đang đăng nhập bảng điều khiển giám sát; yêu cầu của khách hàng có bắt đầu bị quá thời gian chờ không?',
-        hint: 'monitoring dashboard, time out',
-      },
-      {
-        text: 'Yes, average latency jumped above two seconds, and memory usage keeps climbing without dropping.',
-        translation:
-          '[NOC] Có, độ trễ trung bình nhảy vọt lên trên hai giây và mức dùng bộ nhớ cứ tăng liên tục không giảm.',
-        hint: 'average latency, memory usage, climbing',
-      },
-      {
-        text: 'That looks like a classic memory leak triggering heavy garbage collection cycles.',
-        translation:
-          '[SRE] Nghe giống lỗi rò rỉ bộ nhớ kinh điển gây ra các chu kỳ thu gom rác nặng nề.',
-        hint: 'memory leak, garbage collection cycles',
-      },
-      {
-        text: 'Should I restart the application service immediately to bring the CPU back down?',
-        translation:
-          '[NOC] Tôi có nên khởi động lại dịch vụ ứng dụng ngay để hạ CPU xuống không?',
-        hint: 'restart, application service, immediately',
-      },
-      {
-        text: 'Wait one minute; drain that server from the load balancer first so we preserve a heap dump.',
-        translation:
-          '[SRE] Khoan một phút; hãy rút lưu lượng khỏi máy chủ đó ở bộ cân bằng tải trước để giữ lại bản chụp bộ nhớ heap.',
-        hint: 'drain, load balancer, preserve, heap dump',
-      },
-      {
-        text: 'Got it, traffic is drained and the diagnostic snapshot finished writing to storage.',
-        translation:
-          '[NOC] Rõ rồi, lưu lượng đã được chuyển hướng và bản chụp chẩn đoán đã ghi xong vào bộ lưu trữ.',
-        hint: 'diagnostic snapshot, storage',
-      },
-      {
-        text: "Great, now roll back tonight's release to the previous stable build while I analyze the dump.",
-        translation:
-          '[SRE] Tuyệt, giờ hãy hoàn tác bản phát hành tối nay về bản dựng ổn định trước đó trong lúc tôi phân tích file dump.',
-        hint: 'roll back, release, stable build, analyze',
-      },
-      {
-        text: 'Rollback is complete, CPU dropped to twenty percent, and response times are healthy again.',
-        translation:
-          '[NOC] Hoàn tác xong rồi, CPU đã giảm xuống 20% và thời gian phản hồi đã ổn định trở lại.',
-        hint: 'rollback, response times, healthy',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-02',
-    videoId: 'audio-itops-02',
-    title: '02. Expired SSL Certificate Outage (IT Ops)',
-    description:
-      'Urgent call between a Helpdesk lead and an Infrastructure engineer fixing an expired TLS certificate on the API gateway (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Hello Sarah, customers are calling because browsers show a security warning on our main portal.',
-        translation:
-          '[Helpdesk] Chào Sarah, khách hàng đang gọi báo trình duyệt hiện cảnh báo bảo mật trên cổng thông tin chính.',
-        hint: 'security warning, main portal',
-      },
-      {
-        text: 'Let me inspect the TLS handshake; oh no, the public SSL certificate expired ten minutes ago.',
-        translation:
-          '[Infra] Để tôi kiểm tra quá trình bắt tay TLS; ôi không, chứng chỉ SSL công khai vừa hết hạn mười phút trước.',
-        hint: 'inspect, TLS handshake, SSL certificate, expired',
-      },
-      {
-        text: 'I thought our automation script renewed every certificate automatically before expiration.',
-        translation:
-          '[Helpdesk] Tôi tưởng kịch bản tự động hóa của chúng ta gia hạn mọi chứng chỉ trước khi hết hạn chứ.',
-        hint: 'automation script, renewed, expiration',
-      },
-      {
-        text: 'A recent firewall change blocked the validation challenge, so the renewal job silently failed.',
-        translation:
-          '[Infra] Một thay đổi tường lửa gần đây đã chặn bước xác thực, nên tác vụ gia hạn bị lỗi âm thầm.',
-        hint: 'firewall, validation challenge, silently failed',
-      },
-      {
-        text: 'How fast can we restore encrypted traffic without disconnecting active mobile users?',
-        translation:
-          '[Helpdesk] Chúng ta có thể khôi phục lưu lượng mã hóa nhanh cỡ nào mà không ngắt kết nối người dùng di động đang hoạt động?',
-        hint: 'restore, encrypted traffic, disconnecting',
-      },
-      {
-        text: 'I am uploading the renewed certificate and full intermediate chain to the reverse proxy right now.',
-        translation:
-          '[Infra] Tôi đang tải chứng chỉ mới gia hạn cùng chuỗi chứng chỉ trung gian đầy đủ lên reverse proxy ngay đây.',
-        hint: 'intermediate chain, reverse proxy',
-      },
-      {
-        text: 'Next, I will reload the web server gracefully so existing connections finish cleanly.',
-        translation:
-          '[Infra] Tiếp theo, tôi sẽ nạp lại cấu hình máy chủ web một cách êm ái để các kết nối hiện có hoàn tất trọn vẹn.',
-        hint: 'reload gracefully, existing connections',
-      },
-      {
-        text: 'The portal is green again, and let us add a thirty day expiry alert immediately.',
-        translation:
-          '[Helpdesk] Cổng thông tin đã xanh trở lại, và chúng ta hãy thêm ngay cảnh báo hết hạn trước 30 ngày nhé.',
-        hint: 'expiry alert, immediately',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-03',
-    videoId: 'audio-itops-03',
-    title: '03. Root Disk Full & Log Rotation Fix (IT Ops)',
-    description:
-      'Night-shift Linux troubleshooting call resolving a 100% full root partition, open file handles, and automated log rotation (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Hey Kevin, our billing database just stopped accepting writes and triggered a critical disk alert.',
-        translation:
-          '[Monitoring] Chào Kevin, cơ sở dữ liệu thanh toán vừa ngừng nhận dữ liệu ghi và phát cảnh báo đầy ổ đĩa nghiêm trọng.',
-        hint: 'accepting writes, critical disk alert',
-      },
-      {
-        text: 'I checked disk usage, and the root partition reached one hundred percent capacity.',
-        translation:
-          '[SysAdmin] Tôi vừa kiểm tra dung lượng đĩa, phân vùng root đã chạm ngưỡng 100% sức chứa.',
-        hint: 'disk usage, root partition, capacity',
-      },
-      {
-        text: 'Did the database grow unexpectedly, or is something else consuming all that space?',
-        translation:
-          '[Monitoring] Do cơ sở dữ liệu phình to bất ngờ, hay có thứ gì khác đang chiếm hết dung lượng đó?',
-        hint: 'unexpectedly, consuming',
-      },
-      {
-        text: 'Someone left verbose debug logging enabled, creating a single forty gigabyte text file.',
-        translation:
-          '[SysAdmin] Có ai đó quên tắt chế độ ghi log gỡ lỗi chi tiết, tạo ra một tệp văn bản duy nhất nặng 40 gigabyte.',
-        hint: 'verbose debug logging, enabled',
-      },
-      {
-        text: 'Can we just delete that huge log file right away to recover storage?',
-        translation:
-          '[Monitoring] Chúng ta có thể xóa thẳng tệp log khổng lồ đó ngay lập tức để lấy lại dung lượng không?',
-        hint: 'recover storage',
-      },
-      {
-        text: 'Deleting an open file will not free disk space while the running service holds its handle.',
-        translation:
-          '[SysAdmin] Xóa một tệp đang mở sẽ không giải phóng dung lượng đĩa khi dịch vụ đang chạy vẫn giữ bộ mô tả tệp đó.',
-        hint: 'free disk space, holds its handle',
-      },
-      {
-        text: 'Instead, I will truncate the active file safely and disable verbose logging in configuration.',
-        translation:
-          '[SysAdmin] Thay vào đó, tôi sẽ cắt rỗng tệp đang mở một cách an toàn và tắt log gỡ lỗi chi tiết trong cấu hình.',
-        hint: 'truncate, active file, configuration',
-      },
-      {
-        text: 'Database writes resumed immediately; tomorrow let us enforce daily log rotation with automatic compression.',
-        translation:
-          '[Monitoring] Ghi dữ liệu vào database đã chạy lại ngay; ngày mai chúng ta nhớ áp dụng xoay vòng log hằng ngày kèm nén tự động nhé.',
-        hint: 'resumed, enforce, log rotation, compression',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-04',
-    videoId: 'audio-itops-04',
-    title: '04. Slow Queries & Database Connection Pool (IT Ops)',
-    description:
-      'Incident call between Application Support and a DBA diagnosing checkout timeouts, full table scans, and read replicas (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Hi Priya, checkout requests are timing out and the application logs show connection pool exhaustion.',
-        translation:
-          '[App Support] Chào Priya, các yêu cầu thanh toán đang bị quá thời gian và log ứng dụng báo cạn kiệt bể kết nối.',
-        hint: 'timing out, connection pool exhaustion',
-      },
-      {
-        text: 'I see dozens of queued queries waiting because a heavy analytics report is locking shared resources.',
-        translation:
-          '[DBA] Tôi thấy hàng chục truy vấn đang xếp hàng chờ vì một báo cáo phân tích nặng đang chiếm dụng tài nguyên dùng chung.',
-        hint: 'queued queries, analytics report, shared resources',
-      },
-      {
-        text: 'Why is that report taking almost forty seconds to finish today?',
-        translation:
-          '[App Support] Tại sao hôm nay báo cáo đó lại mất gần bốn mươi giây mới chạy xong vậy?',
-        hint: 'almost forty seconds',
-      },
-      {
-        text: 'The execution plan reveals a full table scan across five million rows without an index.',
-        translation:
-          '[DBA] Kế hoạch thực thi cho thấy đang xảy ra quét toàn bộ bảng qua năm triệu dòng vì thiếu chỉ mục.',
-        hint: 'execution plan, full table scan, index',
-      },
-      {
-        text: 'Can we cancel the stuck reporting queries first so checkout traffic recovers?',
-        translation:
-          '[App Support] Mình hủy các truy vấn báo cáo bị treo trước để lưu lượng thanh toán phục hồi được không?',
-        hint: 'cancel, stuck, recovers',
-      },
-      {
-        text: 'Done, active connections just dropped by half, and I am routing reports to the read replica.',
-        translation:
-          '[DBA] Xong rồi, số kết nối đang mở vừa giảm một nửa, và tôi đang định tuyến các báo cáo sang bản sao chỉ đọc.',
-        hint: 'routing, read replica',
-      },
-      {
-        text: 'Should we add the missing composite index during off peak hours tonight?',
-        translation:
-          '[App Support] Chúng ta có nên thêm chỉ mục kết hợp còn thiếu vào giờ thấp điểm tối nay không?',
-        hint: 'composite index, off peak hours',
-      },
-      {
-        text: 'Even better, we can build it online concurrently without blocking production writes.',
-        translation:
-          '[DBA] Tốt hơn nữa, ta có thể tạo chỉ mục trực tuyến song song mà không làm nghẽn thao tác ghi trên production.',
-        hint: 'concurrently, blocking, production writes',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-05',
-    videoId: 'audio-itops-05',
-    title: '05. Load Balancer Health Checks & DNS Failover (IT Ops)',
-    description:
-      'Bridge call between Network Ops and a Cloud engineer coordinating multi-zone failover, draining unhealthy targets, and DNS TTL caching (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'David, synthetic monitors report intermittent errors from European users after our regional switch.',
-        translation:
-          '[NetOps] David ơi, hệ thống giám sát giả lập báo lỗi chập chờn từ người dùng châu Âu sau khi ta chuyển vùng.',
-        hint: 'synthetic monitors, intermittent errors, regional switch',
-      },
-      {
-        text: 'Let me check the load balancer; two backend nodes are still failing HTTP health checks.',
-        translation:
-          '[Cloud] Để tôi kiểm tra bộ cân bằng tải; hai máy chủ backend vẫn đang trượt kiểm tra sức khỏe HTTP.',
-        hint: 'backend nodes, HTTP health checks',
-      },
-      {
-        text: 'Why did the balancer keep sending requests to those unhealthy instances?',
-        translation:
-          '[NetOps] Tại sao bộ cân bằng tải vẫn tiếp tục gửi yêu cầu tới các máy chủ không khỏe mạnh đó?',
-        hint: 'unhealthy instances',
-      },
-      {
-        text: 'The failure threshold was set too high, so it waited nearly three minutes before draining them.',
-        translation:
-          '[Cloud] Ngưỡng báo lỗi bị đặt quá cao, nên nó chờ gần ba phút mới rút lưu lượng khỏi chúng.',
-        hint: 'failure threshold, draining',
-      },
-      {
-        text: 'I just tightened the health probe interval and shifted all traffic to our healthy availability zone.',
-        translation:
-          '[Cloud] Tôi vừa siết ngắn chu kỳ thăm dò sức khỏe và chuyển toàn bộ lưu lượng sang vùng sẵn sàng đang ổn định.',
-        hint: 'health probe interval, availability zone',
-      },
-      {
-        text: 'Some offices still see old IP addresses; is DNS caching slowing down the failover?',
-        translation:
-          '[NetOps] Một số văn phòng vẫn thấy địa chỉ IP cũ; có phải bộ nhớ đệm DNS đang làm chậm quá trình chuyển đổi dự phòng không?',
-        hint: 'DNS caching, failover',
-      },
-      {
-        text: 'Exactly, our DNS record had a long TTL, so external resolvers are still holding stale entries.',
-        translation:
-          '[Cloud] Chính xác, bản ghi DNS của mình đặt thời gian sống TTL quá dài nên các máy chủ phân giải ngoài vẫn giữ bản ghi cũ.',
-        hint: 'DNS record, resolvers, stale entries',
-      },
-      {
-        text: 'Once propagation settles, let us lower the TTL to sixty seconds for faster future failovers.',
-        translation:
-          '[NetOps] Khi việc lan truyền DNS ổn định, hãy hạ TTL xuống 60 giây để các lần chuyển đổi dự phòng sau nhanh hơn nhé.',
-        hint: 'propagation settles, lower the TTL',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-06',
-    videoId: 'audio-itops-06',
-    title: '06. Kubernetes Pod Crash Loop & Rollback (IT Ops)',
-    description:
-      'Release call between a Release Manager and DevOps engineer diagnosing CrashLoopBackOff, OOM kills, ConfigMap errors, and instant rollback (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Elena, right after deploying the payment microservice, every new Kubernetes pod entered a crash loop.',
-        translation:
-          '[Release] Elena ơi, ngay sau khi triển khai microservice thanh toán, mọi pod Kubernetes mới đều rơi vào vòng lặp sập nguồn.',
-        hint: 'deploying, microservice, crash loop',
-      },
-      {
-        text: 'Hold the rollout immediately; are existing stable pods still serving live customer traffic?',
-        translation:
-          '[DevOps] Tạm dừng triển khai ngay; các pod ổn định cũ có còn đang phục vụ lưu lượng khách hàng thực không?',
-        hint: 'rollout, serving live traffic',
-      },
-      {
-        text: 'Yes, the readiness probe kept failed containers out of service, so users have not noticed yet.',
-        translation:
-          '[Release] Có, kiểm tra sẵn sàng đã giữ các container lỗi đứng ngoài dịch vụ nên người dùng vẫn chưa bị ảnh hưởng.',
-        hint: 'readiness probe, containers',
-      },
-      {
-        text: 'I am inspecting the container logs and pod events to find the exact exit code.',
-        translation:
-          '[DevOps] Tôi đang kiểm tra log container và sự kiện của pod để tìm mã thoát chính xác.',
-        hint: 'container logs, pod events, exit code',
-      },
-      {
-        text: 'Is it hitting the memory limit and getting terminated as out of memory?',
-        translation:
-          '[Release] Có phải nó chạm giới hạn bộ nhớ và bị hệ thống dừng do tràn bộ nhớ không?',
-        hint: 'memory limit, terminated, out of memory',
-      },
-      {
-        text: 'No, memory looks fine; the container crashed because a required API key is missing from the config map.',
-        translation:
-          '[DevOps] Không, bộ nhớ vẫn ổn; container bị sập vì thiếu một khóa API bắt buộc trong ConfigMap.',
-        hint: 'required API key, config map',
-      },
-      {
-        text: 'Let us trigger a deployment rollback now to clear the failed replica set cleanly.',
-        translation:
-          '[Release] Hãy kích hoạt hoàn tác triển khai ngay để dọn sạch bộ replica bị lỗi một cách gọn gàng.',
-        hint: 'deployment rollback, replica set',
-      },
-      {
-        text: 'Rollback succeeded, all replicas are running, and cluster error rates remain completely flat.',
-        translation:
-          '[DevOps] Hoàn tác thành công, mọi bản sao đều đang chạy và tỷ lệ lỗi cụm hoàn toàn bằng phẳng.',
-        hint: 'replicas, cluster error rates',
-      },
-      {
-        text: 'Before retrying tomorrow, let us add automated configuration validation inside our deployment pipeline.',
-        translation:
-          '[Release] Trước khi thử lại vào ngày mai, hãy thêm bước kiểm tra cấu hình tự động trong quy trình triển khai nhé.',
-        hint: 'configuration validation, deployment pipeline',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-07',
-    videoId: 'audio-itops-07',
-    title: '07. Backup Verification & Disaster Recovery Drill (IT Ops)',
-    description:
-      'Operations review between an Ops Manager and Backup Admin discussing RTO, RPO, point-in-time recovery, and immutable offsite backups (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Good morning Tom, our compliance audit starts next week; are our disaster recovery metrics up to date?',
-        translation:
-          '[Ops Manager] Chào buổi sáng Tom, đợt kiểm toán tuân thủ bắt đầu tuần tới; các chỉ số phục hồi sau thảm họa của ta đã cập nhật chưa?',
-        hint: 'compliance audit, disaster recovery metrics',
-      },
-      {
-        text: 'Yes, we take full snapshots every Sunday and run incremental backups every single hour.',
-        translation:
-          '[Backup Admin] Rồi ạ, chúng ta chụp bản sao lưu đầy đủ mỗi Chủ nhật và chạy sao lưu gia tăng mỗi giờ.',
-        hint: 'full snapshots, incremental backups',
-      },
-      {
-        text: 'That keeps our recovery point objective under one hour, but what about actual restore speed?',
-        translation:
-          '[Ops Manager] Như vậy giữ mục tiêu điểm phục hồi RPO dưới một giờ, nhưng tốc độ khôi phục thực tế thì sao?',
-        hint: 'recovery point objective, restore speed',
-      },
-      {
-        text: 'We ran an automated restore drill in staging yesterday and verified full database integrity.',
-        translation:
-          '[Backup Admin] Hôm qua tụi em đã chạy diễn tập khôi phục tự động trên môi trường staging và kiểm chứng toàn vẹn dữ liệu.',
-        hint: 'restore drill, staging, database integrity',
-      },
-      {
-        text: 'How long did the entire point in time recovery take from start to finish?',
-        translation:
-          '[Ops Manager] Toàn bộ quá trình khôi phục về đúng thời điểm mất bao lâu từ đầu đến cuối?',
-        hint: 'point in time recovery',
-      },
-      {
-        text: 'Thirty five minutes total, comfortably beating our two hour recovery time objective target.',
-        translation:
-          '[Backup Admin] Tổng cộng 35 phút, vượt xa mục tiêu thời gian phục hồi RTO hai giờ của chúng ta.',
-        hint: 'comfortably beating, recovery time objective',
-      },
-      {
-        text: 'Are offsite copies stored in an immutable bucket to protect against ransomware attacks?',
-        translation:
-          '[Ops Manager] Các bản sao lưu ngoài site có được lưu trong kho bất biến để chống lại tấn công mã độc tống tiền không?',
-        hint: 'offsite copies, immutable bucket, ransomware',
-      },
-      {
-        text: 'Absolutely, object lock prevents any modification or deletion for ninety days, even with admin credentials.',
-        translation:
-          '[Backup Admin] Chắc chắn rồi, khóa đối tượng ngăn mọi chỉnh sửa hay xóa bỏ trong 90 ngày, kể cả với quyền quản trị.',
-        hint: 'object lock, modification, admin credentials',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-08',
-    videoId: 'audio-itops-08',
-    title: '08. Suspicious SSH Login & Firewall Hardening (IT Ops)',
-    description:
-      'Security escalation call between a SOC analyst and a SysOps engineer blocking SSH brute-force attacks and hardening bastion access (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: 'Hi Leo, our intrusion detection system just flagged thousands of failed SSH logins on edge server two.',
-        translation:
-          '[SOC] Chào Leo, hệ thống phát hiện xâm nhập vừa gắn cờ hàng nghìn lượt đăng nhập SSH thất bại trên máy chủ biên số hai.',
-        hint: 'intrusion detection, flagged, SSH logins',
-      },
-      {
-        text: 'Thanks for escalating quickly; did any unauthorized account actually succeed in logging in?',
-        translation:
-          '[SysOps] Cảm ơn đã báo leo thang sớm; có tài khoản trái phép nào thực sự đăng nhập thành công không?',
-        hint: 'escalating, unauthorized account',
-      },
-      {
-        text: 'No interactive sessions opened yet, though the traffic comes from a coordinated range of foreign IP addresses.',
-        translation:
-          '[SOC] Chưa có phiên tương tác nào được mở, nhưng lưu lượng đến từ một dải địa chỉ IP nước ngoài có phối hợp.',
-        hint: 'interactive sessions, coordinated range',
-      },
-      {
-        text: 'I am adding an immediate deny rule at the perimeter firewall to block those subnets.',
-        translation:
-          '[SysOps] Tôi đang thêm quy tắc chặn ngay lập tức trên tường lửa vòng ngoài để khóa các dải mạng con đó.',
-        hint: 'deny rule, perimeter firewall, subnets',
-      },
-      {
-        text: 'Why was the SSH port exposed directly to the public internet in the first place?',
-        translation:
-          '[SOC] Ngay từ đầu tại sao cổng SSH lại bị mở trực tiếp ra internet công cộng vậy?',
-        hint: 'exposed directly, public internet',
-      },
-      {
-        text: 'A contractor opened it briefly during migration and forgot to restrict access to our bastion host.',
-        translation:
-          '[SysOps] Một nhà thầu đã mở tạm lúc di chuyển hệ thống và quên giới hạn truy cập chỉ qua máy chủ trung gian bastion.',
-        hint: 'contractor, migration, bastion host',
-      },
-      {
-        text: 'Please disable password authentication completely so only hardware backed SSH keys are accepted.',
-        translation:
-          '[SOC] Vui lòng tắt hoàn toàn xác thực bằng mật khẩu để chỉ chấp nhận khóa SSH có bảo vệ phần cứng.',
-        hint: 'disable password authentication, SSH keys',
-      },
-      {
-        text: 'Done, firewall rules are locked down, service credentials are rotated, and audit logs are archived.',
-        translation:
-          '[SysOps] Xong rồi, quy tắc tường lửa đã khóa chặt, thông tin xác thực dịch vụ đã xoay mới và nhật ký kiểm toán đã được lưu trữ.',
-        hint: 'locked down, credentials rotated, audit logs',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-09',
-    videoId: 'audio-itops-09',
-    title: '09. Maintenance Window & Kernel Patching (IT Ops)',
-    description:
-      'Change Advisory Board call coordinating a low-risk Linux kernel security patch with snapshots, rolling updates, and smoke tests (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: "Thanks for joining the change advisory call; let us review Sunday's Linux kernel security patching.",
-        translation:
-          '[Change Mgr] Cảm ơn đã tham gia cuộc họp hội đồng quản lý thay đổi; cùng rà soát đợt vá bảo mật nhân Linux Chủ nhật này nhé.',
-        hint: 'change advisory, kernel security patching',
-      },
-      {
-        text: 'We scheduled the maintenance window for two in the morning when customer traffic is lowest.',
-        translation:
-          '[SysEng] Chúng tôi lên lịch khung thời gian bảo trì lúc hai giờ sáng khi lưu lượng khách hàng thấp nhất.',
-        hint: 'maintenance window, lowest',
-      },
-      {
-        text: 'Will customers experience full downtime while the application servers reboot?',
-        translation:
-          '[Change Mgr] Khách hàng có gặp tình trạng gián đoạn hoàn toàn trong lúc các máy chủ ứng dụng khởi động lại không?',
-        hint: 'full downtime, reboot',
-      },
-      {
-        text: 'No, we will perform rolling updates one node at a time across our redundant cluster.',
-        translation:
-          '[SysEng] Không ạ, ta sẽ cập nhật cuốn chiếu từng máy chủ một trong cụm dự phòng.',
-        hint: 'rolling updates, redundant cluster',
-      },
-      {
-        text: 'Before applying any patches, make sure fresh system snapshots are captured and verified.',
-        translation:
-          '[Change Mgr] Trước khi cài bất kỳ bản vá nào, hãy đảm bảo các bản chụp hệ thống mới đã được tạo và kiểm tra.',
-        hint: 'patches, system snapshots, verified',
-      },
-      {
-        text: 'Agreed, and if automated smoke tests fail on node one, we abort immediately and revert.',
-        translation:
-          '[SysEng] Nhất trí, và nếu kiểm thử nhanh tự động trên node một thất bại, ta hủy ngay lập tức và khôi phục lại.',
-        hint: 'smoke tests, abort, revert',
-      },
-      {
-        text: 'Has customer support already published the advance notice on our public status page?',
-        translation:
-          '[Change Mgr] Bộ phận hỗ trợ khách hàng đã đăng thông báo trước lên trang trạng thái công khai chưa?',
-        hint: 'advance notice, status page',
-      },
-      {
-        text: 'Yes, subscribers received email alerts yesterday, and the on call roster is confirmed ready.',
-        translation:
-          '[SysEng] Rồi ạ, người đăng ký đã nhận email thông báo hôm qua và lịch trực ứng cứu đã xác nhận sẵn sàng.',
-        hint: 'subscribers, on call roster, confirmed',
-      },
-    ],
-  },
-  {
-    id: 'lesson-audio-itops-10',
-    videoId: 'audio-itops-10',
-    title: '10. Blameless Postmortem & SLA Review (IT Ops)',
-    description:
-      'Post-incident review between an SRE Lead and Operations Engineer covering root cause analysis, SLA error budgets, alert fatigue, and runbooks (~1 min, B1-B2).',
-    voiceAccent: 'en-GB',
-    level: 'Intermediate',
-    items: [
-      {
-        text: "Thanks everyone for joining this blameless postmortem for Tuesday's priority one gateway outage.",
-        translation:
-          '[SRE Lead] Cảm ơn mọi người đã tham gia buổi phân tích sau sự cố không đổ lỗi cho sự cố cổng ưu tiên cấp một hôm thứ Ba.',
-        hint: 'blameless postmortem, priority one outage',
-      },
-      {
-        text: 'Remember our goal is strengthening system reliability rather than blaming any individual engineer.',
-        translation:
-          '[SRE Lead] Hãy nhớ mục tiêu của ta là củng cố độ tin cậy hệ thống chứ không phải đổ lỗi cho bất kỳ kỹ sư cá nhân nào.',
-        hint: 'strengthening, reliability, individual',
-      },
-      {
-        text: 'Our timeline shows twenty two minutes of partial degradation before automated failover engaged.',
-        translation:
-          '[Ops Eng] Dòng thời gian ghi nhận 22 phút suy giảm hiệu năng một phần trước khi chuyển đổi dự phòng tự động kích hoạt.',
-        hint: 'timeline, partial degradation, engaged',
-      },
-      {
-        text: 'Did that outage breach our monthly service level agreement with enterprise clients?',
-        translation:
-          '[SRE Lead] Sự cố đó có làm vi phạm cam kết mức độ dịch vụ SLA hằng tháng với khách hàng doanh nghiệp không?',
-        hint: 'breach, service level agreement',
-      },
-      {
-        text: "Fortunately no, we stayed within SLA, though we consumed half of this quarter's error budget.",
-        translation:
-          '[Ops Eng] May mắn là không, ta vẫn nằm trong SLA, dù đã tiêu hết một nửa ngân sách lỗi của quý này.',
-        hint: 'consumed, error budget',
-      },
-      {
-        text: 'What was the main contributing factor behind our delayed initial response?',
-        translation:
-          '[SRE Lead] Đâu là yếu tố góp phần chính dẫn đến việc phản hồi ban đầu bị chậm trễ?',
-        hint: 'contributing factor, initial response',
-      },
-      {
-        text: 'Severe alert fatigue; noisy low priority warnings buried the critical page in our incident channel.',
-        translation:
-          '[Ops Eng] Sự quá tải cảnh báo nghiêm trọng; các cảnh báo mức thấp ồn ào đã che lấp thông báo khẩn cấp trong kênh sự cố.',
-        hint: 'alert fatigue, noisy warnings, buried',
-      },
-      {
-        text: 'Let us silence non actionable alerts and update the incident runbook with clearer escalation steps.',
-        translation:
-          '[SRE Lead] Hãy tắt các cảnh báo không thể hành động và cập nhật sổ tay xử lý sự cố với các bước leo thang rõ ràng hơn.',
-        hint: 'non actionable, incident runbook, escalation steps',
-      },
-      {
-        text: 'I already created tracked tickets with owners and deadlines so every preventive action gets completed.',
-        translation:
-          '[Ops Eng] Tôi đã tạo sẵn các phiếu công việc có người phụ trách và hạn chót để mọi biện pháp phòng ngừa đều được hoàn tất.',
-        hint: 'tracked tickets, preventive action',
-      },
-    ],
-  },
-]
 
 const RAW_IT_OPS_A2_B1_SPECS: RawAudioLessonSpec[] = [
   {
@@ -1058,12 +467,605 @@ const RAW_IT_OPS_A2_B1_SPECS: RawAudioLessonSpec[] = [
       },
     ],
   },
+  {
+    id: 'lesson-audio-itops-a2-07',
+    videoId: 'audio-itops-a2-07',
+    title: 'A2-B1 | 07. High CPU Alert on Web Server (IT Ops)',
+    description:
+      'Simple on-call call checking a high CPU alert on a live web server, moving traffic away, and safely restarting the app (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Mark, sorry to call late, but web server three just hit ninety percent CPU.',
+        translation:
+          '[NOC] Chào Mark, xin lỗi đã gọi muộn, nhưng máy chủ web số ba vừa chạm 90% CPU.',
+        hint: 'call late, web server, ninety percent',
+      },
+      {
+        text: 'I am opening the monitoring screen now; are customer pages loading slowly?',
+        translation:
+          '[Ops] Tôi đang mở màn hình giám sát; trang của khách hàng có đang tải chậm không?',
+        hint: 'monitoring screen, loading slowly',
+      },
+      {
+        text: 'Yes, pages take three seconds to open, and memory keeps going up.',
+        translation:
+          '[NOC] Có, trang mất ba giây để mở, và bộ nhớ cứ tiếp tục tăng lên.',
+        hint: 'three seconds, memory, going up',
+      },
+      {
+        text: 'That sounds like the app is using too much memory after tonight’s update.',
+        translation:
+          '[Ops] Nghe có vẻ ứng dụng đang dùng quá nhiều bộ nhớ sau bản cập nhật tối nay.',
+        hint: 'too much memory, update',
+      },
+      {
+        text: 'Should I restart the web service right now to bring the CPU down?',
+        translation:
+          '[NOC] Tôi có nên khởi động lại dịch vụ web ngay để hạ CPU xuống không?',
+        hint: 'restart, web service, bring down',
+      },
+      {
+        text: 'Wait a moment; move users to our other servers first so nobody gets cut off.',
+        translation:
+          '[Ops] Chờ một chút; hãy chuyển người dùng sang các máy chủ khác trước để không ai bị ngắt kết nối.',
+        hint: 'move users, cut off',
+      },
+      {
+        text: 'Okay, traffic is safely moved, and I saved a quick log file for your review.',
+        translation:
+          '[NOC] Rồi, lưu lượng đã được chuyển an toàn, và tôi đã lưu nhanh tệp log để anh xem.',
+        hint: 'safely moved, log file, review',
+      },
+      {
+        text: 'Great, now switch back to the earlier version and watch the CPU graph.',
+        translation:
+          '[Ops] Tuyệt, giờ hãy quay về phiên bản trước đó và theo dõi biểu đồ CPU nhé.',
+        hint: 'switch back, earlier version, graph',
+      },
+      {
+        text: 'Done, CPU dropped to twenty percent, and the website feels fast again.',
+        translation:
+          '[NOC] Xong rồi, CPU giảm xuống 20% và trang web lại chạy nhanh trở lại.',
+        hint: 'dropped, fast again',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-08',
+    videoId: 'audio-itops-a2-08',
+    title: 'A2-B1 | 08. Website Security Warning & SSL Fix (IT Ops)',
+    description:
+      'Clear workplace call fixing an expired website security certificate after users report a browser warning (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hello Sarah, customers are calling because browsers show a red security warning on our site.',
+        translation:
+          '[Helpdesk] Chào Sarah, khách hàng đang gọi báo trình duyệt hiện cảnh báo bảo mật màu đỏ trên trang của mình.',
+        hint: 'browsers, security warning',
+      },
+      {
+        text: 'Let me check the website lock icon; oh no, our SSL certificate expired ten minutes ago.',
+        translation:
+          '[Infra] Để tôi kiểm tra biểu tượng ổ khóa trang web; ôi không, chứng chỉ SSL của ta vừa hết hạn mười phút trước.',
+        hint: 'lock icon, SSL certificate, expired',
+      },
+      {
+        text: 'I thought our server updated every security certificate automatically before it ended.',
+        translation:
+          '[Helpdesk] Tôi tưởng máy chủ tự động cập nhật mọi chứng chỉ bảo mật trước khi hết hạn chứ.',
+        hint: 'updated, automatically',
+      },
+      {
+        text: 'A firewall rule blocked the check yesterday, so the auto update did not finish.',
+        translation:
+          '[Infra] Một quy tắc tường lửa đã chặn bước kiểm tra hôm qua, nên việc tự cập nhật không chạy xong.',
+        hint: 'firewall rule, blocked, auto update',
+      },
+      {
+        text: 'How quickly can we fix the site without kicking out users who are already logged in?',
+        translation:
+          '[Helpdesk] Ta có thể sửa trang web nhanh cỡ nào mà không đẩy người dùng đang đăng nhập ra ngoài?',
+        hint: 'kicking out, logged in',
+      },
+      {
+        text: 'I am uploading the new certificate file to our main web server right now.',
+        translation:
+          '[Infra] Tôi đang tải tệp chứng chỉ mới lên máy chủ web chính ngay bây giờ.',
+        hint: 'uploading, certificate file',
+      },
+      {
+        text: 'Next, I will reload the web server softly so current sessions keep working smoothly.',
+        translation:
+          '[Infra] Tiếp theo, tôi sẽ nạp lại máy chủ web nhẹ nhàng để các phiên hiện tại vẫn chạy mượt.',
+        hint: 'reload, current sessions, smoothly',
+      },
+      {
+        text: 'The lock icon is green again; let us add a reminder thirty days before it expires next time.',
+        translation:
+          '[Helpdesk] Biểu tượng ổ khóa đã xanh trở lại; lần tới nhớ thêm nhắc nhở trước 30 ngày hết hạn nhé.',
+        hint: 'green again, reminder, thirty days',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-09',
+    videoId: 'audio-itops-a2-09',
+    title: 'A2-B1 | 09. Large Log Files Filling Up Disk Space (IT Ops)',
+    description:
+      'Straightforward Linux operations call finding a huge debug log file on a full disk and clearing it safely (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hey Kevin, our billing server stopped saving new orders and sent a full disk alert.',
+        translation:
+          '[Monitoring] Chào Kevin, máy chủ thanh toán vừa ngừng lưu đơn hàng mới và gửi cảnh báo đầy ổ đĩa.',
+        hint: 'billing server, full disk alert',
+      },
+      {
+        text: 'I just checked the drive, and the main system disk is one hundred percent full.',
+        translation:
+          '[SysAdmin] Tôi vừa kiểm tra ổ đĩa, và ổ hệ thống chính đã đầy 100%.',
+        hint: 'checked the drive, system disk',
+      },
+      {
+        text: 'Did customer orders grow suddenly, or is another file taking all the space?',
+        translation:
+          '[Monitoring] Do đơn hàng tăng đột ngột, hay có tệp nào khác đang chiếm hết dung lượng?',
+        hint: 'grow suddenly, taking all the space',
+      },
+      {
+        text: 'Someone left detailed error logging turned on, creating one huge forty gigabyte file.',
+        translation:
+          '[SysAdmin] Ai đó quên tắt chế độ ghi log lỗi chi tiết, tạo ra một tệp khổng lồ nặng 40 gigabyte.',
+        hint: 'error logging, huge, gigabyte',
+      },
+      {
+        text: 'Can we simply delete that big log file right now to get our space back?',
+        translation:
+          '[Monitoring] Ta có thể xóa thẳng tệp log lớn đó ngay để lấy lại dung lượng không?',
+        hint: 'simply delete, get space back',
+      },
+      {
+        text: 'Not directly, because the running app is still writing to that open file.',
+        translation:
+          '[SysAdmin] Không xóa trực tiếp được, vì ứng dụng đang chạy vẫn đang ghi vào tệp đang mở đó.',
+        hint: 'directly, running app, open file',
+      },
+      {
+        text: 'Instead, I will clear the file content safely and turn off extra debug logs.',
+        translation:
+          '[SysAdmin] Thay vào đó, tôi sẽ làm rỗng nội dung tệp an toàn và tắt chế độ ghi log gỡ lỗi thừa.',
+        hint: 'clear content, safely, debug logs',
+      },
+      {
+        text: 'Orders are saving again right away; tomorrow let us set up automatic daily log cleanup.',
+        translation:
+          '[Monitoring] Đơn hàng đã lưu lại được ngay; ngày mai ta hãy cài dọn log tự động hằng ngày nhé.',
+        hint: 'right away, daily log cleanup',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-10',
+    videoId: 'audio-itops-a2-10',
+    title: 'A2-B1 | 10. Slow Database & Waiting Customer Orders (IT Ops)',
+    description:
+      'Clear incident call between Support and a Database Admin stopping a heavy report that is slowing down customer checkout (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Priya, customers say the checkout page keeps spinning and never finishes their order.',
+        translation:
+          '[Support] Chào Priya, khách hàng báo trang thanh toán cứ xoay mãi mà không hoàn tất đơn hàng.',
+        hint: 'checkout page, spinning, order',
+      },
+      {
+        text: 'I see many database requests waiting in line because a big sales report is running.',
+        translation:
+          '[DBA] Tôi thấy nhiều yêu cầu cơ sở dữ liệu đang xếp hàng chờ vì một báo cáo doanh số lớn đang chạy.',
+        hint: 'waiting in line, sales report',
+      },
+      {
+        text: 'Why is that sales report taking almost one minute to finish today?',
+        translation:
+          '[Support] Tại sao hôm nay báo cáo doanh số đó lại mất gần một phút mới chạy xong vậy?',
+        hint: 'almost one minute, finish',
+      },
+      {
+        text: 'It is reading five million rows one by one because the table is missing a search index.',
+        translation:
+          '[DBA] Nó đang đọc từng dòng qua năm triệu bản ghi vì bảng đó bị thiếu chỉ mục tìm kiếm.',
+        hint: 'five million rows, missing, search index',
+      },
+      {
+        text: 'Can we stop that slow report first so live customer orders can go through?',
+        translation:
+          '[Support] Ta có thể dừng báo cáo chậm đó trước để đơn hàng của khách đi qua được không?',
+        hint: 'stop, live orders, go through',
+      },
+      {
+        text: 'Done, the waiting queue just cleared, and I moved reports to our backup read server.',
+        translation:
+          '[DBA] Xong rồi, hàng chờ vừa thông thoáng, và tôi đã chuyển báo cáo sang máy chủ đọc dự phòng.',
+        hint: 'waiting queue, cleared, backup read server',
+      },
+      {
+        text: 'Should we add the missing index tonight when the shop is quiet?',
+        translation:
+          '[Support] Ta có nên thêm chỉ mục còn thiếu vào tối nay khi cửa hàng vắng khách không?',
+        hint: 'tonight, quiet',
+      },
+      {
+        text: 'Yes, I will add it carefully tonight without stopping the website at all.',
+        translation:
+          '[DBA] Có, tối nay tôi sẽ thêm cẩn thận mà không cần dừng trang web chút nào.',
+        hint: 'carefully, without stopping',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-11',
+    videoId: 'audio-itops-a2-11',
+    title: 'A2-B1 | 11. Moving Traffic to a Healthy Server (IT Ops)',
+    description:
+      'A2-B1 operations call troubleshooting a failing backend server, checking health probes, and routing traffic to a healthy zone (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'David, some users in Europe are seeing random error pages after our server switch.',
+        translation:
+          '[NetOps] David ơi, một số người dùng ở châu Âu đang thấy trang lỗi ngẫu nhiên sau khi ta chuyển máy chủ.',
+        hint: 'random error pages, server switch',
+      },
+      {
+        text: 'Let me check the load balancer; two backend servers are failing their health checks.',
+        translation:
+          '[Cloud] Để tôi kiểm tra bộ cân bằng tải; hai máy chủ backend đang trượt kiểm tra sức khỏe.',
+        hint: 'load balancer, health checks',
+      },
+      {
+        text: 'Why did the system keep sending visitors to servers that are not healthy?',
+        translation:
+          '[NetOps] Tại sao hệ thống vẫn tiếp tục gửi khách truy cập tới các máy chủ không khỏe?',
+        hint: 'sending visitors, healthy',
+      },
+      {
+        text: 'The check timer was set too slow, so it waited three minutes before removing them.',
+        translation:
+          '[Cloud] Bộ hẹn giờ kiểm tra đặt quá chậm, nên nó chờ tới ba phút mới gỡ chúng ra.',
+        hint: 'check timer, removing',
+      },
+      {
+        text: 'I just made the health check faster and moved all traffic to our healthy backup zone.',
+        translation:
+          '[Cloud] Tôi vừa chỉnh kiểm tra sức khỏe nhanh hơn và chuyển toàn bộ lưu lượng sang vùng dự phòng ổn định.',
+        hint: 'faster, backup zone',
+      },
+      {
+        text: 'One office still sees the old server address; is their network saving old DNS data?',
+        translation:
+          '[NetOps] Một văn phòng vẫn thấy địa chỉ máy chủ cũ; có phải mạng của họ đang lưu dữ liệu DNS cũ không?',
+        hint: 'old server address, DNS data',
+      },
+      {
+        text: 'Yes, our DNS setting kept the old address for an hour before updating.',
+        translation:
+          '[Cloud] Đúng rồi, cài đặt DNS của mình giữ địa chỉ cũ tới một tiếng mới cập nhật.',
+        hint: 'kept, updating',
+      },
+      {
+        text: 'After everything settles, let us change that DNS timer to one minute for faster switches.',
+        translation:
+          '[NetOps] Sau khi mọi thứ ổn định, hãy đổi bộ hẹn giờ DNS đó thành một phút để lần sau chuyển nhanh hơn nhé.',
+        hint: 'settles, one minute, faster switches',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-12',
+    videoId: 'audio-itops-a2-12',
+    title: 'A2-B1 | 12. New App Update Crashing After Release (IT Ops)',
+    description:
+      'Simple DevOps release call diagnosing a crashing payment service after deployment, finding a missing key, and rolling back (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Elena, right after we pushed the new payment update, the app started crashing every ten seconds.',
+        translation:
+          '[Release] Elena ơi, ngay sau khi ta đẩy bản cập nhật thanh toán mới, ứng dụng bắt đầu bị sập mỗi mười giây.',
+        hint: 'pushed, payment update, crashing',
+      },
+      {
+        text: 'Pause the rollout right now; are the old app servers still serving our customers?',
+        translation:
+          '[DevOps] Tạm dừng triển khai ngay; các máy chủ ứng dụng cũ có vẫn đang phục vụ khách hàng không?',
+        hint: 'pause, rollout, serving',
+      },
+      {
+        text: 'Yes, the system blocked the broken servers automatically, so customers have not noticed yet.',
+        translation:
+          '[Release] Có, hệ thống đã tự động chặn các máy chủ bị lỗi nên khách hàng vẫn chưa nhận ra.',
+        hint: 'broken servers, noticed',
+      },
+      {
+        text: 'I am reading the error logs now to see why the new version keeps stopping.',
+        translation:
+          '[DevOps] Tôi đang đọc nhật ký lỗi để xem vì sao phiên bản mới cứ tự dừng.',
+        hint: 'error logs, keeps stopping',
+      },
+      {
+        text: 'Is the app running out of memory, or did a setting file go missing?',
+        translation:
+          '[Release] Ứng dụng bị hết bộ nhớ, hay có tệp cài đặt nào bị thiếu vậy?',
+        hint: 'running out of memory, setting file',
+      },
+      {
+        text: 'Memory is totally fine; the app crashed because one payment password is missing in settings.',
+        translation:
+          '[DevOps] Bộ nhớ hoàn toàn ổn; ứng dụng sập vì thiếu một mật khẩu thanh toán trong phần cài đặt.',
+        hint: 'totally fine, missing in settings',
+      },
+      {
+        text: 'Let us roll back to the previous version now so everything stays clean and safe.',
+        translation:
+          '[Release] Hãy quay lại phiên bản trước ngay để mọi thứ luôn gọn gàng và an toàn.',
+        hint: 'roll back, previous version',
+      },
+      {
+        text: 'Rollback is complete, all servers are green, and we will double check settings before trying tomorrow.',
+        translation:
+          '[DevOps] Hoàn tác xong rồi, mọi máy chủ đều xanh, và ta sẽ kiểm tra kỹ cài đặt trước khi thử lại vào ngày mai.',
+        hint: 'rollback, double check, tomorrow',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-13',
+    videoId: 'audio-itops-a2-13',
+    title: 'A2-B1 | 13. Testing a Backup Restore Before Audit (IT Ops)',
+    description:
+      'Clear operations review checking weekly and hourly backups, running a test restore in staging, and protecting offsite copies (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Good morning Tom, our yearly system check starts next week; are our backup reports ready?',
+        translation:
+          '[Ops Manager] Chào buổi sáng Tom, đợt kiểm tra hệ thống hằng năm bắt đầu tuần tới; báo cáo sao lưu đã sẵn sàng chưa?',
+        hint: 'yearly check, backup reports',
+      },
+      {
+        text: 'Yes, we save a full copy every Sunday and smaller updates every single hour.',
+        translation:
+          '[Backup Admin] Rồi ạ, ta lưu một bản sao đầy đủ mỗi Chủ nhật và các bản cập nhật nhỏ mỗi giờ.',
+        hint: 'full copy, every hour',
+      },
+      {
+        text: 'That is great, so we lose less than one hour of data if a server fails.',
+        translation:
+          '[Ops Manager] Tốt lắm, vậy ta chỉ mất dưới một giờ dữ liệu nếu một máy chủ gặp sự cố.',
+        hint: 'less than, server fails',
+      },
+      {
+        text: 'We also tested a full restore on our test server yesterday and checked all customer records.',
+        translation:
+          '[Backup Admin] Hôm qua tụi em cũng đã thử khôi phục toàn bộ trên máy chủ thử nghiệm và kiểm tra mọi hồ sơ khách hàng.',
+        hint: 'full restore, test server, records',
+      },
+      {
+        text: 'How long did the whole database restore take from start to finish?',
+        translation:
+          '[Ops Manager] Toàn bộ quá trình khôi phục cơ sở dữ liệu mất bao lâu từ đầu đến cuối?',
+        hint: 'from start to finish',
+      },
+      {
+        text: 'It took thirty five minutes, which is much faster than our two hour target.',
+        translation:
+          '[Backup Admin] Mất 35 phút, nhanh hơn nhiều so với mục tiêu hai giờ của mình.',
+        hint: 'thirty five minutes, target',
+      },
+      {
+        text: 'Are our extra backup copies locked in cloud storage so hackers cannot delete them?',
+        translation:
+          '[Ops Manager] Các bản sao lưu dự phòng có được khóa trên lưu trữ đám mây để tin tặc không xóa được không?',
+        hint: 'locked, cloud storage, hackers',
+      },
+      {
+        text: 'Yes, cloud lock keeps every copy safe for ninety days, and nobody can change or erase it.',
+        translation:
+          '[Backup Admin] Có ạ, khóa đám mây giữ an toàn mọi bản sao trong 90 ngày, không ai có thể sửa hay xóa được.',
+        hint: 'ninety days, change or erase',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-14',
+    videoId: 'audio-itops-a2-14',
+    title: 'A2-B1 | 14. Blocking Strange Login Attempts on Server (IT Ops)',
+    description:
+      'A2-B1 security call blocking repeated failed SSH login attempts at the firewall and disabling password logins (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Leo, our security tool just reported thousands of failed logins on edge server two.',
+        translation:
+          '[SOC] Chào Leo, công cụ bảo mật vừa báo hàng nghìn lượt đăng nhập thất bại trên máy chủ biên số hai.',
+        hint: 'security tool, failed logins',
+      },
+      {
+        text: 'Thanks for telling me quickly; did any unknown user actually get into the server?',
+        translation:
+          '[SysOps] Cảm ơn đã báo sớm; có người dùng lạ nào thực sự vào được máy chủ không?',
+        hint: 'unknown user, get into',
+      },
+      {
+        text: 'No one got in yet, but the login attempts are coming from many strange foreign addresses.',
+        translation:
+          '[SOC] Chưa ai vào được, nhưng các lượt đăng nhập đến từ nhiều địa chỉ nước ngoài lạ.',
+        hint: 'login attempts, foreign addresses',
+      },
+      {
+        text: 'I am adding a block rule on our main firewall right now to stop all of them.',
+        translation:
+          '[SysOps] Tôi đang thêm quy tắc chặn trên tường lửa chính ngay để dừng tất cả các địa chỉ đó.',
+        hint: 'block rule, main firewall',
+      },
+      {
+        text: 'Why was the admin login port open to the public internet in the first place?',
+        translation:
+          '[SOC] Ngay từ đầu tại sao cổng đăng nhập quản trị lại mở ra internet công cộng vậy?',
+        hint: 'admin port, public internet',
+      },
+      {
+        text: 'An outside helper opened it during setup last week and forgot to close it afterwards.',
+        translation:
+          '[SysOps] Một kỹ thuật viên bên ngoài đã mở nó lúc cài đặt tuần trước và quên đóng lại sau đó.',
+        hint: 'outside helper, forgot to close',
+      },
+      {
+        text: 'Please turn off normal password login so only approved security keys can connect.',
+        translation:
+          '[SOC] Vui lòng tắt đăng nhập bằng mật khẩu thường để chỉ các khóa bảo mật được duyệt mới kết nối được.',
+        hint: 'password login, security keys',
+      },
+      {
+        text: 'Done, the firewall is locked down, old keys are replaced, and the alert count dropped to zero.',
+        translation:
+          '[SysOps] Xong rồi, tường lửa đã khóa chặt, khóa cũ đã thay mới và số cảnh báo đã giảm về không.',
+        hint: 'locked down, replaced, zero',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-15',
+    videoId: 'audio-itops-a2-15',
+    title: 'A2-B1 | 15. Office VPN Connection Problem for Remote Staff (IT Ops)',
+    description:
+      'Everyday IT Operations support call troubleshooting a company VPN outage for remote employees working from home (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Hi Alex, five staff members working from home say they cannot connect to the office VPN.',
+        translation:
+          '[Helpdesk] Chào Alex, năm nhân viên làm việc tại nhà báo họ không thể kết nối VPN công ty.',
+        hint: 'working from home, office VPN',
+      },
+      {
+        text: 'Do they see a wrong password message, or does the connection just time out?',
+        translation:
+          '[NetOps] Họ thấy thông báo sai mật khẩu, hay kết nối chỉ bị hết thời gian chờ?',
+        hint: 'wrong password, time out',
+      },
+      {
+        text: 'It keeps trying to connect for thirty seconds, then shows server not responding.',
+        translation:
+          '[Helpdesk] Nó cứ thử kết nối trong ba mươi giây, rồi báo máy chủ không phản hồi.',
+        hint: 'thirty seconds, not responding',
+      },
+      {
+        text: 'Let me check the VPN gateway; oh, the service reached its maximum user limit today.',
+        translation:
+          '[NetOps] Để tôi kiểm tra cổng VPN; ồ, dịch vụ đã chạm giới hạn số người dùng tối đa hôm nay.',
+        hint: 'VPN gateway, user limit',
+      },
+      {
+        text: 'Why are there so many connections when only forty people work remotely?',
+        translation:
+          '[Helpdesk] Tại sao lại có nhiều kết nối thế khi chỉ có bốn mươi người làm việc từ xa?',
+        hint: 'connections, remotely',
+      },
+      {
+        text: 'Many old sessions stayed open overnight because people did not log out after work.',
+        translation:
+          '[NetOps] Nhiều phiên cũ vẫn mở qua đêm vì mọi người không đăng xuất sau giờ làm.',
+        hint: 'stayed open, overnight, log out',
+      },
+      {
+        text: 'I will clear inactive sessions older than four hours and add an automatic timeout.',
+        translation:
+          '[NetOps] Tôi sẽ dọn các phiên không hoạt động quá bốn giờ và thêm chế độ tự ngắt kết nối.',
+        hint: 'inactive sessions, automatic timeout',
+      },
+      {
+        text: 'Awesome, two remote users just got connected, and I will update the rest in chat.',
+        translation:
+          '[Helpdesk] Tuyệt quá, hai nhân viên từ xa vừa kết nối được rồi, để tôi báo cho những người còn lại trong nhóm chat.',
+        hint: 'connected, update the rest',
+      },
+    ],
+  },
+  {
+    id: 'lesson-audio-itops-a2-16',
+    videoId: 'audio-itops-a2-16',
+    title: 'A2-B1 | 16. Reviewing Yesterday’s Outage Together (IT Ops)',
+    description:
+      'Friendly A2-B1 post-incident team review discussing what happened during an outage, cleaning noisy alerts, and updating the checklist (~1 min, A2-B1, UK English).',
+    voiceAccent: 'en-GB',
+    level: 'Beginner',
+    items: [
+      {
+        text: 'Thanks everyone for joining our short review of Tuesday’s twenty minute website outage.',
+        translation:
+          '[Team Lead] Cảm ơn mọi người đã tham gia buổi rà soát ngắn về sự cố mất mạng trang web hai mươi phút hôm thứ Ba.',
+        hint: 'short review, website outage',
+      },
+      {
+        text: 'Remember, we are here to make our system stronger, not to blame any team member.',
+        translation:
+          '[Team Lead] Hãy nhớ ta ở đây để làm hệ thống vững vàng hơn, chứ không phải đổ lỗi cho thành viên nào.',
+        hint: 'stronger, blame',
+      },
+      {
+        text: 'Our timeline shows customers saw slow pages for twenty minutes before the backup server took over.',
+        translation:
+          '[Ops Eng] Dòng thời gian cho thấy khách thấy trang chậm trong hai mươi phút trước khi máy chủ dự phòng tiếp quản.',
+        hint: 'timeline, took over',
+      },
+      {
+        text: 'Why did it take our on-call team ten minutes just to notice the first critical alert?',
+        translation:
+          '[Team Lead] Tại sao nhóm trực ứng cứu lại mất tới mười phút mới nhận ra cảnh báo khẩn cấp đầu tiên?',
+        hint: 'on-call team, notice, critical alert',
+      },
+      {
+        text: 'Our chat channel had too many small test warnings, so the real red alert got buried.',
+        translation:
+          '[Ops Eng] Kênh chat của ta có quá nhiều cảnh báo thử nghiệm nhỏ, nên cảnh báo đỏ thật bị chìm mất.',
+        hint: 'chat channel, warnings, buried',
+      },
+      {
+        text: 'Let us turn off those noisy low warnings and keep the alert channel clean.',
+        translation:
+          '[Team Lead] Hãy tắt các cảnh báo mức thấp ồn ào đó đi và giữ kênh cảnh báo thật gọn gàng.',
+        hint: 'noisy, alert channel',
+      },
+      {
+        text: 'Should we also update our step by step guide so new engineers know who to call first?',
+        translation:
+          '[Ops Eng] Ta có nên cập nhật sổ tay từng bước để kỹ sư mới biết cần gọi ai trước không?',
+        hint: 'step by step guide, call first',
+      },
+      {
+        text: 'Yes, I created clear tasks with owners and dates so we finish every fix this week.',
+        translation:
+          '[Team Lead] Có, tôi đã tạo các đầu việc rõ ràng có người phụ trách và hạn chót để ta sửa xong hết trong tuần này.',
+        hint: 'clear tasks, owners, dates',
+      },
+    ],
+  },
 ]
 
 export const DEFAULT_A2_B1_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_A2_B1_SPECS.map(buildLesson)
-export const DEFAULT_IT_OPS_B1_B2_AUDIO_LESSONS: Lesson[] = RAW_IT_OPS_SPECS.map(buildLesson)
-export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = [
-  ...DEFAULT_A2_B1_AUDIO_LESSONS,
-  ...DEFAULT_IT_OPS_B1_B2_AUDIO_LESSONS,
-]
-export const DEFAULT_IT_OPS_AUDIO_LESSONS = DEFAULT_B1_B2_AUDIO_LESSONS
+export const DEFAULT_IT_OPS_B1_B2_AUDIO_LESSONS: Lesson[] = []
+export const DEFAULT_B1_B2_AUDIO_LESSONS: Lesson[] = [...DEFAULT_A2_B1_AUDIO_LESSONS]
+export const DEFAULT_IT_OPS_AUDIO_LESSONS = DEFAULT_A2_B1_AUDIO_LESSONS

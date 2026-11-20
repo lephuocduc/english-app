@@ -91,7 +91,9 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   isBlindListening: false,
   isFocusMode: false,
   showSubtitles: false,
-  hasAudioLeadIn: true,
+  hasAudioLeadIn: false,
+  isPhoneCallMode: true,
+  isLooping: true,
   ttsAccent: 'en-GB',
 }
 

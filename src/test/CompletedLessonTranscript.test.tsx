@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { isLessonFinished } from '../lib/dictation/resumeManager'
 import { CompletedLessonTranscript } from '../features/dictation/CompletedLessonTranscript'
+import { LessonsView } from '../features/lessons/LessonsView'
 import { storage } from '../lib/storage/storage'
 import { App } from '../App'
-import type { Lesson, UserSentenceProgress } from '../types'
+import type { Lesson, UserLessonProgress, UserSentenceProgress } from '../types'
 
 const sampleLesson: Lesson = {
   id: 'lesson-audio-test-complete',
@@ -115,8 +116,9 @@ describe('Completed Lesson Full Transcript Review', () => {
       },
     }
 
-    it('renders all lines, toggles passage mode and translations, plays lines, bookmarks words, and copies', async () => {
+    it('renders all lines, toggles passage mode and translations, plays full lesson and lines, bookmarks words, and copies', async () => {
       const onSelectSegment = vi.fn()
+      const onPlayFullLesson = vi.fn()
       const onBookmarkVocabulary = vi.fn()
       const writeText = vi.fn().mockResolvedValue(undefined)
       Object.defineProperty(navigator, 'clipboard', {
@@ -130,11 +132,17 @@ describe('Completed Lesson Full Transcript Review', () => {
           lesson={sampleLesson}
           activeSegmentIndex={0}
           isPlaying={false}
+          isPlayingFullLesson={false}
           savedProgressMap={completedProgress}
           onSelectSegment={onSelectSegment}
+          onPlayFullLesson={onPlayFullLesson}
           onBookmarkVocabulary={onBookmarkVocabulary}
         />
       )
+
+      // Play full lesson once
+      fireEvent.click(screen.getByRole('button', { name: /Nghe full bài \(1 lần\)/i }))
+      expect(onPlayFullLesson).toHaveBeenCalledTimes(1)
 
       expect(
         screen.getByText('Bài học đã hoàn thành • Full Transcript')
@@ -226,6 +234,74 @@ describe('Completed Lesson Full Transcript Review', () => {
       expect(
         screen.getByText('Hệ thống giám sát cho thấy lưu lượng hiện đang ổn định.')
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('4. LessonsView completion status filter', () => {
+    it('filters completed and uncompleted lessons accurately', () => {
+      const unfinishedLesson: Lesson = {
+        ...sampleLesson,
+        id: 'lesson-audio-unfinished',
+        videoId: 'audio-unfinished',
+        title: 'Unfinished IT Ops Call',
+        sentences: [
+          {
+            id: 'seg-u1',
+            startTime: 0,
+            endTime: 4,
+            text: 'Checking the server status now.',
+          },
+        ],
+      }
+
+      const progressMap: Record<string, UserLessonProgress> = {
+        [sampleLesson.id]: {
+          lessonId: sampleLesson.id,
+          lastSentenceId: 'seg-a2',
+          updatedAt: new Date().toISOString(),
+          sentenceProgress: {
+            'seg-a1': {
+              sentenceId: 'seg-a1',
+              userInput: 'The web server restarted cleanly.',
+              score: 100,
+              isRevealed: false,
+              attempts: 1,
+              completed: true,
+              lastAttemptAt: new Date().toISOString(),
+            },
+            'seg-a2': {
+              sentenceId: 'seg-a2',
+              userInput: 'Monitoring shows healthy traffic now.',
+              score: 95,
+              isRevealed: false,
+              attempts: 1,
+              completed: true,
+              lastAttemptAt: new Date().toISOString(),
+            },
+          },
+        },
+      }
+
+      render(
+        <LessonsView
+          lessons={[sampleLesson, unfinishedLesson]}
+          activeLessonId={sampleLesson.id}
+          onSelectLesson={vi.fn()}
+          onImportCustomVideo={vi.fn()}
+          allProgressMap={progressMap}
+        />
+      )
+
+      expect(screen.getByText('Test IT Ops Completion Call')).toBeInTheDocument()
+      expect(screen.getByText('Unfinished IT Ops Call')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: /Đã hoàn thành \(1\)/i }))
+      expect(screen.getByText('Test IT Ops Completion Call')).toBeInTheDocument()
+      expect(screen.queryByText('Unfinished IT Ops Call')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: /Chưa hoàn thành \(1\)/i }))
+      expect(screen.queryByText('Test IT Ops Completion Call')).not.toBeInTheDocument()
+      expect(screen.getByText('Unfinished IT Ops Call')).toBeInTheDocument()
     })
   })
 })

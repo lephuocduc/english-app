@@ -10,6 +10,8 @@ import {
   Languages,
   Volume2,
   BookmarkPlus,
+  Play,
+  Square,
 } from 'lucide-react'
 import type { Lesson, SentenceSegment, UserSentenceProgress } from '../../types'
 import { cleanWord } from '../../lib/translation/translator'
@@ -26,8 +28,10 @@ interface CompletedLessonTranscriptProps {
   lesson: Lesson
   activeSegmentIndex: number
   isPlaying?: boolean
+  isPlayingFullLesson?: boolean
   savedProgressMap: Record<string, UserSentenceProgress>
   onSelectSegment: (index: number) => void
+  onPlayFullLesson?: () => void
   onBookmarkVocabulary?: (
     word: string,
     contextSentence: string,
@@ -47,8 +51,10 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
   lesson,
   activeSegmentIndex,
   isPlaying = false,
+  isPlayingFullLesson = false,
   savedProgressMap,
   onSelectSegment,
+  onPlayFullLesson,
   onBookmarkVocabulary,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -200,6 +206,39 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {onPlayFullLesson && totalSentences > 0 && (
+              <button
+                type="button"
+                onClick={onPlayFullLesson}
+                aria-pressed={isPlayingFullLesson}
+                title={
+                  isPlayingFullLesson
+                    ? 'Dừng phát toàn bộ bài nghe'
+                    : 'Nghe liền mạch toàn bộ bài từ câu 1 đến câu cuối (1 lần)'
+                }
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer ${
+                  isPlayingFullLesson
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                }`}
+              >
+                {isPlayingFullLesson ? (
+                  <>
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>
+                      Dừng nghe full ({Math.min(activeSegmentIndex + 1, totalSentences)}/
+                      {totalSentences})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Nghe full bài (1 lần)</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {hasAnyTranslation && (
               <button
                 type="button"

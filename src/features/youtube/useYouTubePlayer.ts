@@ -5,6 +5,7 @@ export interface YouTubePlayerHookOptions {
   videoId: string
   isVisible?: boolean
   initialSpeed?: number
+  initialLoop?: boolean
   showSubtitles?: boolean
   onSegmentEnd?: () => void
   onStateChange?: (state: number) => void
@@ -115,6 +116,7 @@ export function useYouTubePlayer({
   videoId,
   isVisible = true,
   initialSpeed = 1.0,
+  initialLoop = true,
   showSubtitles: initialShowSubtitles = false,
   onSegmentEnd,
   onStateChange,
@@ -127,8 +129,8 @@ export function useYouTubePlayer({
   const [isPlaying, setIsPlaying] = useState(false)
   const [playerError, setPlayerError] = useState<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
-  const [isLooping, setIsLooping] = useState<boolean>(false)
-  const isLoopingRef = useRef<boolean>(false)
+  const [isLooping, setIsLooping] = useState<boolean>(initialLoop)
+  const isLoopingRef = useRef<boolean>(initialLoop)
 
   const [showSubtitles, setShowSubtitles] = useState<boolean>(initialShowSubtitles ?? false)
   const showSubtitlesRef = useRef<boolean>(showSubtitles)

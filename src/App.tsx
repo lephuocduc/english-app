@@ -212,10 +212,10 @@ export function App() {
     })
   }, [])
 
-  // 1-second pre-roll audio lead-in state for smooth sentence transitions
+  // 1-second pre-roll audio lead-in state for smooth sentence transitions (off by default)
   const [hasAudioLeadIn, setHasAudioLeadIn] = useState<boolean>(() => {
     const saved = preferences.hasAudioLeadIn
-    return saved !== undefined ? saved : true
+    return saved !== undefined ? saved : false
   })
 
   const toggleAudioLeadIn = useCallback(() => {
@@ -473,6 +473,7 @@ export function App() {
     videoId: activeLesson && !activeIsAudio ? activeLesson.videoId : '',
     isVisible: activeTab === 'practice' && Boolean(activeLesson) && !activeIsAudio,
     initialSpeed: preferences.playbackSpeed,
+    initialLoop: preferences.isLooping ?? true,
     showSubtitles,
     onVideoMetadata: (meta) => {
       if (meta?.title && activeLesson && !activeIsAudio) {
@@ -484,13 +485,24 @@ export function App() {
   // Setup Text-to-Audio TTS Player hook (active for Text-to-Audio lessons)
   const audioPlayer = useAudioLessonPlayer({
     initialSpeed: preferences.playbackSpeed,
-    initialPhoneCallMode: preferences.isPhoneCallMode ?? false,
+    initialPhoneCallMode: preferences.isPhoneCallMode ?? true,
+    initialLoop: preferences.isLooping ?? true,
     initialAccent: preferences.ttsAccent || 'en-GB',
   })
+
+  const [isYouTubeFullPlaying, setIsYouTubeFullPlaying] = useState(false)
+
+  // Clear YouTube full-lesson playing flag when playback stops
+  useEffect(() => {
+    if (!isPlaying && isYouTubeFullPlaying) {
+      setIsYouTubeFullPlaying(false)
+    }
+  }, [isPlaying, isYouTubeFullPlaying])
 
   // Sync voice accent when switching between audio lessons (without overriding user accent choice)
   useEffect(() => {
     audioPlayer.stopAudio()
+    setIsYouTubeFullPlaying(false)
     if (activeIsAudio && activeLesson?.voiceAccent && !preferences.ttsAccent) {
       audioPlayer.changeVoiceAccent(activeLesson.voiceAccent)
     }
@@ -506,6 +518,57 @@ export function App() {
   const effectiveIsPlaying = activeIsAudio ? audioPlayer.isPlaying : isPlaying
   const effectiveIsLooping = activeIsAudio ? audioPlayer.isLooping : isLooping
   const effectiveIsPlayerReady = activeIsAudio ? true : isPlayerReady
+  const isPlayingFullLesson = activeIsAudio
+    ? audioPlayer.isPlayingFullLesson
+    : isYouTubeFullPlaying && isPlaying
+
+  const handlePlayFullLesson = useCallback(() => {
+    if (!activeLesson || activeLesson.sentences.length === 0) return
+
+    if (isPlayingFullLesson) {
+      if (activeIsAudio) {
+        audioPlayer.stopAudio()
+      } else {
+        pauseSegment()
+        setIsYouTubeFullPlaying(false)
+      }
+      return
+    }
+
+    if (activeIsAudio) {
+      const segmentsPayload = activeLesson.sentences.map((seg) => ({
+        text: seg.text,
+        speakerIndex: getSegmentSpeakerIndex(activeLesson, seg),
+      }))
+      void audioPlayer.playFullLesson(segmentsPayload, {
+        onSegmentChange: (idx) => {
+          activeSegmentIndexRef.current = idx
+          setActiveSegmentIndex(idx)
+        },
+      })
+    } else if (isPlayerReady) {
+      if (isLooping) {
+        toggleLoop()
+      }
+      const firstSeg = activeLesson.sentences[0]
+      const lastSeg = activeLesson.sentences[activeLesson.sentences.length - 1]
+      activeSegmentIndexRef.current = 0
+      setActiveSegmentIndex(0)
+      setIsYouTubeFullPlaying(true)
+      playSegment(firstSeg.startTime, lastSeg.endTime, 0)
+    }
+  }, [
+    activeLesson,
+    isPlayingFullLesson,
+    activeIsAudio,
+    audioPlayer,
+    pauseSegment,
+    getSegmentSpeakerIndex,
+    isPlayerReady,
+    isLooping,
+    toggleLoop,
+    playSegment,
+  ])
 
   const handleTogglePhoneCallMode = useCallback(() => {
     const next = !audioPlayer.isPhoneCallMode
@@ -533,12 +596,16 @@ export function App() {
   )
 
   const handleToggleLoop = useCallback(() => {
+    const next = !(activeIsAudio ? audioPlayer.isLooping : isLooping)
     if (activeIsAudio) {
       audioPlayer.toggleLoop()
     } else {
       toggleLoop()
     }
-  }, [activeIsAudio, audioPlayer, toggleLoop])
+    const newPrefs = { ...preferences, isLooping: next }
+    setPreferences(newPrefs)
+    storage.savePreferences(newPrefs)
+  }, [activeIsAudio, audioPlayer, isLooping, toggleLoop, preferences])
 
   const handleTogglePlayPause = useCallback(() => {
     if (activeIsAudio) {
@@ -1716,7 +1783,7 @@ export function App() {
                         }
                       }}
                       onTogglePlayPause={togglePlayPause}
-                      onToggleLoop={toggleLoop}
+                      onToggleLoop={handleToggleLoop}
                       onToggleBlindListening={toggleBlindListening}
                       onToggleSubtitles={toggleSubtitles}
                       onToggleLeadIn={toggleAudioLeadIn}
@@ -1787,6 +1854,8 @@ export function App() {
                     maxUnlockedIndex={maxUnlockedIndex}
                     isLessonFinished={activeLessonFinished}
                     onJumpToFullTranscript={handleJumpToFullTranscript}
+                    isPlayingFullLesson={isPlayingFullLesson}
+                    onPlayFullLesson={handlePlayFullLesson}
                   />
 
                   {activeLessonFinished && (
@@ -1794,8 +1863,10 @@ export function App() {
                       lesson={activeLesson}
                       activeSegmentIndex={activeSegmentIndex}
                       isPlaying={effectiveIsPlaying}
+                      isPlayingFullLesson={isPlayingFullLesson}
                       savedProgressMap={activeLessonProgress}
                       onSelectSegment={handleSelectSegment}
+                      onPlayFullLesson={handlePlayFullLesson}
                       onBookmarkVocabulary={handleBookmarkVocabulary}
                     />
                   )}
