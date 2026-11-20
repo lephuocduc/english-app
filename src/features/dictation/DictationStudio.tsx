@@ -75,6 +75,8 @@ interface DictationStudioProps {
   onJumpToFullTranscript?: () => void
   isPlayingFullLesson?: boolean
   onPlayFullLesson?: () => void
+  nextLessonTitle?: string
+  onNextLesson?: () => void
 }
 
 export const DictationStudio: React.FC<DictationStudioProps> = ({
@@ -105,6 +107,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   onJumpToFullTranscript,
   isPlayingFullLesson = false,
   onPlayFullLesson,
+  nextLessonTitle,
+  onNextLesson,
 }) => {
   const currentSegment: SentenceSegment | undefined = lesson?.sentences?.[activeSegmentIndex]
   const saved = currentSegment ? savedProgressMap[currentSegment.id] : undefined
@@ -832,6 +836,22 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             >
               <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Full Transcript</span>
+            </button>
+          )}
+
+          {lessonDone && onNextLesson && (
+            <button
+              type="button"
+              onClick={onNextLesson}
+              title={
+                nextLessonTitle
+                  ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                  : 'Chuyển nhanh sang bài tiếp theo cùng level'
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <span>Bài tiếp theo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -1637,10 +1657,25 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       <button
                         type="button"
                         onClick={onJumpToFullTranscript}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                        className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                       >
                         <FileText className="w-4 h-4" />
                         <span>Xem Full Transcript</span>
+                      </button>
+                    )}
+                    {onNextLesson && (
+                      <button
+                        type="button"
+                        onClick={onNextLesson}
+                        title={
+                          nextLessonTitle
+                            ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                            : 'Chuyển nhanh sang bài tiếp theo cùng level'
+                        }
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                      >
+                        <span>Bài tiếp theo</span>
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
                   </div>

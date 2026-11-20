@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { isLessonFinished } from '../lib/dictation/resumeManager'
+import { isLessonFinished, getNextSameLevelLesson } from '../lib/dictation/resumeManager'
 import { CompletedLessonTranscript } from '../features/dictation/CompletedLessonTranscript'
 import { LessonsView } from '../features/lessons/LessonsView'
 import { storage } from '../lib/storage/storage'
@@ -292,7 +292,8 @@ describe('Completed Lesson Full Transcript Review', () => {
         />
       )
 
-      expect(screen.getByText('Test IT Ops Completion Call')).toBeInTheDocument()
+      // Defaults to "Chưa hoàn thành"
+      expect(screen.queryByText('Test IT Ops Completion Call')).not.toBeInTheDocument()
       expect(screen.getByText('Unfinished IT Ops Call')).toBeInTheDocument()
 
       fireEvent.click(screen.getByRole('button', { name: /Đã hoàn thành \(1\)/i }))
@@ -302,6 +303,53 @@ describe('Completed Lesson Full Transcript Review', () => {
       fireEvent.click(screen.getByRole('button', { name: /Chưa hoàn thành \(1\)/i }))
       expect(screen.queryByText('Test IT Ops Completion Call')).not.toBeInTheDocument()
       expect(screen.getByText('Unfinished IT Ops Call')).toBeInTheDocument()
+    })
+  })
+
+  describe('5. getNextSameLevelLesson helper & quick next-lesson button', () => {
+    it('selects the next uncompleted lesson with the exact same level and source type', () => {
+      const a2Lesson1: Lesson = { ...sampleLesson, id: 'a2-1', videoId: 'audio-a2-1', level: 'Beginner' }
+      const b1Lesson: Lesson = { ...sampleLesson, id: 'b1-1', videoId: 'audio-b1-1', level: 'Intermediate' }
+      const ytBeginner: Lesson = {
+        ...sampleLesson,
+        id: 'yt-1',
+        videoId: 'dQw4w9WgXcQ',
+        sourceType: 'youtube',
+        level: 'Beginner',
+      }
+      const a2Lesson2: Lesson = {
+        ...sampleLesson,
+        id: 'a2-2',
+        videoId: 'audio-a2-2',
+        level: 'Beginner',
+        title: 'Next A2-B1 Call',
+      }
+
+      const next = getNextSameLevelLesson([a2Lesson1, b1Lesson, ytBeginner, a2Lesson2], a2Lesson1, {})
+      expect(next?.id).toBe('a2-2')
+
+      // Returns null when no other lesson matches the same level + source type
+      expect(getNextSameLevelLesson([a2Lesson1, b1Lesson, ytBeginner], a2Lesson1, {})).toBeNull()
+    })
+
+    it('renders and triggers the Bài tiếp theo button in CompletedLessonTranscript', () => {
+      const onNextLesson = vi.fn()
+      render(
+        <CompletedLessonTranscript
+          lesson={sampleLesson}
+          activeSegmentIndex={0}
+          isPlaying={false}
+          savedProgressMap={{}}
+          onSelectSegment={vi.fn()}
+          nextLessonTitle="Next A2-B1 Call"
+          onNextLesson={onNextLesson}
+        />
+      )
+
+      const nextBtn = screen.getByRole('button', { name: /Bài tiếp theo/i })
+      expect(nextBtn).toHaveAttribute('title', expect.stringContaining('Next A2-B1 Call'))
+      fireEvent.click(nextBtn)
+      expect(onNextLesson).toHaveBeenCalledTimes(1)
     })
   })
 })

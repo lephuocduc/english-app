@@ -43,7 +43,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
   const [videoToDelete, setVideoToDelete] = useState<Lesson | null>(null)
   const [createMode, setCreateMode] = useState<'youtube' | 'audio'>('youtube')
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'audio-a2' | 'audio-b1' | 'youtube'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'uncompleted' | 'completed'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'uncompleted' | 'completed'>('uncompleted')
 
   const a2AudioCount = useMemo(
     () => lessons.filter((l) => isAudioLesson(l) && l.level === 'Beginner').length,

@@ -12,6 +12,7 @@ import {
   BookmarkPlus,
   Play,
   Square,
+  ArrowRight,
 } from 'lucide-react'
 import type { Lesson, SentenceSegment, UserSentenceProgress } from '../../types'
 import { cleanWord } from '../../lib/translation/translator'
@@ -32,6 +33,8 @@ interface CompletedLessonTranscriptProps {
   savedProgressMap: Record<string, UserSentenceProgress>
   onSelectSegment: (index: number) => void
   onPlayFullLesson?: () => void
+  nextLessonTitle?: string
+  onNextLesson?: () => void
   onBookmarkVocabulary?: (
     word: string,
     contextSentence: string,
@@ -55,6 +58,8 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
   savedProgressMap,
   onSelectSegment,
   onPlayFullLesson,
+  nextLessonTitle,
+  onNextLesson,
   onBookmarkVocabulary,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -236,6 +241,22 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
                     <span>Nghe full bài (1 lần)</span>
                   </>
                 )}
+              </button>
+            )}
+
+            {onNextLesson && (
+              <button
+                type="button"
+                onClick={onNextLesson}
+                title={
+                  nextLessonTitle
+                    ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                    : 'Chuyển nhanh sang bài tiếp theo cùng level'
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer"
+              >
+                <span>Bài tiếp theo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
 

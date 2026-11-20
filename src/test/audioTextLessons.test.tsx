@@ -305,7 +305,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       }
 
       try {
-        ;(globalThis as any).SpeechSynthesisUtterance = StubSpeechSynthesisUtterance
+        ; (globalThis as any).SpeechSynthesisUtterance = StubSpeechSynthesisUtterance
         Object.defineProperty(window, 'speechSynthesis', {
           configurable: true,
           writable: true,
@@ -343,7 +343,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
         expect(onFallbackUsed).toHaveBeenCalledWith(true, true)
       } finally {
         globalThis.fetch = prevFetch
-        ;(globalThis as any).SpeechSynthesisUtterance = prevUtterance
+          ; (globalThis as any).SpeechSynthesisUtterance = prevUtterance
         if (prevSpeechDescriptor) {
           Object.defineProperty(window, 'speechSynthesis', prevSpeechDescriptor)
         } else {

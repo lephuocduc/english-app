@@ -51,6 +51,7 @@ import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { getDueVocabulary } from './lib/srs/sm2'
 import {
   getMaxUnlockedIndex,
+  getNextSameLevelLesson,
   getResumeSegmentIndex,
   isLessonFinished,
 } from './lib/dictation/resumeManager'
@@ -270,6 +271,11 @@ export function App() {
   const activeLessonFinished = useMemo(
     () => isLessonFinished(activeLesson?.sentences, activeLessonProgress),
     [activeLesson?.sentences, activeLessonProgress]
+  )
+
+  const nextSameLevelLesson = useMemo(
+    () => getNextSameLevelLesson(videosList, activeLesson, allLessonsProgress),
+    [videosList, activeLesson, allLessonsProgress]
   )
 
   const handleJumpToFullTranscript = useCallback(() => {
@@ -1856,6 +1862,12 @@ export function App() {
                     onJumpToFullTranscript={handleJumpToFullTranscript}
                     isPlayingFullLesson={isPlayingFullLesson}
                     onPlayFullLesson={handlePlayFullLesson}
+                    nextLessonTitle={nextSameLevelLesson?.title}
+                    onNextLesson={
+                      nextSameLevelLesson
+                        ? () => handleSelectLesson(nextSameLevelLesson.id)
+                        : undefined
+                    }
                   />
 
                   {activeLessonFinished && (
@@ -1867,6 +1879,12 @@ export function App() {
                       savedProgressMap={activeLessonProgress}
                       onSelectSegment={handleSelectSegment}
                       onPlayFullLesson={handlePlayFullLesson}
+                      nextLessonTitle={nextSameLevelLesson?.title}
+                      onNextLesson={
+                        nextSameLevelLesson
+                          ? () => handleSelectLesson(nextSameLevelLesson.id)
+                          : undefined
+                      }
                       onBookmarkVocabulary={handleBookmarkVocabulary}
                     />
                   )}
