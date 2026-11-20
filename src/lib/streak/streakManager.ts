@@ -11,6 +11,17 @@ export function formatLocalDate(date: Date = new Date()): string {
 }
 
 /**
+ * Parses a 'YYYY-MM-DD' local calendar date string into a local midday Date
+ * (avoiding UTC midnight shifts across timezones).
+ */
+export function parseLocalDateString(dateStr?: string | null): Date | null {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null
+  const [y, m, d] = dateStr.split('-').map(Number)
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return null
+  return new Date(y, m - 1, d, 12, 0, 0)
+}
+
+/**
  * Returns integer day difference between two 'YYYY-MM-DD' date strings.
  * (positive if toDateStr is after fromDateStr)
  */

@@ -106,5 +106,58 @@ describe('ListenFlow Daily Streak & Streak Freeze API', () => {
     expect(getJson.data.longestStreak).toBe(12)
     expect(getJson.data.freezeUsedDates).toContain('2026-11-05')
   })
+
+  it('respects client localDate on POST /api/streak/record and supports force reset on PUT /api/streak/sync', async () => {
+    // Client in UTC+7 records two completions on local date 2026-11-21
+    const r1 = await makeRequest('/api/streak/record', {
+      method: 'POST',
+      body: { localDate: '2026-11-21' },
+    })
+    const j1 = (await r1.json()) as { data: StreakData; justCompleted: boolean }
+    expect(j1.justCompleted).toBe(true)
+    expect(j1.data.currentStreak).toBe(1)
+    expect(j1.data.lastActiveDate).toBe('2026-11-21')
+
+    const r2 = await makeRequest('/api/streak/record', {
+      method: 'POST',
+      body: { localDate: '2026-11-21' },
+    })
+    const j2 = (await r2.json()) as { data: StreakData; justCompleted: boolean }
+    expect(j2.justCompleted).toBe(false)
+    expect(j2.data.currentStreak).toBe(1)
+
+    // Force-reset inflated streak back to 1
+    await makeRequest('/api/streak/sync', {
+      method: 'PUT',
+      body: {
+        currentStreak: 9,
+        longestStreak: 9,
+        lastActiveDate: '2026-11-21',
+        freezeUsedDates: [],
+        lastFreezeWeek: null,
+        freezeAvailable: true,
+        totalDaysActive: 9,
+      },
+    })
+    await makeRequest('/api/streak/sync', {
+      method: 'PUT',
+      body: {
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActiveDate: '2026-11-21',
+        freezeUsedDates: [],
+        lastFreezeWeek: null,
+        freezeAvailable: true,
+        totalDaysActive: 1,
+        force: true,
+      },
+    })
+
+    const getRes = await makeRequest('/api/streak?date=2026-11-21')
+    const getJson = (await getRes.json()) as { data: StreakData }
+    expect(getJson.data.currentStreak).toBe(1)
+    expect(getJson.data.longestStreak).toBe(1)
+    expect(getJson.data.totalDaysActive).toBe(1)
+  })
 })
 

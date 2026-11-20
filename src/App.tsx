@@ -2184,6 +2184,10 @@ export function App() {
         onClose={() => setShowDailyStreakModal(false)}
         streak={streakData}
         onStartPractice={() => setActiveTab('practice')}
+        onResetStreak={() => {
+          const reset = storage.resetStreak(true)
+          setStreakData(reset)
+        }}
       />
 
       {/* Windows Auto-Start Modal */}

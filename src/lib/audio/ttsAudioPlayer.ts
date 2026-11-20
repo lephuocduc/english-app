@@ -1,7 +1,7 @@
 import type { VoiceAccent } from '../../types'
 import { apiClient } from '../api/client'
 import { getSpeakerVoiceProfile } from './dialogueVoices'
-import { pitchShiftAudioBuffer } from './voicePitchShift'
+import { pitchShiftAudioBuffer, timeStretchAudioBuffer } from './voicePitchShift'
 
 export interface PlayAudioSegmentOptions {
   text: string
@@ -278,51 +278,66 @@ export class TtsAudioEngine {
   async fetchSegmentBuffer(
     text: string,
     accent: VoiceAccent = 'en-GB',
-    speakerIndex = 0
+    speakerIndex = 0,
+    speed = 1.0
   ): Promise<AudioBuffer> {
     const cleanText = text.trim()
+    const safeSpeed = Math.round(Math.min(2.0, Math.max(0.5, speed)) * 100) / 100
     const profile = getSpeakerVoiceProfile(speakerIndex)
     const baseCacheKey = `${accent}:::${cleanText}`
-    const targetCacheKey =
+    const voiceCacheKey =
       profile.id === 'voice-a' ? baseCacheKey : `${accent}:::${profile.id}:::${cleanText}`
+    const finalCacheKey =
+      Math.abs(safeSpeed - 1.0) < 0.01 ? voiceCacheKey : `${voiceCacheKey}:::spd=${safeSpeed}`
 
-    const cachedTarget = bufferCache.get(targetCacheKey)
-    if (cachedTarget) return cachedTarget
+    const cachedFinal = bufferCache.get(finalCacheKey)
+    if (cachedFinal) return cachedFinal
 
     const ctx = this.getAudioContext()
     if (!ctx) {
       throw new Error('Web Audio API is unavailable in this environment')
     }
 
-    let baseBuffer = bufferCache.get(baseCacheKey)
-    if (!baseBuffer) {
-      const url = apiClient.getTtsAudioUrl(cleanText, accent)
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`TTS HTTP ${response.status}`)
+    let voiceBuffer = bufferCache.get(voiceCacheKey)
+    if (!voiceBuffer) {
+      let baseBuffer = bufferCache.get(baseCacheKey)
+      if (!baseBuffer) {
+        const url = apiClient.getTtsAudioUrl(cleanText, accent)
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`TTS HTTP ${response.status}`)
+        }
+
+        const contentType = (response.headers?.get?.('content-type') || '').toLowerCase()
+        if (contentType.includes('text/html') || contentType.includes('application/json')) {
+          throw new Error('TTS endpoint did not return audio')
+        }
+
+        const arrayBuf = await response.arrayBuffer()
+        if (arrayBuf.byteLength < 64) {
+          throw new Error('TTS returned empty audio data')
+        }
+
+        baseBuffer = await ctx.decodeAudioData(arrayBuf)
+        bufferCache.set(baseCacheKey, baseBuffer)
       }
 
-      const contentType = (response.headers?.get?.('content-type') || '').toLowerCase()
-      if (contentType.includes('text/html') || contentType.includes('application/json')) {
-        throw new Error('TTS endpoint did not return audio')
+      if (Math.abs(profile.pitchRatio - 1.0) >= 0.01) {
+        voiceBuffer = pitchShiftAudioBuffer(ctx, baseBuffer, profile.pitchRatio)
+        bufferCache.set(voiceCacheKey, voiceBuffer)
+      } else {
+        voiceBuffer = baseBuffer
       }
-
-      const arrayBuf = await response.arrayBuffer()
-      if (arrayBuf.byteLength < 64) {
-        throw new Error('TTS returned empty audio data')
-      }
-
-      baseBuffer = await ctx.decodeAudioData(arrayBuf)
-      bufferCache.set(baseCacheKey, baseBuffer)
     }
 
-    if (Math.abs(profile.pitchRatio - 1.0) >= 0.01) {
-      const shifted = pitchShiftAudioBuffer(ctx, baseBuffer, profile.pitchRatio)
-      bufferCache.set(targetCacheKey, shifted)
-      return shifted
+    // Apply pitch-preserving WSOLA time-stretch when playback speed != 1.0
+    if (Math.abs(safeSpeed - 1.0) >= 0.01) {
+      const stretched = timeStretchAudioBuffer(ctx, voiceBuffer, safeSpeed)
+      bufferCache.set(finalCacheKey, stretched)
+      return stretched
     }
 
-    return baseBuffer
+    return voiceBuffer
   }
 
   private connectWithSpeakerEq(
@@ -526,9 +541,9 @@ export class TtsAudioEngine {
       if (!ctx) throw new Error('AudioContext unavailable')
 
       const effectiveLeadInSpeaker = leadInSpeakerIndex ?? speakerIndex
-      const mainBufferPromise = this.fetchSegmentBuffer(cleanText, accent, speakerIndex)
+      const mainBufferPromise = this.fetchSegmentBuffer(cleanText, accent, speakerIndex, speed)
       const leadInBufferPromise = leadInText?.trim()
-        ? this.fetchSegmentBuffer(leadInText.trim(), accent, effectiveLeadInSpeaker).catch(
+        ? this.fetchSegmentBuffer(leadInText.trim(), accent, effectiveLeadInSpeaker, speed).catch(
             () => null
           )
         : Promise.resolve(null)
@@ -552,10 +567,11 @@ export class TtsAudioEngine {
       let mainStartAt = now
 
       // Optional 1.0s audio lead-in from the tail of the previous sentence buffer
+      // (already pitch-preserving time-stretched to `speed`, so play at playbackRate = 1.0)
       if (leadInBuffer && leadInBuffer.duration > 0.3) {
         const leadInSrc = ctx.createBufferSource()
         leadInSrc.buffer = leadInBuffer
-        leadInSrc.playbackRate.value = speed
+        leadInSrc.playbackRate.value = 1.0
         this.connectWithSpeakerEq(ctx, leadInSrc, inputNode, effectiveLeadInSpeaker)
 
         const sliceDuration = Math.min(1.1, leadInBuffer.duration)
@@ -563,13 +579,12 @@ export class TtsAudioEngine {
         leadInSrc.start(now, offset, sliceDuration)
         this.leadInSource = leadInSrc
 
-        const realLeadDuration = sliceDuration / speed
-        mainStartAt = now + realLeadDuration + 0.08
+        mainStartAt = now + sliceDuration + 0.08
       }
 
       const mainSrc = ctx.createBufferSource()
       mainSrc.buffer = mainBuffer
-      mainSrc.playbackRate.value = speed
+      mainSrc.playbackRate.value = 1.0
       this.connectWithSpeakerEq(ctx, mainSrc, inputNode, speakerIndex)
       this.activeSource = mainSrc
 

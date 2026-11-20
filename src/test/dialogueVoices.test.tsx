@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { pitchShiftChannel } from '../lib/audio/voicePitchShift'
+import { pitchShiftChannel, timeStretchChannel } from '../lib/audio/voicePitchShift'
 import { buildLessonSpeakerMap } from '../lib/audio/dialogueVoices'
 import { DEFAULT_B1_B2_AUDIO_LESSONS } from '../data/defaultAudioLessons'
 import { createAudioLessonFromText, detectDialogueSpeakersInText } from '../lib/audio/textToLesson'
@@ -226,6 +226,42 @@ describe('Dialogue Multi-Speaker Voice Differentiation', () => {
       expect(
         screen.getByText(/Hội thoại 2 vai \(Alice, Bob\)/i)
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('6. Pitch-preserving speed control (timeStretchChannel)', () => {
+    it('changes speaking duration for 0.75x and 1.25x without altering vocal pitch', () => {
+      const sampleRate = 16000
+      const freq = 200 // 200 Hz synthetic vocal tone
+      const input = new Float32Array(sampleRate) // 1.0s
+      for (let i = 0; i < input.length; i++) {
+        input[i] = Math.sin((2 * Math.PI * freq * i) / sampleRate)
+      }
+
+      const measureFreq = (buf: Float32Array) => {
+        // Count positive-going zero crossings in the middle 60% of the buffer
+        const start = Math.floor(buf.length * 0.2)
+        const end = Math.floor(buf.length * 0.8)
+        let crossings = 0
+        for (let i = start + 1; i < end; i++) {
+          if (buf[i - 1] <= 0 && buf[i] > 0) crossings++
+        }
+        const durationSec = (end - start) / sampleRate
+        return crossings / durationSec
+      }
+
+      const slower = timeStretchChannel(input, sampleRate, 1 / 0.75)
+      const faster = timeStretchChannel(input, sampleRate, 1 / 1.25)
+
+      // Duration changes accurately
+      expect(slower.length / input.length).toBeCloseTo(1 / 0.75, 1)
+      expect(faster.length / input.length).toBeCloseTo(1 / 1.25, 1)
+
+      // Fundamental pitch stays at ~200Hz (within 5% tolerance) instead of shifting to 150Hz / 250Hz
+      expect(measureFreq(slower)).toBeGreaterThan(190)
+      expect(measureFreq(slower)).toBeLessThan(210)
+      expect(measureFreq(faster)).toBeGreaterThan(190)
+      expect(measureFreq(faster)).toBeLessThan(210)
     })
   })
 })

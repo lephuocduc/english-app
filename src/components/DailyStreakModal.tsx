@@ -9,6 +9,7 @@ import {
   Calendar,
   X,
   Zap,
+  RotateCcw,
 } from 'lucide-react'
 import type { StreakData } from '../types'
 
@@ -17,6 +18,7 @@ interface DailyStreakModalProps {
   onClose: () => void
   streak: StreakData
   onStartPractice?: () => void
+  onResetStreak?: () => void
 }
 
 export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({
@@ -24,6 +26,7 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({
   onClose,
   streak,
   onStartPractice,
+  onResetStreak,
 }) => {
   if (!isOpen) return null
 
@@ -173,6 +176,23 @@ export const DailyStreakModal: React.FC<DailyStreakModalProps> = ({
               Đóng
             </button>
           </div>
+
+          {onResetStreak && streak.currentStreak > 1 && (
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={onResetStreak}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>
+                  {isCompletedToday
+                    ? 'Đặt lại chuỗi về 1 ngày (hôm nay)'
+                    : 'Đặt lại chuỗi về 0'}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
