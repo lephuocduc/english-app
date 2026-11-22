@@ -425,10 +425,9 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                           }}
                           title="Listen to example sentence (E)"
                           aria-label="Listen to example sentence"
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700/80 transition cursor-pointer active:scale-95"
+                          className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-full transition cursor-pointer active:scale-95"
                         >
-                          <Volume2 className="w-3.5 h-3.5" />
-                          <span>Nghe ví dụ (E)</span>
+                          <Volume2 className="w-5 h-5" />
                         </button>
                       </div>
                       <p className="italic">

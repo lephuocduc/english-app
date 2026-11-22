@@ -400,10 +400,9 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                             onClick={() => speakSentence(item.contextSentence)}
                             title="Listen to example sentence"
                             aria-label="Listen to example sentence"
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/80 dark:hover:bg-indigo-950/70 rounded-md transition cursor-pointer"
+                            className="p-1 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded transition cursor-pointer"
                           >
-                            <Volume2 className="w-3 h-3" />
-                            <span>Nghe câu</span>
+                            <Volume2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
