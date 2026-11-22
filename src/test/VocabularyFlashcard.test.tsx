@@ -304,9 +304,11 @@ describe('AddVocabularyModal Component', () => {
     expect(screen.getByText('Add New Vocabulary Word')).toBeInTheDocument()
 
     const wordInput = screen.getByPlaceholderText(/e\.g\. determine, breakthrough/i)
+    const posSelect = screen.getByLabelText(/Dạng từ/i)
     const meaningInput = screen.getByPlaceholderText(/e\.g\. xác định, đột phá/i)
 
     fireEvent.change(wordInput, { target: { value: 'innovation' } })
+    fireEvent.change(posSelect, { target: { value: 'n' } })
     fireEvent.change(meaningInput, { target: { value: 'sự đổi mới sáng tạo' } })
 
     const submitBtn = screen.getByRole('button', { name: /Save Vocabulary/i })
@@ -315,7 +317,7 @@ describe('AddVocabularyModal Component', () => {
     expect(onAddVocabulary).toHaveBeenCalledTimes(1)
     const submitted = onAddVocabulary.mock.calls[0][0] as VocabularyItem
     expect(submitted.word).toBe('innovation')
-    expect(submitted.meaning).toBe('sự đổi mới sáng tạo')
+    expect(submitted.meaning).toBe('(n) sự đổi mới sáng tạo')
     expect(onClose).toHaveBeenCalled()
   })
 })

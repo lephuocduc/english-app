@@ -147,9 +147,11 @@ describe('User Requested Features Tests', () => {
       expect(cleanWord('stay!')).toBe('stay')
     })
 
-    it('translates common dictionary words quickly', async () => {
+    it('translates common dictionary & IT Ops words with part of speech quickly', async () => {
       const res = await translateToVietnamese('opportunity')
-      expect(res).toBe('cơ hội')
+      expect(res).toBe('(n) cơ hội')
+      const itRes = await translateToVietnamese('firewall')
+      expect(itRes).toBe('(n) tường lửa')
     })
 
     it('displays word meaning, video example, and sentence translation in VocabularyView', () => {

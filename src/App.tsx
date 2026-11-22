@@ -48,6 +48,7 @@ import { DailyStreakModal } from './components/DailyStreakModal'
 import { AutoStartModal } from './components/AutoStartModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
+import { lookupContextualWord } from './lib/translation/itOpsWordDictionary'
 import { getDueVocabulary } from './lib/srs/sm2'
 import {
   getMaxUnlockedIndex,
@@ -1207,10 +1208,12 @@ export function App() {
   ) => {
     if (!activeLesson) return
 
+    const resolvedMeaning = meaning?.trim() || lookupContextualWord(word) || undefined
+
     const newItem: VocabularyItem = {
       id: `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       word,
-      meaning,
+      meaning: resolvedMeaning,
       contextSentence,
       contextSentenceTranslation,
       timestamp,

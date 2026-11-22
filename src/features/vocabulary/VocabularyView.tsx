@@ -22,6 +22,7 @@ import {
   speakWord,
   speakSentence,
 } from '../../lib/srs/sm2'
+import { parseMeaningWithPos, POS_LABELS } from '../../lib/translation/itOpsWordDictionary'
 import { FlashcardReviewModal } from './FlashcardReviewModal'
 import { AddVocabularyModal } from './AddVocabularyModal'
 
@@ -312,6 +313,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredWords.map((item) => {
             const due = isWordDue(item)
+            const parsedMeaning = parseMeaningWithPos(item.meaning)
             return (
               <div
                 key={item.id}
@@ -320,10 +322,18 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 <div className="space-y-2.5">
                   {/* Top Word header with pronunciation, mastered toggle, and delete */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-base font-bold text-indigo-950 dark:text-indigo-300 capitalize font-serif tracking-tight">
                         {item.word}
                       </h4>
+                      {parsedMeaning.pos && (
+                        <span
+                          title={POS_LABELS[parsedMeaning.pos] || parsedMeaning.pos}
+                          className="px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 text-[10px] font-bold lowercase"
+                        >
+                          {parsedMeaning.pos}
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => speakWord(item.word)}
@@ -350,10 +360,10 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   {/* SRS Badges & Meaning tag */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {/* Meaning tag */}
-                    {item.meaning && (
+                    {parsedMeaning.text && (
                       <div className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-semibold">
                         <span>Meaning:</span>
-                        <strong className="font-bold">{item.meaning}</strong>
+                        <strong className="font-bold">{parsedMeaning.text}</strong>
                       </div>
                     )}
 

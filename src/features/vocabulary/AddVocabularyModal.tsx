@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { X, Plus, Sparkles, Loader2, BookmarkPlus } from 'lucide-react'
 import type { VocabularyItem } from '../../types'
 import { translateToVietnamese } from '../../lib/translation/translator'
+import {
+  POS_OPTIONS,
+  parseMeaningWithPos,
+  formatMeaningWithPos,
+} from '../../lib/translation/itOpsWordDictionary'
 
 interface AddVocabularyModalProps {
   isOpen: boolean
@@ -19,6 +24,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
   activeVideoId = '',
 }) => {
   const [word, setWord] = useState('')
+  const [partOfSpeech, setPartOfSpeech] = useState('')
   const [meaning, setMeaning] = useState('')
   const [contextSentence, setContextSentence] = useState('')
   const [contextSentenceTranslation, setContextSentenceTranslation] = useState('')
@@ -28,6 +34,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setWord('')
+      setPartOfSpeech('')
       setMeaning('')
       setContextSentence('')
       setContextSentenceTranslation('')
@@ -41,7 +48,11 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
     setIsTranslating(true)
     try {
       const transWord = await translateToVietnamese(word.trim())
-      if (transWord) setMeaning(transWord)
+      if (transWord) {
+        const parsed = parseMeaningWithPos(transWord)
+        if (parsed.pos) setPartOfSpeech(parsed.pos)
+        setMeaning(parsed.text)
+      }
 
       if (contextSentence.trim() && !contextSentenceTranslation.trim()) {
         const transSentence = await translateToVietnamese(contextSentence.trim())
@@ -58,10 +69,12 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
     e.preventDefault()
     if (!word.trim()) return
 
+    const formattedMeaning = formatMeaningWithPos(partOfSpeech, meaning)
+
     const newItem: VocabularyItem = {
       id: `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       word: word.trim(),
-      meaning: meaning.trim() || undefined,
+      meaning: formattedMeaning || undefined,
       contextSentence: contextSentence.trim() || `Example with ${word.trim()}`,
       contextSentenceTranslation: contextSentenceTranslation.trim() || undefined,
       timestamp: 0,
@@ -143,17 +156,40 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Vietnamese Meaning:
-            </label>
-            <input
-              type="text"
-              value={meaning}
-              onChange={(e) => setMeaning(e.target.value)}
-              placeholder="e.g. xác định, đột phá, kiên trì..."
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label
+                htmlFor="vocab-pos-select"
+                className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+              >
+                Dạng từ (Word Type):
+              </label>
+              <select
+                id="vocab-pos-select"
+                value={partOfSpeech}
+                onChange={(e) => setPartOfSpeech(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
+              >
+                {POS_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'none'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Vietnamese Meaning:
+              </label>
+              <input
+                type="text"
+                value={meaning}
+                onChange={(e) => setMeaning(e.target.value)}
+                placeholder="e.g. xác định, đột phá, kiên trì..."
+                className="w-full px-3.5 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white"
+              />
+            </div>
           </div>
 
           <div>

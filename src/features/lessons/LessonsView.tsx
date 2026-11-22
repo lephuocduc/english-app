@@ -9,12 +9,10 @@ import {
   ExternalLink,
   Plus,
   Volume2,
-  Video,
   Download,
 } from 'lucide-react'
 import type { Lesson, UserLessonProgress } from '../../types'
 import { YouTubeImportForm } from '../youtube/YouTubeImportForm'
-import { TextToAudioForm } from '../audio/TextToAudioForm'
 import { isAudioLesson } from '../../lib/audio/textToLesson'
 import { DEFAULT_A2_B1_AUDIO_LESSONS } from '../../data/defaultAudioLessons'
 import { isLessonFinished } from '../../lib/dictation/resumeManager'
@@ -35,13 +33,11 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
   activeLessonId,
   onSelectLesson,
   onImportCustomVideo,
-  onCreateAudioLesson,
   onSeedDefaultAudioLessons,
   onDeleteVideo,
   allProgressMap,
 }) => {
   const [videoToDelete, setVideoToDelete] = useState<Lesson | null>(null)
-  const [createMode, setCreateMode] = useState<'youtube' | 'audio'>('youtube')
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'audio-a2' | 'audio-b1' | 'youtube'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'uncompleted' | 'completed'>('uncompleted')
 
@@ -108,11 +104,8 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
             <span>YouTube Video &amp; Audio TTS Library</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            YouTube Dictation &amp; Text-to-Audio Lessons
+            YouTube Dictation &amp; Audio Lessons
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Paste any YouTube link or convert your own English passages into spoken audio (with Phone Call Challenge Mode) and train dictation reflexes.
-          </p>
         </div>
 
         {onSeedDefaultAudioLessons && missingPresetAudioCount > 0 && (
@@ -127,53 +120,14 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
         )}
       </div>
 
-      {/* Add Lesson Section: Switch between YouTube Video & Text-to-Audio Studio */}
+      {/* Add YouTube Video Section */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
-            <Plus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <span>
-              {createMode === 'youtube'
-                ? 'Add New YouTube Video'
-                : 'Tạo Bài Nghe Audio Từ Văn Bản (Text-to-Audio)'}
-            </span>
-          </div>
-
-          {onCreateAudioLesson && (
-            <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-              <button
-                type="button"
-                onClick={() => setCreateMode('youtube')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
-                  createMode === 'youtube'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Video className="w-3.5 h-3.5" />
-                <span>YouTube Link</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreateMode('audio')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
-                  createMode === 'audio'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Volume2 className="w-3.5 h-3.5" />
-                <span>Tạo Audio từ Text</span>
-              </button>
-            </div>
-          )}
+        <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+          <Plus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <span>Add New YouTube Video</span>
         </div>
 
-        {createMode === 'audio' && onCreateAudioLesson ? (
-          <TextToAudioForm onCreateAudioLesson={onCreateAudioLesson} />
-        ) : (
-          <YouTubeImportForm onImportVideo={onImportCustomVideo} />
-        )}
+        <YouTubeImportForm onImportVideo={onImportCustomVideo} />
       </div>
 
       {/* Saved Videos & Audio Grid */}
@@ -228,7 +182,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Audio B1-B2 ({b1AudioCount})
+                  Audio B1 ({b1AudioCount})
                 </button>
               )}
               <button
@@ -261,7 +215,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                   {libraryFilter === 'audio-a2'
                     ? 'Audio A2-B1'
                     : libraryFilter === 'audio-b1'
-                      ? 'Audio B1-B2'
+                      ? 'Audio B1'
                       : libraryFilter === 'youtube'
                         ? 'YouTube'
                         : 'Tất cả'}
@@ -330,7 +284,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               {statusFilter !== 'all'
                 ? 'Hãy chuyển bộ lọc trạng thái để xem các bài học khác trong thư viện.'
-                : 'Paste a YouTube link or switch to Text-to-Audio above to add your first lesson.'}
+                : 'Paste a YouTube link above to add your first video lesson.'}
             </p>
           </div>
         ) : (
@@ -388,7 +342,7 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                             ? 'A2-B1'
                             : lesson.level === 'Advanced'
                               ? 'C1'
-                              : 'B1-B2'}
+                              : 'B1'}
                         </span>
                         <span className="text-[10px] text-amber-300 font-sans font-semibold">
                           Phone Mode Ready

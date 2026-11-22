@@ -111,14 +111,6 @@ export const YouTubeImportForm: React.FC<YouTubeImportFormProps> = ({
             <span>Video loaded successfully!</span>
           </div>
         )}
-
-        {/* Informational note regarding YouTube playback & segments */}
-        <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-900 leading-relaxed">
-          <p className="font-semibold mb-0.5">Practice listening with any YouTube video:</p>
-          <p className="text-indigo-700">
-            Once loaded, videos stream via the official YouTube player. You can import or add sentence segments to practice looping, dictation, and get instant alignment feedback.
-          </p>
-        </div>
       </form>
     </div>
   )

@@ -4,37 +4,39 @@
  * with MyMemory as fallback and in-memory caching.
  */
 
+import { lookupContextualWord } from './itOpsWordDictionary'
+
 const translationCache = new Map<string, string>()
 
 // Pre-fill cache with common words for instant speed
 const COMMON_DICTIONARY: Record<string, string> = {
-  hello: 'xin chào',
-  hi: 'chào',
-  yes: 'có, vâng',
-  no: 'không',
-  thank: 'cảm ơn',
-  thanks: 'cảm ơn',
-  please: 'làm ơn, xin vui lòng',
-  good: 'tốt, hay',
-  great: 'tuyệt vời',
-  world: 'thế giới',
-  life: 'cuộc sống, cuộc đời',
-  time: 'thời gian',
-  day: 'ngày',
-  today: 'hôm nay',
-  story: 'câu chuyện',
-  stories: 'những câu chuyện',
-  connect: 'kết nối',
-  dots: 'các dấu chấm, điểm nối',
-  love: 'yêu, tình yêu',
-  loss: 'mất mát',
-  death: 'cái chết, sự qua đời',
-  stay: 'hãy ở lại, giữ vững',
-  hungry: 'khao khát, đói',
-  foolish: 'dại khờ, ngốc nghếch',
-  opportunity: 'cơ hội',
-  listen: 'lắng nghe',
-  practice: 'luyện tập',
+  hello: '(phr) xin chào',
+  hi: '(phr) chào',
+  yes: '(adv) có, vâng',
+  no: '(adv) không',
+  thank: '(v) cảm ơn',
+  thanks: '(n/v) cảm ơn',
+  please: '(adv) làm ơn, vui lòng',
+  good: '(adj) tốt, hay',
+  great: '(adj) tuyệt vời',
+  world: '(n) thế giới',
+  life: '(n) cuộc sống, cuộc đời',
+  time: '(n) thời gian',
+  day: '(n) ngày',
+  today: '(adv/n) hôm nay',
+  story: '(n) câu chuyện',
+  stories: '(n) những câu chuyện',
+  connect: '(v) kết nối',
+  dots: '(n) các dấu chấm, điểm nối',
+  love: '(v/n) yêu, tình yêu',
+  loss: '(n) mất mát',
+  death: '(n) cái chết, sự qua đời',
+  stay: '(v) giữ nguyên, ở lại',
+  hungry: '(adj) khao khát, đói',
+  foolish: '(adj) dại khờ, ngốc nghếch',
+  opportunity: '(n) cơ hội',
+  listen: '(v) lắng nghe',
+  practice: '(v/n) luyện tập',
 }
 
 /**
@@ -46,13 +48,20 @@ export function cleanWord(raw: string): string {
 }
 
 /**
- * Translates English text to Vietnamese
+ * Translates English text to Vietnamese.
+ * Single words check our hand-curated IT Ops contextual dictionary (with part of speech) first.
  */
 export async function translateToVietnamese(rawText: string): Promise<string> {
   const text = rawText.trim()
   if (!text) return ''
 
   const lower = text.toLowerCase()
+  const isSingleWord = !/\s/.test(lower)
+  if (isSingleWord) {
+    const contextual = lookupContextualWord(lower)
+    if (contextual) return contextual
+  }
+
   if (COMMON_DICTIONARY[lower]) {
     return COMMON_DICTIONARY[lower]
   }

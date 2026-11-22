@@ -21,6 +21,7 @@ import {
   speakSentence,
   createClozeSentence,
 } from '../../lib/srs/sm2'
+import { parseMeaningWithPos, POS_LABELS } from '../../lib/translation/itOpsWordDictionary'
 
 interface FlashcardReviewModalProps {
   isOpen: boolean
@@ -443,11 +444,22 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                   {/* Flipped Back Side: Vietnamese Meaning & Translation */}
                   {isFlipped ? (
                     <div className="space-y-3 pt-2 animate-fade-in">
-                      {currentCard.meaning && (
-                        <div className="inline-block px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-base sm:text-lg font-bold shadow-2xs">
-                          {currentCard.meaning}
-                        </div>
-                      )}
+                      {currentCard.meaning && (() => {
+                        const parsed = parseMeaningWithPos(currentCard.meaning)
+                        return (
+                          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-base sm:text-lg font-bold shadow-2xs">
+                            {parsed.pos && (
+                              <span
+                                title={POS_LABELS[parsed.pos] || parsed.pos}
+                                className="px-2 py-0.5 rounded-lg bg-violet-100 dark:bg-violet-900/70 text-violet-800 dark:text-violet-200 text-xs font-bold lowercase"
+                              >
+                                {parsed.pos}
+                              </span>
+                            )}
+                            <span>{parsed.text}</span>
+                          </div>
+                        )
+                      })()}
 
                       {currentCard.contextSentenceTranslation && (
                         <p className="text-xs sm:text-sm text-emerald-700 dark:text-emerald-400 italic max-w-lg mx-auto">
