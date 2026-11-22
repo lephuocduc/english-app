@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { isLessonFinished } from '../lib/dictation/resumeManager'
+import {
+  isLessonFinished,
+  selectHomeLessonId,
+  getNextUncompletedLesson,
+} from '../lib/dictation/resumeManager'
 import { CompletedLessonTranscript } from '../features/dictation/CompletedLessonTranscript'
 import { storage } from '../lib/storage/storage'
 import { App } from '../App'
@@ -226,6 +230,83 @@ describe('Completed Lesson Full Transcript Review', () => {
       expect(
         screen.getByText('Hệ thống giám sát cho thấy lưu lượng hiện đang ổn định.')
       ).toBeInTheDocument()
+    })
+
+    it('selects in-progress lesson on home page or advances to the next uncompleted lesson when current is done', () => {
+      const lesson2: Lesson = {
+        ...sampleLesson,
+        id: 'lesson-audio-test-next',
+        videoId: 'audio-test-next',
+        title: 'Next IT Ops Lesson',
+        sentences: [
+          { id: 'seg-b1', startTime: 0, endTime: 4, text: 'Second lesson first line.' },
+          { id: 'seg-b2', startTime: 4, endTime: 8, text: 'Second lesson second line.' },
+        ],
+      }
+      const lesson3: Lesson = {
+        ...sampleLesson,
+        id: 'lesson-audio-test-third',
+        videoId: 'audio-test-third',
+        title: 'Third IT Ops Lesson',
+        sentences: [
+          { id: 'seg-c1', startTime: 0, endTime: 4, text: 'Third lesson first line.' },
+          { id: 'seg-c2', startTime: 4, endTime: 8, text: 'Third lesson second line.' },
+        ],
+      }
+      const lessons = [sampleLesson, lesson2, lesson3]
+
+      // 1) When lesson 1 is finished and saved as active, home page advances to lesson 2
+      const doneFirstProgress = {
+        [sampleLesson.id]: {
+          lessonId: sampleLesson.id,
+          updatedAt: new Date().toISOString(),
+          sentenceProgress: {
+            'seg-a1': {
+              sentenceId: 'seg-a1',
+              userInput: 'ok',
+              score: 100,
+              isRevealed: false,
+              attempts: 1,
+              completed: true,
+              lastAttemptAt: new Date().toISOString(),
+            },
+            'seg-a2': {
+              sentenceId: 'seg-a2',
+              userInput: 'ok',
+              score: 100,
+              isRevealed: false,
+              attempts: 1,
+              completed: true,
+              lastAttemptAt: new Date().toISOString(),
+            },
+          },
+        },
+      }
+      expect(selectHomeLessonId(lessons, doneFirstProgress, sampleLesson.id)).toBe(lesson2.id)
+      expect(getNextUncompletedLesson(lessons, doneFirstProgress, sampleLesson.id)?.id).toBe(
+        lesson2.id
+      )
+
+      // 2) When lesson 3 is in progress (1/2), home page resumes lesson 3 even if lesson 1 was saved
+      const withInProgress = {
+        ...doneFirstProgress,
+        [lesson3.id]: {
+          lessonId: lesson3.id,
+          updatedAt: new Date().toISOString(),
+          sentenceProgress: {
+            'seg-c1': {
+              sentenceId: 'seg-c1',
+              userInput: 'ok',
+              score: 100,
+              isRevealed: false,
+              attempts: 1,
+              completed: true,
+              lastAttemptAt: new Date().toISOString(),
+            },
+          },
+        },
+      }
+      expect(selectHomeLessonId(lessons, withInProgress, sampleLesson.id)).toBe(lesson3.id)
     })
   })
 })

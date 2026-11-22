@@ -55,30 +55,38 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
     })
   })
 
-  describe('2. 16 IT System Operations Audio Conversations (6 A2-B1 + 10 B1-B2, ~1 minute each)', () => {
-    it('provides 6 A2-B1 and 10 B1-B2 UK-default IT Ops conversations with translations, hints, and ~1-minute duration', () => {
+  describe('2. 16 IT System Operations Audio Conversations (6 A2-B1 ~1m + 10 B1 ~2m)', () => {
+    it('provides 6 A2-B1 (~1m) and 10 B1 (~2m) UK-default IT Ops conversations with translations and hints', () => {
       expect(DEFAULT_A2_B1_AUDIO_LESSONS).toHaveLength(6)
       for (const lesson of DEFAULT_A2_B1_AUDIO_LESSONS) {
         expect(lesson.level).toBe('Beginner')
         expect(lesson.id).toMatch(/^lesson-audio-itops-a2-\d{2}$/)
         expect(lesson.voiceAccent).toBe('en-GB')
+        const totalDuration = lesson.sentences[lesson.sentences.length - 1].endTime
+        expect(totalDuration).toBeGreaterThanOrEqual(40)
+        expect(totalDuration).toBeLessThanOrEqual(75)
       }
 
       expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(16)
+      const b1Lessons = DEFAULT_B1_B2_AUDIO_LESSONS.filter((l) => l.level === 'Intermediate')
+      expect(b1Lessons).toHaveLength(10)
+
+      for (const lesson of b1Lessons) {
+        expect(lesson.id).toMatch(/^lesson-audio-itops-b1-\d{2}$/)
+        expect(lesson.videoId).toMatch(/^audio-itops-b1-\d{2}$/)
+        expect(lesson.sentences.length).toBeGreaterThanOrEqual(16)
+        const totalDuration = lesson.sentences[lesson.sentences.length - 1].endTime
+        // Each new B1 lesson targets ~2 minutes (95s to 150s)
+        expect(totalDuration).toBeGreaterThanOrEqual(95)
+        expect(totalDuration).toBeLessThanOrEqual(150)
+      }
 
       for (const lesson of DEFAULT_B1_B2_AUDIO_LESSONS) {
         expect(isAudioLesson(lesson)).toBe(true)
-        expect(lesson.id).toMatch(/^lesson-audio-itops-(?:a2-)?\d{2}$/)
-        expect(lesson.videoId).toMatch(/^audio-itops-(?:a2-)?\d{2}$/)
         expect(lesson.videoId.length).toBeLessThanOrEqual(32)
         expect(lesson.voiceAccent).toBe('en-GB')
         expect(['Beginner', 'Intermediate']).toContain(lesson.level)
         expect(lesson.sentences.length).toBeGreaterThanOrEqual(8)
-
-        const totalDuration = lesson.sentences[lesson.sentences.length - 1].endTime
-        // Each lesson targets ~1 minute (40s to 75s)
-        expect(totalDuration).toBeGreaterThanOrEqual(40)
-        expect(totalDuration).toBeLessThanOrEqual(75)
 
         for (const seg of lesson.sentences) {
           expect(seg.text.trim().length).toBeGreaterThan(10)

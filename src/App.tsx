@@ -53,6 +53,8 @@ import {
   getMaxUnlockedIndex,
   getResumeSegmentIndex,
   isLessonFinished,
+  selectHomeLessonId,
+  getNextUncompletedLesson,
 } from './lib/dictation/resumeManager'
 import type { StreakData, VoiceAccent } from './types'
 
@@ -111,22 +113,32 @@ export function App() {
     }
   }, [])
 
+  const hasUserManuallySelectedLessonRef = useRef(false)
+
   const [activeLessonId, setActiveLessonId] = useState<string>(() => {
     const savedId = storage.loadActiveLessonId()
     const initialList = storage.loadVideos() || defaultInitialLessons
-    return savedId && initialList.some((l) => l.id === savedId)
-      ? savedId
-      : initialList[0]?.id || ''
+    const initialProgressMap: Record<string, UserLessonProgress> = {}
+    initialList.forEach((l) => {
+      const prog = storage.loadLessonProgress(l.id)
+      if (prog) initialProgressMap[l.id] = prog
+    })
+    return selectHomeLessonId(initialList, initialProgressMap, savedId)
   })
 
   // Selected sentence segment index (intelligently resumes where left off or next uncompleted sentence)
   const [activeSegmentIndex, setActiveSegmentIndex] = useState<number>(() => {
     const savedId = storage.loadActiveLessonId()
-    const initialList = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
-    const lesson = savedId ? initialList.find((l) => l.id === savedId) : initialList[0]
+    const initialList = storage.loadVideos() || defaultInitialLessons
+    const initialProgressMap: Record<string, UserLessonProgress> = {}
+    initialList.forEach((l) => {
+      const prog = storage.loadLessonProgress(l.id)
+      if (prog) initialProgressMap[l.id] = prog
+    })
+    const pickedId = selectHomeLessonId(initialList, initialProgressMap, savedId)
+    const lesson = initialList.find((l) => l.id === pickedId) || initialList[0]
     if (!lesson) return 0
-    const prog = storage.loadLessonProgress(lesson.id)
-    return getResumeSegmentIndex(lesson, prog)
+    return getResumeSegmentIndex(lesson, initialProgressMap[lesson.id])
   })
   const activeSegmentIndexRef = useRef<number>(0)
   useEffect(() => {
@@ -272,6 +284,11 @@ export function App() {
     [activeLesson?.sentences, activeLessonProgress]
   )
 
+  const nextUncompletedLesson = useMemo(
+    () => getNextUncompletedLesson(videosList, allLessonsProgress, activeLesson?.id),
+    [videosList, allLessonsProgress, activeLesson?.id]
+  )
+
   const handleJumpToFullTranscript = useCallback(() => {
     const el = document.getElementById('full-transcript-review')
     if (el && typeof el.scrollIntoView === 'function') {
@@ -280,7 +297,7 @@ export function App() {
   }, [])
 
   // Refresh all state from local storage after cloud sync
-  const refreshAllData = useCallback(() => {
+  const refreshAllData = useCallback((autoSelectHomeLesson = false) => {
     const freshVideos = storage.loadVideos() || DEFAULT_YOUTUBE_VIDEOS
     setVideosList(freshVideos)
     setVocabularyList(storage.loadVocabulary())
@@ -291,6 +308,20 @@ export function App() {
       if (prog) map[l.id] = prog
     })
     setAllLessonsProgress(map)
+
+    if (autoSelectHomeLesson && !hasUserManuallySelectedLessonRef.current && freshVideos.length > 0) {
+      const recommendedId = selectHomeLessonId(freshVideos, map, storage.loadActiveLessonId())
+      if (recommendedId) {
+        const targetLesson = freshVideos.find((l) => l.id === recommendedId)
+        setActiveLessonId(recommendedId)
+        storage.saveActiveLessonId(recommendedId)
+        if (targetLesson) {
+          const nextIdx = getResumeSegmentIndex(targetLesson, map[recommendedId])
+          activeSegmentIndexRef.current = nextIdx
+          setActiveSegmentIndex(nextIdx)
+        }
+      }
+    }
   }, [])
 
   // Auto-sync with Cloudflare D1 on initial load (100% Cloud-First)
@@ -343,7 +374,7 @@ export function App() {
       .syncWithCloud()
       .then(() => {
         if (isMounted) {
-          refreshAllData()
+          refreshAllData(true)
         }
       })
       .catch(() => { })
@@ -700,6 +731,7 @@ export function App() {
 
   // Select another lesson and automatically resume to the next uncompleted sentence
   const handleSelectLesson = (lessonId: string) => {
+    hasUserManuallySelectedLessonRef.current = true
     audioPlayer.stopAudio()
     setActiveLessonId(lessonId)
     storage.saveActiveLessonId(lessonId)
@@ -712,6 +744,7 @@ export function App() {
 
   // Save a user-created Text-to-Audio lesson to local storage & Cloudflare D1
   const handleCreateAudioLesson = (lesson: Lesson) => {
+    hasUserManuallySelectedLessonRef.current = true
     const updated = storage.addVideo(lesson)
     setVideosList(updated)
     setActiveLessonId(lesson.id)
@@ -1797,6 +1830,12 @@ export function App() {
                       savedProgressMap={activeLessonProgress}
                       onSelectSegment={handleSelectSegment}
                       onBookmarkVocabulary={handleBookmarkVocabulary}
+                      nextLessonTitle={nextUncompletedLesson?.title}
+                      onGoToNextLesson={
+                        nextUncompletedLesson
+                          ? () => handleSelectLesson(nextUncompletedLesson.id)
+                          : undefined
+                      }
                     />
                   )}
 

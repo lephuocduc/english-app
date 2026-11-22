@@ -110,3 +110,97 @@ export function isLessonFinished(
   })
 }
 
+function hasAnyLessonProgress(
+  sentences?: SentenceSegment[],
+  sentenceProgress?: Record<string, UserSentenceProgress> | null
+): boolean {
+  if (!sentences || sentences.length === 0 || !sentenceProgress) {
+    return false
+  }
+  return sentences.some((s) => {
+    const p = sentenceProgress[s.id]
+    return Boolean(
+      p?.completed ||
+        (p?.score ?? 0) >= 80 ||
+        p?.isRevealed ||
+        p?.userInput?.trim() ||
+        (p?.attempts ?? 0) > 0
+    )
+  })
+}
+
+/**
+ * Returns the next uncompleted lesson after `currentLessonId` (wrapping around), or null if all are finished.
+ */
+export function getNextUncompletedLesson(
+  lessons: Lesson[],
+  progressMap: Record<string, UserLessonProgress | undefined>,
+  currentLessonId?: string | null
+): Lesson | null {
+  if (!lessons || lessons.length === 0) return null
+
+  const startIndex = currentLessonId ? lessons.findIndex((l) => l.id === currentLessonId) : -1
+  for (let offset = 1; offset <= lessons.length; offset++) {
+    const idx = (startIndex + offset) % lessons.length
+    const candidate = lessons[idx]
+    if (!candidate) continue
+    if (candidate.id === currentLessonId && lessons.length > 1) continue
+    if (!isLessonFinished(candidate.sentences, progressMap[candidate.id]?.sentenceProgress)) {
+      return candidate
+    }
+  }
+  return null
+}
+
+/**
+ * Selects the best lesson to display on the Home / Practice page:
+ * 1) A lesson currently in progress (started, not yet finished) — preferring savedActiveLessonId if it is in progress.
+ * 2) If savedActiveLessonId is already finished, advance to the next uncompleted lesson.
+ * 3) Otherwise keep savedActiveLessonId if uncompleted, or pick the first uncompleted lesson.
+ * 4) Fallback to lessons[0] if every lesson is completed.
+ */
+export function selectHomeLessonId(
+  lessons: Lesson[],
+  progressMap: Record<string, UserLessonProgress | undefined>,
+  savedActiveLessonId?: string | null
+): string {
+  if (!lessons || lessons.length === 0) return ''
+
+  const isInProgress = (l: Lesson): boolean => {
+    const sp = progressMap[l.id]?.sentenceProgress
+    return hasAnyLessonProgress(l.sentences, sp) && !isLessonFinished(l.sentences, sp)
+  }
+
+  const savedLesson = savedActiveLessonId
+    ? lessons.find((l) => l.id === savedActiveLessonId)
+    : undefined
+
+  // 1. Saved lesson is currently in progress -> resume it
+  if (savedLesson && isInProgress(savedLesson)) {
+    return savedLesson.id
+  }
+
+  // 2. Any other lesson is currently in progress -> resume it
+  const anyInProgress = lessons.find((l) => isInProgress(l))
+  if (anyInProgress) {
+    return anyInProgress.id
+  }
+
+  // 3. Saved lesson is already finished -> advance to next uncompleted lesson
+  if (savedLesson && isLessonFinished(savedLesson.sentences, progressMap[savedLesson.id]?.sentenceProgress)) {
+    const next = getNextUncompletedLesson(lessons, progressMap, savedLesson.id)
+    return next ? next.id : savedLesson.id
+  }
+
+  // 4. Saved lesson exists and is not finished -> keep it
+  if (savedLesson) {
+    return savedLesson.id
+  }
+
+  // 5. Pick first uncompleted lesson, or fallback to first lesson
+  const firstUncompleted = lessons.find(
+    (l) => !isLessonFinished(l.sentences, progressMap[l.id]?.sentenceProgress)
+  )
+  return firstUncompleted ? firstUncompleted.id : lessons[0].id
+}
+

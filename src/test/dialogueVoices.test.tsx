@@ -64,20 +64,20 @@ describe('Dialogue Multi-Speaker Voice Differentiation', () => {
         expect(info.speakers.length).toBeGreaterThanOrEqual(2)
       }
 
-      // Check Lesson 02 where [Infra] has consecutive turns at index 5 & 6
-      const sslLesson = DEFAULT_B1_B2_AUDIO_LESSONS.find(
-        (l) => l.id === 'lesson-audio-itops-02'
+      // Check B1 Lesson 02 where [Network Eng] has consecutive turns at index 3, 4, 5
+      const vpnLesson = DEFAULT_B1_B2_AUDIO_LESSONS.find(
+        (l) => l.id === 'lesson-audio-itops-b1-02'
       )!
-      const sslMap = buildLessonSpeakerMap(sslLesson.sentences)
-      const turn5 = sslMap.bySegmentId[sslLesson.sentences[4].id]
-      const turn6 = sslMap.bySegmentId[sslLesson.sentences[5].id]
-      const turn7 = sslMap.bySegmentId[sslLesson.sentences[6].id]
+      const vpnMap = buildLessonSpeakerMap(vpnLesson.sentences)
+      const turn3 = vpnMap.bySegmentId[vpnLesson.sentences[2].id]
+      const turn4 = vpnMap.bySegmentId[vpnLesson.sentences[3].id]
+      const turn5 = vpnMap.bySegmentId[vpnLesson.sentences[4].id]
 
-      expect(turn5.speaker).toBe('Helpdesk')
-      expect(turn6.speaker).toBe('Infra')
-      expect(turn7.speaker).toBe('Infra')
-      expect(turn6.speakerIndex).toBe(turn7.speakerIndex)
-      expect(turn5.speakerIndex).not.toBe(turn6.speakerIndex)
+      expect(turn3.speaker).toBe('Branch Support')
+      expect(turn4.speaker).toBe('Network Eng')
+      expect(turn5.speaker).toBe('Network Eng')
+      expect(turn4.speakerIndex).toBe(turn5.speakerIndex)
+      expect(turn3.speakerIndex).not.toBe(turn4.speakerIndex)
     })
   })
 

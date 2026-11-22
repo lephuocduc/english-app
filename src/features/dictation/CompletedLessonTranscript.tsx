@@ -10,6 +10,7 @@ import {
   Languages,
   Volume2,
   BookmarkPlus,
+  ArrowRight,
 } from 'lucide-react'
 import type { Lesson, SentenceSegment, UserSentenceProgress } from '../../types'
 import { cleanWord } from '../../lib/translation/translator'
@@ -35,6 +36,8 @@ interface CompletedLessonTranscriptProps {
     meaning?: string,
     contextSentenceTranslation?: string
   ) => void
+  nextLessonTitle?: string
+  onGoToNextLesson?: () => void
 }
 
 function formatTime(secs: number): string {
@@ -50,6 +53,8 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
   savedProgressMap,
   onSelectSegment,
   onBookmarkVocabulary,
+  nextLessonTitle,
+  onGoToNextLesson,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true)
   const [viewMode, setViewMode] = useState<'lines' | 'passage'>('lines')
@@ -148,24 +153,38 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            aria-expanded={isExpanded}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shrink-0"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="w-3.5 h-3.5" />
-                <span>Thu gọn</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3.5 h-3.5" />
-                <span>Mở rộng</span>
-              </>
+          <div className="flex items-center gap-2 shrink-0">
+            {onGoToNextLesson && (
+              <button
+                type="button"
+                onClick={onGoToNextLesson}
+                title={nextLessonTitle ? `Chuyển sang bài tiếp theo: ${nextLessonTitle}` : 'Chuyển sang bài tiếp theo'}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition active:scale-95 cursor-pointer"
+              >
+                <span>Bài tiếp theo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              aria-expanded={isExpanded}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition cursor-pointer shrink-0"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  <span>Thu gọn</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  <span>Mở rộng</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Toolbar */}
