@@ -146,7 +146,9 @@ streakRouter.post('/record', async (c) => {
       const body = (await c.req.json()) as { localDate?: string }
       clientDate = parseLocalDateString(body?.localDate)
     } catch {
-      // Optional JSON body; fall back to query param or server clock
+      // Optional JSON body
+    }
+    if (!clientDate) {
       clientDate = parseLocalDateString(c.req.query('date'))
     }
 
@@ -228,9 +230,19 @@ streakRouter.put('/sync', async (c) => {
          ON CONFLICT(user_id) DO UPDATE SET
            current_streak = MAX(user_streaks.current_streak, excluded.current_streak),
            longest_streak = MAX(user_streaks.longest_streak, excluded.longest_streak),
-           last_active_date = COALESCE(excluded.last_active_date, user_streaks.last_active_date),
+           last_active_date = CASE
+             WHEN user_streaks.last_active_date IS NULL THEN excluded.last_active_date
+             WHEN excluded.last_active_date IS NULL THEN user_streaks.last_active_date
+             WHEN excluded.last_active_date >= user_streaks.last_active_date THEN excluded.last_active_date
+             ELSE user_streaks.last_active_date
+           END,
            freeze_used_dates = excluded.freeze_used_dates,
-           last_freeze_week = excluded.last_freeze_week,
+           last_freeze_week = CASE
+             WHEN user_streaks.last_freeze_week IS NULL THEN excluded.last_freeze_week
+             WHEN excluded.last_freeze_week IS NULL THEN user_streaks.last_freeze_week
+             WHEN excluded.last_freeze_week >= user_streaks.last_freeze_week THEN excluded.last_freeze_week
+             ELSE user_streaks.last_freeze_week
+           END,
            freeze_available = excluded.freeze_available,
            total_days_active = MAX(user_streaks.total_days_active, excluded.total_days_active),
            updated_at = datetime('now')`

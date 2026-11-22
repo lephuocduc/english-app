@@ -252,6 +252,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       fireEvent.click(ukBtn)
       expect(onChangeAccent).toHaveBeenCalledWith('en-GB')
 
+      const onChangePhoneCallLevel = vi.fn()
       rerender(
         <AudioPlayerView
           lessonTitle="01. High CPU Alert & Memory Leak Triage (IT Ops)"
@@ -260,7 +261,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
           isLoadingAudio={false}
           isLooping={false}
           isPhoneCallMode={true}
-          hasLeadIn={true}
+          phoneCallLevel={1}
           usingFallbackSpeech={true}
           fallbackAccentMissing={true}
           audioError={null}
@@ -277,17 +278,21 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
           onTogglePlayPause={vi.fn()}
           onToggleLoop={vi.fn()}
           onTogglePhoneCallMode={onTogglePhoneCallMode}
-          onToggleLeadIn={vi.fn()}
+          onChangePhoneCallLevel={onChangePhoneCallLevel}
           onChangeSpeed={vi.fn()}
           onChangeAccent={onChangeAccent}
         />
       )
 
-      expect(screen.getByText('Phone Filter 320Hz–3.2kHz')).toBeInTheDocument()
+      expect(screen.getByText(/Phone Lv 1 • 320Hz–3\.2kHz/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Phone Mode/i })).toHaveAttribute(
         'aria-pressed',
         'true'
       )
+      fireEvent.click(screen.getByRole('button', { name: /^Lv 2$/i }))
+      expect(onChangePhoneCallLevel).toHaveBeenCalledWith(2)
+      fireEvent.click(screen.getByRole('button', { name: /^Lv 3$/i }))
+      expect(onChangePhoneCallLevel).toHaveBeenCalledWith(3)
       expect(screen.getByRole('button', { name: 'UK' })).toHaveAttribute('aria-pressed', 'true')
       expect(screen.getByRole('button', { name: 'US' })).toHaveAttribute('aria-pressed', 'false')
       expect(screen.getByText(/Browser Voice \(thiếu giọng UK — cần \/api\/tts\)/i)).toBeInTheDocument()

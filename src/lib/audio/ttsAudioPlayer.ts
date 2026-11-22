@@ -1,4 +1,4 @@
-import type { VoiceAccent } from '../../types'
+import type { PhoneCallLevel, VoiceAccent } from '../../types'
 import { apiClient } from '../api/client'
 import { getSpeakerVoiceProfile } from './dialogueVoices'
 import { pitchShiftAudioBuffer, timeStretchAudioBuffer } from './voicePitchShift'
@@ -10,12 +10,85 @@ export interface PlayAudioSegmentOptions {
   speakerIndex?: number
   leadInSpeakerIndex?: number
   isPhoneCallMode?: boolean
+  phoneCallLevel?: PhoneCallLevel
   leadInText?: string
   loop?: boolean
   onStart?: () => void
   onEnd?: () => void
   onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
   onError?: (msg: string) => void
+}
+
+export interface PhoneModePreset {
+  level: PhoneCallLevel
+  label: string
+  shortLabel: string
+  bandLabel: string
+  highpassHz: number
+  lowpassHz: number
+  midFreqHz: number
+  midGainDb: number
+  distortion: number
+  noiseGain: number
+  compressorThreshold: number
+  compressorRatio: number
+  masterGain: number
+  wobbleHz: number
+  wobbleDepth: number
+}
+
+export const PHONE_MODE_PRESETS: Record<PhoneCallLevel, PhoneModePreset> = {
+  1: {
+    level: 1,
+    label: 'Mức 1 (Tiêu chuẩn)',
+    shortLabel: 'Lv 1',
+    bandLabel: '320Hz–3.2kHz',
+    highpassHz: 320,
+    lowpassHz: 3200,
+    midFreqHz: 1250,
+    midGainDb: 5.0,
+    distortion: 14,
+    noiseGain: 0.014,
+    compressorThreshold: -22,
+    compressorRatio: 6,
+    masterGain: 1.15,
+    wobbleHz: 0,
+    wobbleDepth: 0,
+  },
+  2: {
+    level: 2,
+    label: 'Mức 2 (Sóng yếu)',
+    shortLabel: 'Lv 2',
+    bandLabel: '420Hz–2.5kHz',
+    highpassHz: 420,
+    lowpassHz: 2500,
+    midFreqHz: 1350,
+    midGainDb: 6.5,
+    distortion: 28,
+    noiseGain: 0.036,
+    compressorThreshold: -26,
+    compressorRatio: 9,
+    masterGain: 1.25,
+    wobbleHz: 3.5,
+    wobbleDepth: 0.14,
+  },
+  3: {
+    level: 3,
+    label: 'Mức 3 (Chập chờn)',
+    shortLabel: 'Lv 3',
+    bandLabel: '520Hz–2.0kHz',
+    highpassHz: 520,
+    lowpassHz: 2050,
+    midFreqHz: 1450,
+    midGainDb: 8.0,
+    distortion: 48,
+    noiseGain: 0.068,
+    compressorThreshold: -30,
+    compressorRatio: 12,
+    masterGain: 1.35,
+    wobbleHz: 5.5,
+    wobbleDepth: 0.28,
+  },
 }
 
 const HIGH_QUALITY_VOICE_HINTS = [
@@ -152,6 +225,25 @@ function selectBestSpeechVoice(
 }
 
 const bufferCache = new Map<string, AudioBuffer>()
+const rawBlobCache = new Map<string, Blob>()
+
+function decodeAudioDataCompat(ctx: AudioContext, arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
+  const copy = arrayBuffer.slice(0)
+  return new Promise((resolve, reject) => {
+    try {
+      const maybePromise = ctx.decodeAudioData(
+        copy,
+        (decoded) => resolve(decoded),
+        (err) => reject(err || new Error('decodeAudioData failed'))
+      )
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.then(resolve, reject)
+      }
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
 
 function createPhoneDistortionCurve(amount = 16): Float32Array<ArrayBuffer> {
   const samples = 44100
@@ -170,7 +262,6 @@ function createLineNoiseBuffer(ctx: AudioContext, durationSec = 2): AudioBuffer 
   const buffer = ctx.createBuffer(1, length, sampleRate)
   const data = buffer.getChannelData(0)
   for (let i = 0; i < length; i++) {
-    // Subtle pink-ish telephone line hiss
     data[i] = (Math.random() * 2 - 1) * 0.5
   }
   return buffer
@@ -181,10 +272,60 @@ export class TtsAudioEngine {
   private activeSource: AudioBufferSourceNode | null = null
   private leadInSource: AudioBufferSourceNode | null = null
   private noiseSource: AudioBufferSourceNode | null = null
+  private wobbleOsc: OscillatorNode | null = null
+  private activeHtmlAudio: HTMLAudioElement | null = null
+  private activeBlobUrl: string | null = null
   private outputGain: GainNode | null = null
   private playbackToken = 0
-  private phoneCurve: Float32Array<ArrayBuffer> | null = null
+  private phoneCurves = new Map<number, Float32Array<ArrayBuffer>>()
   private lineNoiseBuffer: AudioBuffer | null = null
+  private isUnlocked = false
+  private unlockListenersBound = false
+
+  constructor() {
+    this.bindMobileUnlockListeners()
+  }
+
+  private bindMobileUnlockListeners(): void {
+    if (this.unlockListenersBound || typeof window === 'undefined') return
+    this.unlockListenersBound = true
+    const handleGesture = () => {
+      this.unlockAudio()
+      if (this.isUnlocked) {
+        window.removeEventListener('touchstart', handleGesture)
+        window.removeEventListener('pointerdown', handleGesture)
+        window.removeEventListener('click', handleGesture)
+      }
+    }
+    window.addEventListener('touchstart', handleGesture, { passive: true })
+    window.addEventListener('pointerdown', handleGesture, { passive: true })
+    window.addEventListener('click', handleGesture, { passive: true })
+  }
+
+  unlockAudio(): AudioContext | null {
+    const ctx = this.getAudioContext()
+    if (!ctx) return null
+    try {
+      if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') {
+        void ctx.resume().catch(() => {})
+      }
+      if (
+        !this.isUnlocked &&
+        typeof ctx.createBuffer === 'function' &&
+        typeof ctx.createBufferSource === 'function'
+      ) {
+        const silentBuf = ctx.createBuffer(1, 1, 22050)
+        const src = ctx.createBufferSource()
+        src.buffer = silentBuf
+        src.connect(ctx.destination)
+        src.start(0)
+        this.isUnlocked = true
+      }
+    } catch {
+      // ignore unlock errors
+    }
+    return ctx
+  }
 
   private getAudioContext(): AudioContext | null {
     if (typeof window === 'undefined') return null
@@ -192,10 +333,11 @@ export class TtsAudioEngine {
       window.AudioContext ||
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioCtx) return null
-    if (!this.ctx) {
+    if (!this.ctx || this.ctx.state === 'closed') {
       this.ctx = new AudioCtx()
+      this.isUnlocked = false
     }
-    if (this.ctx.state === 'suspended') {
+    if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
       void this.ctx.resume().catch(() => {})
     }
     return this.ctx
@@ -203,45 +345,48 @@ export class TtsAudioEngine {
 
   private createDestinationChain(
     ctx: AudioContext,
-    isPhoneCallMode: boolean
-  ): { inputNode: AudioNode; noiseTarget: AudioNode | null } {
+    isPhoneCallMode: boolean,
+    phoneCallLevel: PhoneCallLevel = 1
+  ): { inputNode: AudioNode; noiseTarget: AudioNode | null; preset: PhoneModePreset } {
+    const preset = PHONE_MODE_PRESETS[phoneCallLevel] || PHONE_MODE_PRESETS[1]
     const masterGain = ctx.createGain()
-    masterGain.gain.value = isPhoneCallMode ? 1.15 : 1.0
+    masterGain.gain.value = isPhoneCallMode ? preset.masterGain : 1.0
     masterGain.connect(ctx.destination)
     this.outputGain = masterGain
 
     if (!isPhoneCallMode) {
-      return { inputNode: masterGain, noiseTarget: null }
+      return { inputNode: masterGain, noiseTarget: null, preset }
     }
 
-    // Authentic PSTN / Mobile Phone Call Bandpass DSP (320Hz - 3200Hz)
     const highpass = ctx.createBiquadFilter()
     highpass.type = 'highpass'
-    highpass.frequency.value = 320
+    highpass.frequency.value = preset.highpassHz
     highpass.Q.value = 0.85
 
     const lowpass = ctx.createBiquadFilter()
     lowpass.type = 'lowpass'
-    lowpass.frequency.value = 3200
+    lowpass.frequency.value = preset.lowpassHz
     lowpass.Q.value = 0.85
 
     const midResonance = ctx.createBiquadFilter()
     midResonance.type = 'peaking'
-    midResonance.frequency.value = 1250
+    midResonance.frequency.value = preset.midFreqHz
     midResonance.Q.value = 1.3
-    midResonance.gain.value = 5.0
+    midResonance.gain.value = preset.midGainDb
 
     const shaper = ctx.createWaveShaper()
-    if (!this.phoneCurve) {
-      this.phoneCurve = createPhoneDistortionCurve(14)
+    let curve = this.phoneCurves.get(preset.distortion)
+    if (!curve) {
+      curve = createPhoneDistortionCurve(preset.distortion)
+      this.phoneCurves.set(preset.distortion, curve)
     }
-    shaper.curve = this.phoneCurve
+    shaper.curve = curve
     shaper.oversample = '2x'
 
     const compressor = ctx.createDynamicsCompressor()
-    compressor.threshold.value = -22
+    compressor.threshold.value = preset.compressorThreshold
     compressor.knee.value = 15
-    compressor.ratio.value = 6
+    compressor.ratio.value = preset.compressorRatio
     compressor.attack.value = 0.005
     compressor.release.value = 0.12
 
@@ -249,12 +394,41 @@ export class TtsAudioEngine {
     lowpass.connect(midResonance)
     midResonance.connect(shaper)
     shaper.connect(compressor)
-    compressor.connect(masterGain)
 
-    return { inputNode: highpass, noiseTarget: highpass }
+    if (preset.wobbleHz > 0 && preset.wobbleDepth > 0 && typeof ctx.createOscillator === 'function') {
+      try {
+        const wobbleGain = ctx.createGain()
+        wobbleGain.gain.value = 1.0 - preset.wobbleDepth * 0.5
+
+        const lfo = ctx.createOscillator()
+        lfo.type = 'sine'
+        lfo.frequency.value = preset.wobbleHz
+
+        const lfoDepth = ctx.createGain()
+        lfoDepth.gain.value = preset.wobbleDepth * 0.5
+
+        lfo.connect(lfoDepth)
+        lfoDepth.connect(wobbleGain.gain)
+        lfo.start()
+        this.wobbleOsc = lfo
+
+        compressor.connect(wobbleGain)
+        wobbleGain.connect(masterGain)
+      } catch {
+        compressor.connect(masterGain)
+      }
+    } else {
+      compressor.connect(masterGain)
+    }
+
+    return { inputNode: highpass, noiseTarget: highpass, preset }
   }
 
-  private startPhoneLineStatic(ctx: AudioContext, target: AudioNode): void {
+  private startPhoneLineStatic(
+    ctx: AudioContext,
+    target: AudioNode,
+    noiseLevel = 0.014
+  ): void {
     try {
       if (!this.lineNoiseBuffer) {
         this.lineNoiseBuffer = createLineNoiseBuffer(ctx, 2)
@@ -264,7 +438,7 @@ export class TtsAudioEngine {
       noise.loop = true
 
       const noiseGain = ctx.createGain()
-      noiseGain.gain.value = 0.014
+      noiseGain.gain.value = noiseLevel
 
       noise.connect(noiseGain)
       noiseGain.connect(target)
@@ -318,7 +492,11 @@ export class TtsAudioEngine {
           throw new Error('TTS returned empty audio data')
         }
 
-        baseBuffer = await ctx.decodeAudioData(arrayBuf)
+        if (typeof Blob !== 'undefined') {
+          rawBlobCache.set(baseCacheKey, new Blob([arrayBuf], { type: contentType || 'audio/mpeg' }))
+        }
+
+        baseBuffer = await decodeAudioDataCompat(ctx, arrayBuf)
         bufferCache.set(baseCacheKey, baseBuffer)
       }
 
@@ -384,9 +562,32 @@ export class TtsAudioEngine {
     } catch {
       // ignore
     }
+    try {
+      this.wobbleOsc?.stop()
+    } catch {
+      // ignore
+    }
+    if (this.activeHtmlAudio) {
+      try {
+        this.activeHtmlAudio.pause()
+        this.activeHtmlAudio.src = ''
+      } catch {
+        // ignore
+      }
+      this.activeHtmlAudio = null
+    }
+    if (this.activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      try {
+        URL.revokeObjectURL(this.activeBlobUrl)
+      } catch {
+        // ignore
+      }
+      this.activeBlobUrl = null
+    }
     this.activeSource = null
     this.leadInSource = null
     this.noiseSource = null
+    this.wobbleOsc = null
     if (this.outputGain) {
       try {
         this.outputGain.disconnect()
@@ -512,9 +713,69 @@ export class TtsAudioEngine {
     }
   }
 
+  private async playWithHtmlAudioFallback(
+    cleanText: string,
+    accent: VoiceAccent,
+    speed: number,
+    token: number,
+    onStart?: () => void,
+    onEnd?: () => void,
+    onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
+  ): Promise<boolean> {
+    if (typeof window === 'undefined' || typeof Audio === 'undefined') return false
+    try {
+      const baseCacheKey = `${accent}:::${cleanText}`
+      let blob = rawBlobCache.get(baseCacheKey)
+      if (!blob) {
+        const url = apiClient.getTtsAudioUrl(cleanText, accent)
+        const res = await fetch(url)
+        if (!res.ok) return false
+        const contentType = (res.headers?.get?.('content-type') || '').toLowerCase()
+        if (contentType.includes('text/html') || contentType.includes('application/json')) {
+          return false
+        }
+        blob = await res.blob()
+        if (blob.size < 64) return false
+        rawBlobCache.set(baseCacheKey, blob)
+      }
+      if (this.playbackToken !== token) return false
+
+      const blobUrl = URL.createObjectURL(blob)
+      this.activeBlobUrl = blobUrl
+      const audioEl = new Audio(blobUrl)
+      audioEl.playbackRate = Math.min(2.0, Math.max(0.5, speed))
+      this.activeHtmlAudio = audioEl
+
+      audioEl.onended = () => {
+        if (this.playbackToken !== token) return
+        this.activeHtmlAudio = null
+        onEnd?.()
+      }
+      audioEl.onerror = () => {
+        if (this.playbackToken !== token) return
+        this.activeHtmlAudio = null
+        onEnd?.()
+      }
+
+      await audioEl.play()
+      if (this.playbackToken !== token) {
+        audioEl.pause()
+        return false
+      }
+      onFallbackUsed?.(false)
+      onStart?.()
+      return true
+    } catch {
+      return false
+    }
+  }
+
   async playSegment(options: PlayAudioSegmentOptions): Promise<void> {
     this.stop()
     const token = this.playbackToken
+
+    // Unlock AudioContext synchronously inside tap/click gesture for iOS Safari & Android Chrome
+    const unlockedCtx = this.unlockAudio()
 
     const {
       text,
@@ -523,6 +784,7 @@ export class TtsAudioEngine {
       speakerIndex = 0,
       leadInSpeakerIndex,
       isPhoneCallMode = false,
+      phoneCallLevel = 1,
       leadInText,
       onStart,
       onEnd,
@@ -537,7 +799,7 @@ export class TtsAudioEngine {
     }
 
     try {
-      const ctx = this.getAudioContext()
+      const ctx = unlockedCtx || this.getAudioContext()
       if (!ctx) throw new Error('AudioContext unavailable')
 
       const effectiveLeadInSpeaker = leadInSpeakerIndex ?? speakerIndex
@@ -555,9 +817,36 @@ export class TtsAudioEngine {
 
       if (this.playbackToken !== token) return
 
-      const { inputNode, noiseTarget } = this.createDestinationChain(ctx, isPhoneCallMode)
+      if (ctx.state !== 'running') {
+        try {
+          await ctx.resume()
+        } catch {
+          // handled below
+        }
+      }
+
+      if (this.playbackToken !== token) return
+
+      if (ctx.state !== 'running') {
+        const htmlPlayed = await this.playWithHtmlAudioFallback(
+          cleanText,
+          accent,
+          speed,
+          token,
+          onStart,
+          onEnd,
+          onFallbackUsed
+        )
+        if (htmlPlayed) return
+      }
+
+      const { inputNode, noiseTarget, preset } = this.createDestinationChain(
+        ctx,
+        isPhoneCallMode,
+        phoneCallLevel
+      )
       if (isPhoneCallMode && noiseTarget) {
-        this.startPhoneLineStatic(ctx, noiseTarget)
+        this.startPhoneLineStatic(ctx, noiseTarget, preset.noiseGain)
       }
 
       onFallbackUsed?.(false)
@@ -566,8 +855,6 @@ export class TtsAudioEngine {
       const now = ctx.currentTime
       let mainStartAt = now
 
-      // Optional 1.0s audio lead-in from the tail of the previous sentence buffer
-      // (already pitch-preserving time-stretched to `speed`, so play at playbackRate = 1.0)
       if (leadInBuffer && leadInBuffer.duration > 0.3) {
         const leadInSrc = ctx.createBufferSource()
         leadInSrc.buffer = leadInBuffer
@@ -595,7 +882,13 @@ export class TtsAudioEngine {
         } catch {
           // ignore
         }
+        try {
+          this.wobbleOsc?.stop()
+        } catch {
+          // ignore
+        }
         this.noiseSource = null
+        this.wobbleOsc = null
         this.activeSource = null
         onEnd?.()
       }
@@ -603,6 +896,17 @@ export class TtsAudioEngine {
       mainSrc.start(mainStartAt)
     } catch (err) {
       if (this.playbackToken !== token) return
+      const htmlPlayed = await this.playWithHtmlAudioFallback(
+        cleanText,
+        accent,
+        speed,
+        token,
+        onStart,
+        onEnd,
+        onFallbackUsed
+      )
+      if (htmlPlayed) return
+
       const fallbackStarted = await this.playWithSpeechSynthesisFallback(options, token)
       if (!fallbackStarted) {
         const message = err instanceof Error ? err.message : 'Unable to play synthesized audio'

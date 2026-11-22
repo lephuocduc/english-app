@@ -51,7 +51,7 @@ describe('User Requested Features Tests', () => {
       )
 
       // Expected word count for "Stay hungry, stay foolish." is 4 words
-      expect(screen.getByText(/Hint: 4 words/i)).toBeInTheDocument()
+      expect(screen.getByText(/Typed: 0 \/ 4 words/i)).toBeInTheDocument()
       expect(screen.getByText(/This sentence has/i)).toBeInTheDocument()
 
       const textarea = screen.getByPlaceholderText(/Type what you hear \(4 words\)/i)

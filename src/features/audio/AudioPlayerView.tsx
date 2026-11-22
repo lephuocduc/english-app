@@ -11,7 +11,8 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react'
-import type { SentenceSegment, VoiceAccent } from '../../types'
+import type { PhoneCallLevel, SentenceSegment, VoiceAccent } from '../../types'
+import { PHONE_MODE_PRESETS } from '../../lib/audio/ttsAudioPlayer'
 
 interface AudioPlayerViewProps {
   lessonTitle: string
@@ -20,6 +21,7 @@ interface AudioPlayerViewProps {
   isLoadingAudio: boolean
   isLooping?: boolean
   isPhoneCallMode?: boolean
+  phoneCallLevel?: PhoneCallLevel
   hasLeadIn?: boolean
   usingFallbackSpeech?: boolean
   fallbackAccentMissing?: boolean
@@ -35,6 +37,7 @@ interface AudioPlayerViewProps {
   onTogglePlayPause: () => void
   onToggleLoop?: () => void
   onTogglePhoneCallMode?: () => void
+  onChangePhoneCallLevel?: (level: PhoneCallLevel) => void
   onToggleLeadIn?: () => void
   onChangeSpeed: (speed: number) => void
   onChangeAccent?: (accent: VoiceAccent) => void
@@ -72,7 +75,7 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   isLoadingAudio,
   isLooping = true,
   isPhoneCallMode = true,
-  hasLeadIn = false,
+  phoneCallLevel = 1,
   usingFallbackSpeech = false,
   fallbackAccentMissing = false,
   activeSpeaker,
@@ -87,11 +90,13 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   onTogglePlayPause,
   onToggleLoop,
   onTogglePhoneCallMode,
-  onToggleLeadIn,
+  onChangePhoneCallLevel,
   onChangeSpeed,
   onChangeAccent,
 }) => {
   const speeds = [0.75, 1.0, 1.25]
+  const phoneLevels: PhoneCallLevel[] = [1, 2, 3]
+  const activePhonePreset = PHONE_MODE_PRESETS[phoneCallLevel] || PHONE_MODE_PRESETS[1]
   const waveHeights = [26, 48, 72, 42, 86, 60, 34, 78, 52, 90, 44, 66, 36, 58, 30]
 
   const formatTime = (secs: number) => {
@@ -124,7 +129,9 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
           {isPhoneCallMode ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-bold animate-pulse">
               <PhoneCall className="w-3 h-3" />
-              <span>Phone Filter 320Hz–3.2kHz</span>
+              <span>
+                Phone {activePhonePreset.shortLabel} • {activePhonePreset.bandLabel}
+              </span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[11px] font-semibold">
@@ -333,26 +340,53 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {/* Phone Call Challenge Mode Toggle */}
+            {/* Phone Call Challenge Mode Toggle + Level Selector (1/2/3) */}
             {onTogglePhoneCallMode && (
-              <button
-                type="button"
-                onClick={onTogglePhoneCallMode}
-                aria-pressed={isPhoneCallMode}
-                title="Bật/tắt chế độ nghe qua điện thoại (lọc dải tần 320Hz–3.2kHz & nhiễu sóng nhẹ để tăng độ khó)"
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                  isPhoneCallMode
-                    ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 shadow-2xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300 hover:border-amber-200'
-                }`}
-              >
-                {isPhoneCallMode ? (
-                  <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
-                ) : (
-                  <Phone className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onTogglePhoneCallMode}
+                  aria-pressed={isPhoneCallMode}
+                  title={`Bật/tắt chế độ nghe qua điện thoại (${activePhonePreset.label})`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                    isPhoneCallMode
+                      ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 shadow-2xs'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300 hover:border-amber-200'
+                  }`}
+                >
+                  {isPhoneCallMode ? (
+                    <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
+                  ) : (
+                    <Phone className="w-3.5 h-3.5" />
+                  )}
+                  <span>Phone Mode</span>
+                </button>
+
+                {isPhoneCallMode && onChangePhoneCallLevel && (
+                  <div
+                    role="group"
+                    aria-label="Phone Mode difficulty level"
+                    className="inline-flex items-center bg-amber-50/80 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-0.5 shadow-2xs"
+                  >
+                    {phoneLevels.map((lv) => (
+                      <button
+                        key={lv}
+                        type="button"
+                        onClick={() => onChangePhoneCallLevel(lv)}
+                        aria-pressed={phoneCallLevel === lv}
+                        title={PHONE_MODE_PRESETS[lv].label}
+                        className={`px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                          phoneCallLevel === lv
+                            ? 'bg-amber-600 text-white shadow-2xs'
+                            : 'text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50'
+                        }`}
+                      >
+                        Lv {lv}
+                      </button>
+                    ))}
+                  </div>
                 )}
-                <span>Phone Mode</span>
-              </button>
+              </div>
             )}
 
             {/* Loop */}
@@ -370,23 +404,6 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
               >
                 <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'animate-spin-slow' : ''}`} />
                 <span>Loop</span>
-              </button>
-            )}
-
-            {/* 1s Context Lead-In */}
-            {onToggleLeadIn && (
-              <button
-                type="button"
-                onClick={onToggleLeadIn}
-                aria-pressed={hasLeadIn}
-                title="Nghe kèm 1 giây cuối câu trước đó để bắt nhịp liền mạch (Alt+P)"
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition cursor-pointer ${
-                  hasLeadIn
-                    ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 shadow-2xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <span>+1s Context</span>
               </button>
             )}
 

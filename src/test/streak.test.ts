@@ -4,6 +4,7 @@ import {
   getIsoWeekKey,
   createInitialStreak,
   evaluateStreakStatus,
+  mergeStreakData,
   recordSegmentCompleted,
 } from '../lib/streak/streakManager'
 
@@ -162,5 +163,37 @@ describe('Daily Streak & Streak Freeze Manager', () => {
     const nextMonday = new Date(2026, 10, 16, 10, 0, 0)
     const evalNextWeek = evaluateStreakStatus(streak, nextMonday)
     expect(evalNextWeek.freezeAvailable).toBe(true) // Freeze is available again!
+  })
+
+  it('mergeStreakData never lets an older cloud lastActiveDate overwrite today and cause double-counting', () => {
+    const today = new Date(2026, 10, 23, 1, 15, 0) // 2026-11-23 01:15 local
+    const localAfterCompletingToday = {
+      ...createInitialStreak(),
+      currentStreak: 6,
+      longestStreak: 6,
+      lastActiveDate: '2026-11-23',
+      todayCompleted: true,
+      totalDaysActive: 6,
+    }
+    const staleCloudFromYesterday = {
+      ...createInitialStreak(),
+      currentStreak: 5,
+      longestStreak: 5,
+      lastActiveDate: '2026-11-22',
+      todayCompleted: false,
+      totalDaysActive: 5,
+    }
+
+    const merged = mergeStreakData(localAfterCompletingToday, staleCloudFromYesterday, today)
+    expect(merged.lastActiveDate).toBe('2026-11-23')
+    expect(merged.todayCompleted).toBe(true)
+    expect(merged.currentStreak).toBe(6)
+    expect(merged.totalDaysActive).toBe(6)
+
+    // Subsequent segment on the same day must NOT increment again!
+    const nextRes = recordSegmentCompleted(merged, today)
+    expect(nextRes.justCompleted).toBe(false)
+    expect(nextRes.streak.currentStreak).toBe(6)
+    expect(nextRes.streak.totalDaysActive).toBe(6)
   })
 })

@@ -206,3 +206,61 @@ export function recordSegmentCompleted(
   }
 }
 
+/**
+ * Safely merges local and cloud StreakData without ever regressing `lastActiveDate`
+ * backwards or resetting `todayCompleted` (which caused same-day double-counting).
+ */
+export function mergeStreakData(
+  local: StreakData,
+  cloud: StreakData,
+  now: Date = new Date()
+): StreakData {
+  const localDate = local.lastActiveDate || ''
+  const cloudDate = cloud.lastActiveDate || ''
+  const mergedFreezeDates = Array.from(
+    new Set([...(local.freezeUsedDates || []), ...(cloud.freezeUsedDates || [])])
+  ).sort()
+
+  const latestFreezeWeek =
+    local.lastFreezeWeek && cloud.lastFreezeWeek
+      ? local.lastFreezeWeek >= cloud.lastFreezeWeek
+        ? local.lastFreezeWeek
+        : cloud.lastFreezeWeek
+      : local.lastFreezeWeek || cloud.lastFreezeWeek || null
+
+  let merged: StreakData
+  if (localDate && (!cloudDate || localDate > cloudDate)) {
+    // Local is strictly newer (e.g. user just completed today locally before cloud updated)
+    merged = {
+      ...local,
+      longestStreak: Math.max(local.longestStreak, cloud.longestStreak, local.currentStreak),
+      totalDaysActive: Math.max(local.totalDaysActive, cloud.totalDaysActive),
+      freezeUsedDates: mergedFreezeDates,
+      lastFreezeWeek: latestFreezeWeek,
+    }
+  } else if (cloudDate && (!localDate || cloudDate > localDate)) {
+    // Cloud is strictly newer (e.g. user studied on another device)
+    merged = {
+      ...cloud,
+      longestStreak: Math.max(local.longestStreak, cloud.longestStreak, cloud.currentStreak),
+      totalDaysActive: Math.max(local.totalDaysActive, cloud.totalDaysActive),
+      freezeUsedDates: mergedFreezeDates,
+      lastFreezeWeek: latestFreezeWeek,
+    }
+  } else {
+    // Same lastActiveDate (or both null)
+    const maxCurrent = Math.max(local.currentStreak, cloud.currentStreak)
+    merged = {
+      ...cloud,
+      lastActiveDate: local.lastActiveDate || cloud.lastActiveDate || null,
+      currentStreak: maxCurrent,
+      longestStreak: Math.max(local.longestStreak, cloud.longestStreak, maxCurrent),
+      totalDaysActive: Math.max(local.totalDaysActive, cloud.totalDaysActive),
+      freezeUsedDates: mergedFreezeDates,
+      lastFreezeWeek: latestFreezeWeek,
+    }
+  }
+
+  return evaluateStreakStatus(merged, now)
+}
+

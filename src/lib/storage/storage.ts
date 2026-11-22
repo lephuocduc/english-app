@@ -11,6 +11,7 @@ import { apiClient } from '../api/client'
 import {
   createInitialStreak,
   evaluateStreakStatus,
+  mergeStreakData,
   recordSegmentCompleted,
 } from '../streak/streakManager'
 import { normalizeSentenceBoundaries } from '../transcript/sentenceNormalizer.ts'
@@ -93,6 +94,7 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   showSubtitles: false,
   hasAudioLeadIn: false,
   isPhoneCallMode: true,
+  phoneCallLevel: 1,
   isLooping: true,
   ttsAccent: 'en-GB',
 }
@@ -887,21 +889,12 @@ export const storage = {
         }
       }
 
-      // Sync Daily Streak with cloud
+      // Sync Daily Streak with cloud (preserving the latest lastActiveDate to avoid same-day double-counting)
       try {
         const cloudStreak = await apiClient.getStreak()
         if (cloudStreak) {
           const localStreak = this.loadStreak()
-          const mergedStreak: StreakData = {
-            ...cloudStreak,
-            currentStreak: Math.max(localStreak.currentStreak, cloudStreak.currentStreak),
-            longestStreak: Math.max(localStreak.longestStreak, cloudStreak.longestStreak),
-            totalDaysActive: Math.max(localStreak.totalDaysActive, cloudStreak.totalDaysActive),
-            freezeUsedDates: Array.from(
-              new Set([...localStreak.freezeUsedDates, ...cloudStreak.freezeUsedDates])
-            ),
-          }
-          const evaluated = evaluateStreakStatus(mergedStreak, new Date())
+          const evaluated = mergeStreakData(localStreak, cloudStreak, new Date())
           this.saveStreak(evaluated)
           apiClient.syncStreak(evaluated).catch(() => { })
         }

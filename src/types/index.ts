@@ -83,6 +83,8 @@ export interface UserLessonProgress {
   updatedAt: string
 }
 
+export type PhoneCallLevel = 1 | 2 | 3
+
 export interface StudyPreferences {
   playbackSpeed: number
   autoReplayCount: number
@@ -94,6 +96,7 @@ export interface StudyPreferences {
   showSubtitles?: boolean
   hasAudioLeadIn?: boolean
   isPhoneCallMode?: boolean
+  phoneCallLevel?: PhoneCallLevel
   isLooping?: boolean
   ttsAccent?: VoiceAccent
 }

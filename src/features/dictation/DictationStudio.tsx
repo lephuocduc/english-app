@@ -23,16 +23,21 @@ import {
   MoreVertical,
   Lock,
   Play,
+  Pause,
   Square,
+  Phone,
+  PhoneCall,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import type {
   Lesson,
+  PhoneCallLevel,
   SentenceSegment,
   ScoreResult,
   UserSentenceProgress,
   StreakData,
 } from '../../types'
+import { PHONE_MODE_PRESETS } from '../../lib/audio/ttsAudioPlayer'
 import { scoreDictation } from '../../lib/scoring/scorer'
 import { parseUniversalTranscript } from '../../lib/transcript/transcriptParser'
 import { TranscriptImportModal } from '../transcript/TranscriptImportModal'
@@ -45,10 +50,16 @@ interface DictationStudioProps {
   lesson: Lesson
   activeSegmentIndex: number
   isPlayerReady: boolean
+  isPlaying?: boolean
   isLooping?: boolean
   hasLeadIn?: boolean
+  isPhoneCallMode?: boolean
+  phoneCallLevel?: PhoneCallLevel
   maxUnlockedIndex?: number
+  onTogglePlayPause?: () => void
   onToggleLoop?: () => void
+  onTogglePhoneCallMode?: () => void
+  onChangePhoneCallLevel?: (level: PhoneCallLevel) => void
   onToggleLeadIn?: () => void
   onPlayPreviousSegment?: () => void
   onSelectSegment: (index: number) => void
@@ -83,11 +94,15 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   lesson,
   activeSegmentIndex,
   isPlayerReady: _isPlayerReady,
+  isPlaying = false,
   isLooping = false,
-  hasLeadIn = true,
+  isPhoneCallMode = false,
+  phoneCallLevel = 1,
   maxUnlockedIndex: propMaxUnlocked,
+  onTogglePlayPause,
   onToggleLoop,
-  onToggleLeadIn,
+  onTogglePhoneCallMode,
+  onChangePhoneCallLevel,
   onPlayPreviousSegment,
   onSelectSegment,
   onReplaySegment,
@@ -1145,11 +1160,6 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                       Your answer:
                     </label>
                     {expectedWordCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 shadow-2xs">
-                        💡 Hint: {expectedWordCount} words
-                      </span>
-                    )}
-                    {expectedWordCount > 0 && (
                       <span
                         className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border ${
                           userWordCount === expectedWordCount
@@ -1170,7 +1180,80 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {onTogglePlayPause && (
+                      <button
+                        type="button"
+                        onClick={onTogglePlayPause}
+                        title={isPlaying ? 'Pause audio' : 'Play current sentence'}
+                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1 ${
+                          isPlaying
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600'
+                            : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                        }`}
+                      >
+                        {isPlaying ? (
+                          <>
+                            <Pause className="w-3 h-3" />
+                            <span>Pause</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>Play</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {onTogglePhoneCallMode && (
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={onTogglePhoneCallMode}
+                          aria-pressed={isPhoneCallMode}
+                          title={`Phone Mode (${(PHONE_MODE_PRESETS[phoneCallLevel] || PHONE_MODE_PRESETS[1]).label})`}
+                          className={`px-2 py-0.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1 ${
+                            isPhoneCallMode
+                              ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
+                              : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {isPhoneCallMode ? (
+                            <PhoneCall className="w-3 h-3" />
+                          ) : (
+                            <Phone className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                          )}
+                          <span>Phone</span>
+                        </button>
+
+                        {isPhoneCallMode && onChangePhoneCallLevel && (
+                          <div
+                            role="group"
+                            aria-label="Quick Phone Mode level"
+                            className="inline-flex items-center bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-lg p-0.5"
+                          >
+                            {([1, 2, 3] as PhoneCallLevel[]).map((lv) => (
+                              <button
+                                key={lv}
+                                type="button"
+                                onClick={() => onChangePhoneCallLevel(lv)}
+                                aria-pressed={phoneCallLevel === lv}
+                                title={PHONE_MODE_PRESETS[lv].label}
+                                className={`px-1.5 py-0.2 text-[10px] font-bold rounded transition cursor-pointer ${
+                                  phoneCallLevel === lv
+                                    ? 'bg-amber-600 text-white'
+                                    : 'text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50'
+                                }`}
+                              >
+                                {lv}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {onToggleLoop && (
                       <button
                         type="button"
@@ -1186,25 +1269,7 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                         <span>Loop{isLooping ? ': On' : ''}</span>
                       </button>
                     )}
-                    {onToggleLeadIn && (
-                      <button
-                        type="button"
-                        onClick={onToggleLeadIn}
-                        title={
-                          hasLeadIn
-                            ? 'Tắt nghe đệm 1s từ câu trước (Alt + P)'
-                            : 'Bật nghe đệm 1s từ câu trước để liền mạch phát âm (Alt + P)'
-                        }
-                        className={`px-2 py-0.5 text-xs font-semibold rounded-lg border shadow-2xs transition active:scale-95 cursor-pointer flex items-center gap-1 ${
-                          hasLeadIn
-                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600'
-                            : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <Volume2 className={`w-3 h-3 ${hasLeadIn ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                        <span>+1s Đệm{hasLeadIn ? ': Bật' : ''}</span>
-                      </button>
-                    )}
+
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline-flex items-center gap-1.5 ml-1">
                       <span>Enter ↵ Check</span>
                     </span>

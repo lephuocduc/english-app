@@ -80,11 +80,8 @@ describe('Dictation Previous Sentence Context & 1s Audio Lead-In', () => {
     fireEvent.click(playPrevBtn)
     expect(onPlayPreviousSegment).toHaveBeenCalledTimes(1)
 
-    // Test clicking +1s lead-in button
-    const leadInBtn = screen.getByTitle(/Tắt nghe đệm 1s từ câu trước/i)
-    expect(leadInBtn).toBeInTheDocument()
-    fireEvent.click(leadInBtn)
-    expect(onToggleLeadIn).toHaveBeenCalledTimes(1)
+    // +1s lead-in button was removed from UI to keep controls streamlined
+    expect(screen.queryByTitle(/Tắt nghe đệm 1s từ câu trước/i)).not.toBeInTheDocument()
   })
 
   it('useYouTubePlayer plays with 1s lead-in buffer when leadInSeconds is supplied', () => {

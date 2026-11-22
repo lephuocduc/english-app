@@ -58,7 +58,7 @@ import {
   selectHomeLessonId,
   getNextUncompletedLesson,
 } from './lib/dictation/resumeManager'
-import type { StreakData, VoiceAccent } from './types'
+import type { PhoneCallLevel, StreakData, VoiceAccent } from './types'
 
 const IS_VITEST = isTestEnvironment()
 
@@ -526,6 +526,7 @@ export function App() {
   const audioPlayer = useAudioLessonPlayer({
     initialSpeed: preferences.playbackSpeed,
     initialPhoneCallMode: preferences.isPhoneCallMode ?? true,
+    initialPhoneCallLevel: preferences.phoneCallLevel ?? 1,
     initialLoop: preferences.isLooping ?? true,
     initialAccent: preferences.ttsAccent || 'en-GB',
   })
@@ -617,6 +618,16 @@ export function App() {
     setPreferences(newPrefs)
     storage.savePreferences(newPrefs)
   }, [audioPlayer, preferences])
+
+  const handleChangePhoneCallLevel = useCallback(
+    (level: PhoneCallLevel) => {
+      audioPlayer.changePhoneCallLevel(level)
+      const newPrefs = { ...preferences, phoneCallLevel: level }
+      setPreferences(newPrefs)
+      storage.savePreferences(newPrefs)
+    },
+    [audioPlayer, preferences]
+  )
 
   const handleChangeAudioAccent = useCallback(
     (accent: VoiceAccent) => {
@@ -1159,6 +1170,7 @@ export function App() {
   const handleSaveSentenceProgress = (progress: UserSentenceProgress) => {
     if (!activeLesson) return
 
+    storage.saveActiveLessonId(activeLesson.id)
     storage.saveSentenceProgress(activeLesson.id, progress, progress.sentenceId)
 
     // Complete 1 listening segment in day = preserve & increment Daily Streak!
@@ -1775,7 +1787,7 @@ export function App() {
                       isLoadingAudio={audioPlayer.isLoadingAudio}
                       isLooping={audioPlayer.isLooping}
                       isPhoneCallMode={audioPlayer.isPhoneCallMode}
-                      hasLeadIn={hasAudioLeadIn}
+                      phoneCallLevel={audioPlayer.phoneCallLevel}
                       usingFallbackSpeech={audioPlayer.usingFallbackSpeech}
                       fallbackAccentMissing={audioPlayer.fallbackAccentMissing}
                       activeSpeaker={
@@ -1802,7 +1814,7 @@ export function App() {
                       onTogglePlayPause={handleTogglePlayPause}
                       onToggleLoop={handleToggleLoop}
                       onTogglePhoneCallMode={handleTogglePhoneCallMode}
-                      onToggleLeadIn={toggleAudioLeadIn}
+                      onChangePhoneCallLevel={handleChangePhoneCallLevel}
                       onChangeSpeed={handleSpeedChange}
                       onChangeAccent={handleChangeAudioAccent}
                     />
@@ -1876,10 +1888,14 @@ export function App() {
                     lesson={activeLesson}
                     activeSegmentIndex={activeSegmentIndex}
                     isPlayerReady={effectiveIsPlayerReady}
+                    isPlaying={effectiveIsPlaying}
                     isLooping={effectiveIsLooping}
-                    hasLeadIn={hasAudioLeadIn}
+                    isPhoneCallMode={activeIsAudio ? audioPlayer.isPhoneCallMode : undefined}
+                    phoneCallLevel={activeIsAudio ? audioPlayer.phoneCallLevel : undefined}
+                    onTogglePlayPause={handleTogglePlayPause}
                     onToggleLoop={handleToggleLoop}
-                    onToggleLeadIn={toggleAudioLeadIn}
+                    onTogglePhoneCallMode={activeIsAudio ? handleTogglePhoneCallMode : undefined}
+                    onChangePhoneCallLevel={activeIsAudio ? handleChangePhoneCallLevel : undefined}
                     onPlayPreviousSegment={handlePlayPreviousSegment}
                     onSelectSegment={handleSelectSegment}
                     onReplaySegment={handleReplayCurrent}

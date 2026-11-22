@@ -158,6 +158,24 @@ describe('ListenFlow Daily Streak & Streak Freeze API', () => {
     expect(getJson.data.currentStreak).toBe(1)
     expect(getJson.data.longestStreak).toBe(1)
     expect(getJson.data.totalDaysActive).toBe(1)
+
+    // Stale sync from another tab/device with an older lastActiveDate must NOT regress last_active_date
+    await makeRequest('/api/streak/sync', {
+      method: 'PUT',
+      body: {
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActiveDate: '2026-11-20',
+        freezeUsedDates: [],
+        lastFreezeWeek: null,
+        freezeAvailable: true,
+        totalDaysActive: 1,
+      },
+    })
+    const afterStaleRes = await makeRequest('/api/streak?date=2026-11-21')
+    const afterStaleJson = (await afterStaleRes.json()) as { data: StreakData }
+    expect(afterStaleJson.data.lastActiveDate).toBe('2026-11-21')
+    expect(afterStaleJson.data.todayCompleted).toBe(true)
   })
 })
 

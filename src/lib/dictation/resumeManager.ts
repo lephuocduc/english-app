@@ -181,24 +181,29 @@ export function selectHomeLessonId(
     return savedLesson.id
   }
 
-  // 2. Any other lesson is currently in progress -> resume it
-  const anyInProgress = lessons.find((l) => isInProgress(l))
-  if (anyInProgress) {
-    return anyInProgress.id
+  // 2. Any other lesson is currently in progress -> resume the most recently practiced one
+  const inProgressLessons = lessons.filter((l) => isInProgress(l))
+  if (inProgressLessons.length > 0) {
+    inProgressLessons.sort((a, b) => {
+      const aTime = progressMap[a.id]?.updatedAt || ''
+      const bTime = progressMap[b.id]?.updatedAt || ''
+      return bTime.localeCompare(aTime)
+    })
+    return inProgressLessons[0].id
   }
 
-  // 3. Saved lesson is already finished -> advance to next uncompleted lesson
+  // 3. Saved lesson exists and is not finished (e.g. user left on this lesson) -> keep it
+  if (savedLesson && !isLessonFinished(savedLesson.sentences, progressMap[savedLesson.id]?.sentenceProgress)) {
+    return savedLesson.id
+  }
+
+  // 4. Saved lesson is already finished -> advance to next uncompleted (new) lesson
   if (savedLesson && isLessonFinished(savedLesson.sentences, progressMap[savedLesson.id]?.sentenceProgress)) {
     const next = getNextUncompletedLesson(lessons, progressMap, savedLesson.id)
     return next ? next.id : savedLesson.id
   }
 
-  // 4. Saved lesson exists and is not finished -> keep it
-  if (savedLesson) {
-    return savedLesson.id
-  }
-
-  // 5. Pick first uncompleted lesson, or fallback to first lesson
+  // 5. Pick first uncompleted (new) lesson, or fallback to first lesson
   const firstUncompleted = lessons.find(
     (l) => !isLessonFinished(l.sentences, progressMap[l.id]?.sentenceProgress)
   )

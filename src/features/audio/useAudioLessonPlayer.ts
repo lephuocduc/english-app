@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { VoiceAccent } from '../../types'
+import type { PhoneCallLevel, VoiceAccent } from '../../types'
 import { sharedTtsAudioEngine } from '../../lib/audio/ttsAudioPlayer'
 
 export interface UseAudioLessonPlayerOptions {
   initialSpeed?: number
   initialPhoneCallMode?: boolean
+  initialPhoneCallLevel?: PhoneCallLevel
   initialLoop?: boolean
   initialAccent?: VoiceAccent
 }
@@ -30,6 +31,7 @@ export interface PlayFullLessonOptions {
 export function useAudioLessonPlayer({
   initialSpeed = 1.0,
   initialPhoneCallMode = true,
+  initialPhoneCallLevel = 1,
   initialLoop = true,
   initialAccent = 'en-GB',
 }: UseAudioLessonPlayerOptions = {}) {
@@ -42,11 +44,13 @@ export function useAudioLessonPlayer({
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
   const [isLooping, setIsLooping] = useState(initialLoop)
   const [isPhoneCallMode, setIsPhoneCallMode] = useState(initialPhoneCallMode)
+  const [phoneCallLevel, setPhoneCallLevel] = useState<PhoneCallLevel>(initialPhoneCallLevel)
   const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>(initialAccent)
 
   const speedRef = useRef(playbackRate)
   const isLoopingRef = useRef(isLooping)
   const phoneCallModeRef = useRef(isPhoneCallMode)
+  const phoneCallLevelRef = useRef<PhoneCallLevel>(phoneCallLevel)
   const accentRef = useRef(voiceAccent)
   const lastPlayedRef = useRef<PlayAudioTextParams | null>(null)
   const loopTimerRef = useRef<number | null>(null)
@@ -64,6 +68,10 @@ export function useAudioLessonPlayer({
   useEffect(() => {
     phoneCallModeRef.current = isPhoneCallMode
   }, [isPhoneCallMode])
+
+  useEffect(() => {
+    phoneCallLevelRef.current = phoneCallLevel
+  }, [phoneCallLevel])
 
   useEffect(() => {
     accentRef.current = voiceAccent
@@ -112,6 +120,7 @@ export function useAudioLessonPlayer({
           speakerIndex: params.speakerIndex ?? 0,
           leadInSpeakerIndex: params.leadInSpeakerIndex,
           isPhoneCallMode: phoneCallModeRef.current,
+          phoneCallLevel: phoneCallLevelRef.current,
           onFallbackUsed: (used, exactMatch) => {
             setUsingFallbackSpeech(used)
             setFallbackAccentMissing(Boolean(used && exactMatch === false))
@@ -178,6 +187,7 @@ export function useAudioLessonPlayer({
           speed: speedRef.current,
           speakerIndex: seg.speakerIndex ?? 0,
           isPhoneCallMode: phoneCallModeRef.current,
+          phoneCallLevel: phoneCallLevelRef.current,
           onFallbackUsed: (used, exactMatch) => {
             setUsingFallbackSpeech(used)
             setFallbackAccentMissing(Boolean(used && exactMatch === false))
@@ -239,6 +249,11 @@ export function useAudioLessonPlayer({
     })
   }, [])
 
+  const changePhoneCallLevel = useCallback((level: PhoneCallLevel) => {
+    setPhoneCallLevel(level)
+    phoneCallLevelRef.current = level
+  }, [])
+
   const changeSpeed = useCallback((speed: number) => {
     setPlaybackRate(speed)
     speedRef.current = speed
@@ -266,6 +281,7 @@ export function useAudioLessonPlayer({
     playbackRate,
     isLooping,
     isPhoneCallMode,
+    phoneCallLevel,
     voiceAccent,
     playTextSegment,
     playFullLesson,
@@ -273,6 +289,7 @@ export function useAudioLessonPlayer({
     replayLast,
     toggleLoop,
     togglePhoneCallMode,
+    changePhoneCallLevel,
     changeSpeed,
     changeVoiceAccent,
     setVoiceAccent,
