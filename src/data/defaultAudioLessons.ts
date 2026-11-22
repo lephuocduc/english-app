@@ -477,33 +477,33 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-01',
     title: 'B1 | 01. Investigating High Memory Usage on Production (IT Ops)',
     description:
-      'A 2-minute B1 IT Operations call tracking steady memory growth on a production server, draining traffic safely, and recovering after a release (~2 min, B1, UK English).',
+      'A 2-minute B1 IT Operations call tracking steady memory growth on a production server, moving traffic safely, and recovering after a release (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hi Daniel, I am calling because memory usage on application server two just passed eighty five percent.',
+        text: 'Hello, I am calling because memory usage on application server two just passed eighty five percent.',
         translation:
-          '[Monitoring] Chào Daniel, tôi gọi vì mức dùng bộ nhớ trên máy chủ ứng dụng số hai vừa vượt qua 85%.',
+          '[Monitoring] Xin chào, tôi gọi vì mức dùng bộ nhớ trên máy chủ ứng dụng số hai vừa vượt qua 85%.',
         hint: 'memory usage, application server',
       },
       {
-        text: 'Thanks for alerting me early; did the jump happen suddenly, or has it been rising slowly?',
+        text: 'Thanks for telling me early; did the jump happen suddenly, or has it been going up slowly?',
         translation:
           '[SysAdmin] Cảm ơn đã báo sớm; mức tăng đó xảy ra đột ngột hay đã tăng dần từ từ?',
-        hint: 'alerting, suddenly, rising slowly',
+        hint: 'suddenly, going up slowly',
       },
       {
-        text: 'Looking at the graph, memory started climbing steadily right after last night’s software update.',
+        text: 'Looking at the chart, memory started rising steadily right after last night’s software update.',
         translation:
           '[Monitoring] Nhìn vào biểu đồ, bộ nhớ bắt đầu tăng đều ngay sau bản cập nhật phần mềm tối qua.',
-        hint: 'graph, climbing steadily, software update',
+        hint: 'chart, rising steadily, software update',
       },
       {
-        text: 'Are the other application servers showing the same upward pattern on the dashboard?',
+        text: 'Are the other application servers showing the same rise on the dashboard?',
         translation:
-          '[SysAdmin] Các máy chủ ứng dụng khác có hiển thị xu hướng tăng giống vậy trên bảng điều khiển không?',
-        hint: 'upward pattern, dashboard',
+          '[SysAdmin] Các máy chủ ứng dụng khác có hiển thị mức tăng giống vậy trên bảng điều khiển không?',
+        hint: 'same rise, dashboard',
       },
       {
         text: 'Yes, server one is already at seventy eight percent, and server three is close behind.',
@@ -512,16 +512,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'close behind',
       },
       {
-        text: 'That strongly suggests the new release is not freeing memory after finishing background tasks.',
+        text: 'That clearly shows the new version is not freeing memory after finishing background tasks.',
         translation:
-          '[SysAdmin] Điều đó cho thấy rõ bản phát hành mới không giải phóng bộ nhớ sau khi hoàn tất tác vụ nền.',
-        hint: 'strongly suggests, freeing memory, background tasks',
+          '[SysAdmin] Điều đó cho thấy rõ phiên bản mới không giải phóng bộ nhớ sau khi hoàn tất tác vụ nền.',
+        hint: 'clearly shows, freeing memory, background tasks',
       },
       {
-        text: 'Are customers experiencing slow page loads or error messages on the website right now?',
+        text: 'Are customers seeing slow page loads or error messages on the website right now?',
         translation:
           '[SysAdmin] Khách hàng có đang gặp tình trạng tải trang chậm hay báo lỗi trên trang web lúc này không?',
-        hint: 'experiencing, page loads',
+        hint: 'page loads, error messages',
       },
       {
         text: 'Not yet, response times are still normal, though we might hit the limit within two hours.',
@@ -536,28 +536,28 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'act before, load balancer',
       },
       {
-        text: 'Should I wait for current user sessions to finish before stopping the application process?',
+        text: 'Should I wait for current user sessions to finish before stopping the application service?',
         translation:
-          '[Monitoring] Tôi có nên chờ các phiên người dùng hiện tại kết thúc trước khi dừng tiến trình ứng dụng không?',
-        hint: 'user sessions, application process',
+          '[Monitoring] Tôi có nên chờ các phiên người dùng hiện tại kết thúc trước khi dừng dịch vụ ứng dụng không?',
+        hint: 'user sessions, application service',
       },
       {
-        text: 'Yes, give it thirty seconds to drain existing connections so nobody loses their shopping cart.',
+        text: 'Yes, give it thirty seconds to finish current connections so nobody loses their shopping cart.',
         translation:
-          '[SysAdmin] Đúng rồi, chờ ba mươi giây để rút hết kết nối đang mở để không ai bị mất giỏ hàng.',
-        hint: 'drain, existing connections',
+          '[SysAdmin] Đúng rồi, chờ ba mươi giây để hoàn tất các kết nối hiện tại để không ai bị mất giỏ hàng.',
+        hint: 'current connections, shopping cart',
       },
       {
-        text: 'Server two is drained now; do you want a quick memory report before I restart it?',
+        text: 'Server two has no active users now; do you want a quick memory report before I restart it?',
         translation:
-          '[Monitoring] Máy chủ số hai đã rút lưu lượng xong; anh có cần lấy báo cáo bộ nhớ nhanh trước khi tôi khởi động lại không?',
-        hint: 'memory report, restart',
+          '[Monitoring] Máy chủ số hai đã hết người dùng hoạt động; bạn có cần lấy báo cáo bộ nhớ nhanh trước khi tôi khởi động lại không?',
+        hint: 'active users, memory report',
       },
       {
-        text: 'Please save the process summary and memory snapshot into our shared troubleshooting folder.',
+        text: 'Please save the process list and memory report into our shared support folder.',
         translation:
-          '[SysAdmin] Nhớ lưu bản tóm tắt tiến trình và bản chụp bộ nhớ vào thư mục xử lý sự cố dùng chung nhé.',
-        hint: 'process summary, troubleshooting folder',
+          '[SysAdmin] Nhớ lưu danh sách tiến trình và báo cáo bộ nhớ vào thư mục hỗ trợ dùng chung nhé.',
+        hint: 'process list, support folder',
       },
       {
         text: 'Both files are saved cleanly, and I am restarting the service on server two right now.',
@@ -566,25 +566,25 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'saved cleanly',
       },
       {
-        text: 'Once health checks pass, add server two back, then we will roll back to the previous stable version.',
+        text: 'Once health checks pass, add server two back, then we will return to the previous stable version.',
         translation:
-          '[SysAdmin] Khi kiểm tra sức khỏe đạt, hãy đưa máy chủ số hai vào lại rồi ta sẽ hoàn tác về phiên bản ổn định trước đó.',
-        hint: 'health checks, roll back, stable version',
+          '[SysAdmin] Khi kiểm tra sức khỏe đạt, hãy đưa máy chủ số hai vào lại rồi ta sẽ quay về phiên bản ổn định trước đó.',
+        hint: 'health checks, stable version',
       },
       {
-        text: 'Server two is healthy at thirty percent memory, and I am starting the rolling update on server one.',
+        text: 'Server two is healthy at thirty percent memory, and I am updating server one next.',
         translation:
-          '[Monitoring] Máy chủ số hai đã ổn định ở mức 30% bộ nhớ, tôi đang bắt đầu cập nhật cuốn chiếu trên máy chủ số một.',
-        hint: 'rolling update',
+          '[Monitoring] Máy chủ số hai đã ổn định ở mức 30% bộ nhớ, tôi đang cập nhật tiếp máy chủ số một.',
+        hint: 'healthy, updating',
       },
       {
-        text: 'I will share the memory report with the development team so they can fix the leak today.',
+        text: 'I will share the memory report with the development team so they can fix the problem today.',
         translation:
-          '[SysAdmin] Tôi sẽ gửi báo cáo bộ nhớ cho đội phát triển để họ sửa lỗi rò rỉ trong hôm nay.',
-        hint: 'development team, fix the leak',
+          '[SysAdmin] Tôi sẽ gửi báo cáo bộ nhớ cho đội phát triển để họ sửa lỗi trong hôm nay.',
+        hint: 'development team, fix the problem',
       },
       {
-        text: 'All three servers are stable again, and I will keep watching the memory graph for the next hour.',
+        text: 'All three servers are stable again, and I will keep watching the memory chart for the next hour.',
         translation:
           '[Monitoring] Cả ba máy chủ đã ổn định trở lại, tôi sẽ tiếp tục theo dõi biểu đồ bộ nhớ trong một giờ tới.',
         hint: 'keep watching, next hour',
@@ -596,21 +596,21 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-02',
     title: 'B1 | 02. Fixing a Broken VPN Tunnel for Branch Office (IT Ops)',
     description:
-      'A 2-minute B1 networking conversation resolving a disconnected site-to-site VPN tunnel, expired shared key, and routing checks (~2 min, B1, UK English).',
+      'A 2-minute B1 networking conversation fixing a disconnected site-to-site VPN tunnel, expired shared key, and network checks (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hello Oliver, staff at our Manchester branch cannot open the internal finance system this morning.',
+        text: 'Hello, staff at our Manchester office cannot open the internal finance system this morning.',
         translation:
-          '[Branch Support] Chào Oliver, nhân viên tại chi nhánh Manchester sáng nay không mở được hệ thống tài chính nội bộ.',
-        hint: 'branch, internal finance system',
+          '[Branch Support] Xin chào, nhân viên tại văn phòng Manchester sáng nay không mở được hệ thống tài chính nội bộ.',
+        hint: 'office, internal finance system',
       },
       {
-        text: 'Can they still browse normal public websites, or is the whole office internet connection down?',
+        text: 'Can they still open normal public websites, or is the whole office internet connection down?',
         translation:
-          '[Network Eng] Họ vẫn vào được các trang web công khai bình thường, hay cả đường truyền internet văn phòng bị mất?',
-        hint: 'browse, public websites, connection down',
+          '[Network Eng] Họ vẫn mở được các trang web công khai bình thường, hay cả đường truyền internet văn phòng bị mất?',
+        hint: 'public websites, connection down',
       },
       {
         text: 'Public websites work fine, and office email loads quickly, so only internal tools are failing.',
@@ -625,9 +625,9 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'VPN tunnel, data centre',
       },
       {
-        text: 'Let me log into the central network gateway and check the tunnel status right away.',
+        text: 'Let me log into the main network gateway and check the tunnel status right away.',
         translation:
-          '[Network Eng] Để tôi đăng nhập vào cổng mạng trung tâm và kiểm tra trạng thái đường hầm ngay lập tức.',
+          '[Network Eng] Để tôi đăng nhập vào cổng mạng chính và kiểm tra trạng thái đường hầm ngay lập tức.',
         hint: 'network gateway, tunnel status',
       },
       {
@@ -637,34 +637,34 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'went offline, reconnect',
       },
       {
-        text: 'Did someone change the branch firewall rules overnight, or did the internet provider drop packets?',
+        text: 'Did someone change the office firewall rules last night, or did the internet provider have an issue?',
         translation:
-          '[Branch Support] Có ai đổi quy tắc tường lửa chi nhánh qua đêm không, hay nhà mạng bị rớt gói tin?',
-        hint: 'firewall rules, internet provider, drop packets',
+          '[Branch Support] Có ai đổi quy tắc tường lửa văn phòng tối qua không, hay nhà mạng gặp sự cố?',
+        hint: 'firewall rules, internet provider',
       },
       {
-        text: 'The gateway logs show an authentication error because the shared security key expired today.',
+        text: 'The gateway logs show a login error because the shared security key expired today.',
         translation:
-          '[Network Eng] Nhật ký cổng mạng báo lỗi xác thực vì khóa bảo mật dùng chung vừa hết hạn hôm nay.',
-        hint: 'authentication error, shared security key, expired',
+          '[Network Eng] Nhật ký cổng mạng báo lỗi đăng nhập vì khóa bảo mật dùng chung vừa hết hạn hôm nay.',
+        hint: 'shared security key, expired',
       },
       {
-        text: 'I did not realise those tunnel keys had a fixed yearly expiry date.',
+        text: 'I did not know those tunnel keys had a fixed yearly expiry date.',
         translation:
-          '[Branch Support] Tôi không để ý là các khóa đường hầm đó có ngày hết hạn cố định hằng năm.',
-        hint: 'realise, expiry date',
+          '[Branch Support] Tôi không biết các khóa đường hầm đó có ngày hết hạn cố định hằng năm.',
+        hint: 'yearly, expiry date',
       },
       {
-        text: 'We rotate them every twelve months for security, and the reminder ticket was missed last week.',
+        text: 'We change them every twelve months for security, and the reminder ticket was missed last week.',
         translation:
-          '[Network Eng] Chúng tôi thay mới chúng mỗi mười hai tháng để bảo mật, và phiếu nhắc nhở tuần trước bị bỏ sót.',
-        hint: 'rotate, reminder ticket, missed',
+          '[Network Eng] Chúng tôi đổi chúng mỗi mười hai tháng để bảo mật, và phiếu nhắc nhở tuần trước bị bỏ sót.',
+        hint: 'reminder ticket, missed',
       },
       {
-        text: 'Can you update the key from headquarters, or do I need to plug into the local router?',
+        text: 'Can you update the key from the main office, or do I need to plug into the local router?',
         translation:
-          '[Branch Support] Anh có thể cập nhật khóa từ trụ sở chính không, hay tôi cần cắm máy vào bộ định tuyến tại chỗ?',
-        hint: 'headquarters, local router',
+          '[Branch Support] Bạn có thể cập nhật khóa từ văn phòng chính không, hay tôi cần cắm máy vào bộ định tuyến tại chỗ?',
+        hint: 'main office, local router',
       },
       {
         text: 'I can reach the branch router over our backup management line, so no cables are needed.',
@@ -673,21 +673,21 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'backup management line, cables',
       },
       {
-        text: 'I just generated a fresh key and applied the matching settings on both gateway devices.',
+        text: 'I just created a fresh key and saved the matching settings on both gateway devices.',
         translation:
-          '[Network Eng] Tôi vừa tạo một khóa mới và áp dụng cấu hình khớp nhau trên cả hai thiết bị cổng mạng.',
-        hint: 'generated, matching settings',
+          '[Network Eng] Tôi vừa tạo một khóa mới và lưu cấu hình khớp nhau trên cả hai thiết bị cổng mạng.',
+        hint: 'fresh key, matching settings',
       },
       {
-        text: 'Now I am resetting the tunnel interface; give it twenty seconds to negotiate the encrypted link.',
+        text: 'Now I am restarting the tunnel link; give it twenty seconds to build the secure connection.',
         translation:
-          '[Network Eng] Giờ tôi đang đặt lại giao diện đường hầm; chờ khoảng hai mươi giây để thương lượng liên kết mã hóa.',
-        hint: 'interface, negotiate, encrypted link',
+          '[Network Eng] Giờ tôi đang khởi động lại liên kết đường hầm; chờ khoảng hai mươi giây để thiết lập kết nối bảo mật.',
+        hint: 'restarting, secure connection',
       },
       {
-        text: 'The status light just turned green on my dashboard, and test pings are returning in twelve milliseconds.',
+        text: 'The status light just turned green on my screen, and test pings are returning in twelve milliseconds.',
         translation:
-          '[Network Eng] Đèn trạng thái vừa chuyển xanh trên bảng điều khiển của tôi, và lệnh ping thử phản hồi trong mười hai mili giây.',
+          '[Network Eng] Đèn trạng thái vừa chuyển xanh trên màn hình của tôi, và lệnh ping thử phản hồi trong mười hai mili giây.',
         hint: 'test pings, milliseconds',
       },
       {
@@ -697,16 +697,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'refresh, sign in',
       },
       {
-        text: 'They confirmed the invoices are loading smoothly, and the shared network drive is visible again.',
+        text: 'They said the invoices are loading smoothly, and the shared network drive is visible again.',
         translation:
-          '[Branch Support] Họ xác nhận hóa đơn tải mượt rồi, ổ đĩa mạng dùng chung cũng hiện lại bình thường.',
-        hint: 'confirmed, shared network drive',
+          '[Branch Support] Họ báo hóa đơn tải mượt rồi, ổ đĩa mạng dùng chung cũng hiện lại bình thường.',
+        hint: 'loading smoothly, shared network drive',
       },
       {
-        text: 'Brilliant; I will schedule an automatic calendar alert thirty days before next year’s key renewal.',
+        text: 'Great; I will set an automatic calendar reminder thirty days before next year’s key update.',
         translation:
-          '[Network Eng] Tuyệt vời; tôi sẽ đặt cảnh báo lịch tự động trước ba mươi ngày cho kỳ gia hạn khóa năm tới.',
-        hint: 'schedule, calendar alert, renewal',
+          '[Network Eng] Tuyệt; tôi sẽ đặt nhắc lịch tự động trước ba mươi ngày cho kỳ cập nhật khóa năm tới.',
+        hint: 'calendar reminder, key update',
       },
     ],
   },
@@ -715,51 +715,51 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-03',
     title: 'B1 | 03. Handling a Sudden Traffic Spike During Sales (IT Ops)',
     description:
-      'A 2-minute B1 cloud operations call managing a flash-sale traffic surge with extra web instances, caching, and checkout monitoring (~2 min, B1, UK English).',
+      'A 2-minute B1 cloud operations call handling a flash-sale traffic jump with extra web servers, page caching, and checkout checks (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hey Grace, our marketing team just sent out a flash sale email and website traffic doubled.',
+        text: 'Hey, our marketing team just sent out a flash sale email and website traffic doubled.',
         translation:
-          '[Ops Lead] Chào Grace, đội marketing vừa gửi email khuyến mãi chớp nhoáng và lưu lượng web tăng gấp đôi rồi.',
+          '[Ops Lead] Chào bạn, đội marketing vừa gửi email khuyến mãi chớp nhoáng và lưu lượng web tăng gấp đôi rồi.',
         hint: 'flash sale, traffic doubled',
       },
       {
-        text: 'I saw the live chart jump a minute ago; how are the web servers coping with the load?',
+        text: 'I saw the live chart jump a minute ago; how are the web servers handling the load?',
         translation:
           '[Cloud Eng] Tôi thấy biểu đồ trực tiếp nhảy vọt một phút trước; các máy chủ web đang chịu tải thế nào?',
-        hint: 'live chart, coping with the load',
+        hint: 'live chart, handling the load',
       },
       {
-        text: 'Average CPU across the web cluster is around seventy five percent, and page loads feel slower.',
+        text: 'Average CPU across the web servers is around seventy five percent, and pages feel slower.',
         translation:
-          '[Ops Lead] CPU trung bình trên cụm web khoảng 75%, và trang web bắt đầu tải chậm hơn.',
-        hint: 'web cluster, page loads',
+          '[Ops Lead] CPU trung bình trên các máy chủ web khoảng 75%, và các trang web bắt đầu chậm hơn.',
+        hint: 'average CPU, slower',
       },
       {
-        text: 'Did automatic scaling start launching extra server instances when CPU crossed seventy percent?',
+        text: 'Did automatic scaling start adding extra server instances when CPU crossed seventy percent?',
         translation:
-          '[Cloud Eng] Hệ thống tự động mở rộng đã bắt đầu khởi chạy thêm máy chủ khi CPU vượt 70% chưa?',
-        hint: 'automatic scaling, launching, instances',
+          '[Cloud Eng] Hệ thống tự động mở rộng đã bắt đầu thêm máy chủ khi CPU vượt 70% chưa?',
+        hint: 'automatic scaling, extra server',
       },
       {
-        text: 'It added two instances, but the maximum limit was set to six servers in our scaling policy.',
+        text: 'It added two servers, but the maximum limit was set to six servers in our scaling rule.',
         translation:
-          '[Ops Lead] Nó đã thêm hai máy chủ, nhưng giới hạn tối đa trong chính sách mở rộng chỉ đặt là sáu máy.',
-        hint: 'maximum limit, scaling policy',
+          '[Ops Lead] Nó đã thêm hai máy chủ, nhưng giới hạn tối đa trong quy tắc mở rộng chỉ đặt là sáu máy.',
+        hint: 'maximum limit, scaling rule',
       },
       {
-        text: 'Let us raise that ceiling to ten instances right now so the cluster has comfortable breathing room.',
+        text: 'Let us raise that limit to ten servers right now so the system has plenty of extra space.',
         translation:
-          '[Cloud Eng] Hãy nâng trần giới hạn lên mười máy chủ ngay để cụm có khoảng trống an toàn.',
-        hint: 'raise that ceiling, breathing room',
+          '[Cloud Eng] Hãy nâng giới hạn lên mười máy chủ ngay để hệ thống có nhiều khoảng trống dự phòng.',
+        hint: 'raise that limit, extra space',
       },
       {
-        text: 'How long does each new web server take to boot up and pass its health check?',
+        text: 'How long does each new web server take to start up and pass its health check?',
         translation:
           '[Ops Lead] Mỗi máy chủ web mới mất bao lâu để khởi động và vượt qua bài kiểm tra sức khỏe?',
-        hint: 'boot up, health check',
+        hint: 'start up, health check',
       },
       {
         text: 'About ninety seconds; two more servers are already starting and should join the balancer soon.',
@@ -774,10 +774,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'product searches, pressure',
       },
       {
-        text: 'Database reads increased sharply, so enabling longer page caching for product lists will help immediately.',
+        text: 'Database reads went up fast, so turning on longer page caching for product lists will help right away.',
         translation:
-          '[Cloud Eng] Lượt đọc database tăng mạnh, nên bật lưu đệm trang lâu hơn cho danh sách sản phẩm sẽ giúp ngay lập tức.',
-        hint: 'increased sharply, page caching',
+          '[Cloud Eng] Lượt đọc database tăng nhanh, nên bật lưu đệm trang lâu hơn cho danh sách sản phẩm sẽ giúp ngay lập tức.',
+        hint: 'went up fast, page caching',
       },
       {
         text: 'Make sure we do not cache personal cart pages or payment checkout screens by mistake.',
@@ -786,10 +786,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'by mistake, checkout screens',
       },
       {
-        text: 'Of course, caching only applies to public catalogue pages, images, and static banner files.',
+        text: 'Of course, caching only applies to public product pages, images, and static banner files.',
         translation:
-          '[Cloud Eng] Chắc chắn rồi, bộ nhớ đệm chỉ áp dụng cho trang danh mục công khai, hình ảnh và tệp banner tĩnh.',
-        hint: 'catalogue pages, static files',
+          '[Cloud Eng] Chắc chắn rồi, bộ nhớ đệm chỉ áp dụng cho trang sản phẩm công khai, hình ảnh và tệp banner tĩnh.',
+        hint: 'product pages, static files',
       },
       {
         text: 'The new cache rule is live, and database read traffic just dropped by nearly forty percent.',
@@ -798,34 +798,34 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'cache rule, dropped by nearly',
       },
       {
-        text: 'Awesome, and all eight web instances are now green with average CPU back under fifty percent.',
+        text: 'Awesome, and all eight web servers are now green with average CPU back under fifty percent.',
         translation:
           '[Ops Lead] Tuyệt vời, cả tám máy chủ web đều đã xanh với mức CPU trung bình quay về dưới 50%.',
         hint: 'average CPU, under fifty percent',
       },
       {
-        text: 'I also ran a quick test order on the checkout page and it completed in under one second.',
+        text: 'I also ran a quick test order on the checkout page and it finished in under one second.',
         translation:
           '[Cloud Eng] Tôi cũng vừa chạy một đơn hàng thử trên trang thanh toán và hoàn tất trong chưa đầy một giây.',
-        hint: 'test order, completed',
+        hint: 'test order, finished',
       },
       {
-        text: 'Let us ask marketing to notify operations one day ahead before future flash sales.',
+        text: 'Let us ask marketing to tell operations one day ahead before future flash sales.',
         translation:
           '[Ops Lead] Hãy nhờ đội marketing báo trước cho bộ phận vận hành một ngày trước các đợt khuyến mãi sau.',
-        hint: 'notify, one day ahead',
+        hint: 'one day ahead, future',
       },
       {
-        text: 'Good idea; that way we can pre warm the servers and review limits calmly beforehand.',
+        text: 'Good idea; that way we can prepare the servers and check our limits early.',
         translation:
-          '[Cloud Eng] Ý hay đấy; như vậy ta có thể làm nóng máy chủ trước và rà soát giới hạn thật bình tĩnh.',
-        hint: 'pre warm, calmly beforehand',
+          '[Cloud Eng] Ý hay đấy; như vậy ta có thể chuẩn bị máy chủ trước và kiểm tra giới hạn từ sớm.',
+        hint: 'prepare the servers, check our limits',
       },
       {
-        text: 'I will stay on the live dashboard until the sale ends and scale back down tonight.',
+        text: 'I will stay on the live dashboard until the sale ends and reduce the servers tonight.',
         translation:
-          '[Cloud Eng] Tôi sẽ theo dõi bảng điều khiển trực tiếp đến khi hết khuyến mãi rồi thu hẹp lại tối nay.',
-        hint: 'scale back down',
+          '[Cloud Eng] Tôi sẽ theo dõi bảng điều khiển trực tiếp đến khi hết khuyến mãi rồi giảm bớt máy chủ tối nay.',
+        hint: 'live dashboard, reduce',
       },
     ],
   },
@@ -834,14 +834,14 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-04',
     title: 'B1 | 04. Resolving Email Delivery Delays & Queue Backlog (IT Ops)',
     description:
-      'A 2-minute B1 mail operations call diagnosing delayed customer invoices, inspecting a stuck mail queue, pausing a noisy loop, and flushing deliveries (~2 min, B1, UK English).',
+      'A 2-minute B1 mail operations call fixing delayed customer emails, checking a stuck mail queue, stopping a noisy loop, and clearing deliveries (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hi Hannah, several customers called support because their order confirmation emails still have not arrived.',
+        text: 'Hi, several customers called support because their order confirmation emails still have not arrived.',
         translation:
-          '[Helpdesk] Chào Hannah, vài khách hàng gọi hỗ trợ vì email xác nhận đơn hàng vẫn chưa tới nơi.',
+          '[Helpdesk] Chào bạn, vài khách hàng gọi hỗ trợ vì email xác nhận đơn hàng vẫn chưa tới nơi.',
         hint: 'order confirmation, arrived',
       },
       {
@@ -851,16 +851,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'bouncing back, later than usual',
       },
       {
-        text: 'They are arriving about forty minutes late, and staff noticed internal notifications are delayed too.',
+        text: 'They are arriving about forty minutes late, and staff noticed internal messages are delayed too.',
         translation:
           '[Helpdesk] Chúng đến trễ khoảng bốn mươi phút, và nhân viên cũng thấy thông báo nội bộ bị chậm theo.',
-        hint: 'delayed, internal notifications',
+        hint: 'delayed, internal messages',
       },
       {
-        text: 'Let me check our outgoing mail relay server; wow, there are twelve thousand messages stuck in the queue.',
+        text: 'Let me check our outgoing mail server; wow, there are twelve thousand messages stuck in the queue.',
         translation:
-          '[Mail Admin] Để tôi kiểm tra máy chủ chuyển tiếp thư đi; ôi, có mười hai nghìn thư đang bị kẹt trong hàng đợi.',
-        hint: 'mail relay server, stuck in the queue',
+          '[Mail Admin] Để tôi kiểm tra máy chủ gửi thư; ôi, có mười hai nghìn thư đang bị kẹt trong hàng đợi.',
+        hint: 'outgoing mail server, stuck in the queue',
       },
       {
         text: 'Twelve thousand? Normally our busy morning queue only holds around two hundred emails.',
@@ -869,10 +869,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'normally, holds around',
       },
       {
-        text: 'Wait a second, most of these messages are coming from one single automated reporting account.',
+        text: 'Wait a second, most of these messages are coming from one single automatic reporting account.',
         translation:
           '[Mail Admin] Khoan đã, phần lớn các thư này đều xuất phát từ duy nhất một tài khoản báo cáo tự động.',
-        hint: 'automated reporting account',
+        hint: 'automatic reporting account',
       },
       {
         text: 'What is that account sending? It looks like the same five megabyte attachment repeated every second.',
@@ -887,21 +887,21 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'scheduled script, retry loop',
       },
       {
-        text: 'Exactly; it filled up all outgoing worker slots, blocking real customer confirmations behind it.',
+        text: 'Exactly; it filled up all outgoing mail workers, blocking real customer emails behind it.',
         translation:
-          '[Mail Admin] Chính xác; nó chiếm kín toàn bộ luồng gửi thư, chặn hết email xác nhận của khách hàng ở phía sau.',
-        hint: 'worker slots, blocking',
+          '[Mail Admin] Chính xác; nó chiếm kín toàn bộ luồng gửi thư, chặn hết email của khách hàng ở phía sau.',
+        hint: 'mail workers, blocking',
       },
       {
-        text: 'First, I am pausing that automated sender account so no new duplicate messages enter the queue.',
+        text: 'First, I am pausing that automatic sender account so no new copy messages enter the queue.',
         translation:
           '[Mail Admin] Trước hết tôi tạm khóa tài khoản gửi tự động đó để không có thêm thư trùng lặp vào hàng đợi.',
-        hint: 'pausing, duplicate messages',
+        hint: 'pausing, copy messages',
       },
       {
-        text: 'Can we clear out only those duplicate report messages without deleting real customer emails?',
+        text: 'Can we clear out only those repeated report messages without deleting real customer emails?',
         translation:
-          '[Helpdesk] Mình có thể dọn riêng các thư báo cáo trùng lặp đó mà không xóa nhầm email khách hàng thật không?',
+          '[Helpdesk] Mình có thể dọn riêng các thư báo cáo lặp lại đó mà không xóa nhầm email khách hàng thật không?',
         hint: 'clear out, without deleting',
       },
       {
@@ -911,34 +911,34 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'filter the queue, sender address',
       },
       {
-        text: 'Done, eleven thousand duplicate messages are cleared, leaving only three hundred genuine customer emails.',
+        text: 'Done, eleven thousand repeated messages are cleared, leaving only three hundred real customer emails.',
         translation:
-          '[Mail Admin] Xong rồi, mười một nghìn thư trùng đã được dọn, chỉ còn ba trăm email khách hàng thật.',
-        hint: 'genuine customer emails',
+          '[Mail Admin] Xong rồi, mười một nghìn thư lặp đã được dọn, chỉ còn ba trăm email khách hàng thật.',
+        hint: 'real customer emails',
       },
       {
-        text: 'Now I am flushing the mail queue so the relay server delivers those waiting confirmations immediately.',
+        text: 'Now I am pushing the mail queue so the server sends those waiting confirmations right away.',
         translation:
-          '[Mail Admin] Giờ tôi đẩy xả hàng đợi thư để máy chủ chuyển tiếp gửi ngay những thư xác nhận đang chờ.',
-        hint: 'flushing the mail queue, delivers',
+          '[Mail Admin] Giờ tôi đẩy hàng đợi thư để máy chủ gửi ngay những thư xác nhận đang chờ.',
+        hint: 'pushing the mail queue, right away',
       },
       {
-        text: 'I just tested a password reset email and it landed in my inbox within three seconds.',
+        text: 'I just tested a password reset email and it arrived in my inbox within three seconds.',
         translation:
           '[Helpdesk] Tôi vừa thử một email đặt lại mật khẩu và nó vào hộp thư đến trong vòng ba giây.',
-        hint: 'landed in my inbox',
+        hint: 'arrived in my inbox',
       },
       {
-        text: 'Great news; I will also tell the billing team to add a strict retry limit on their script.',
+        text: 'Great news; I will also tell the billing team to add a clear retry limit on their script.',
         translation:
-          '[Mail Admin] Tin tốt quá; tôi cũng sẽ báo nhóm thanh toán thêm giới hạn thử lại chặt chẽ vào kịch bản của họ.',
-        hint: 'strict retry limit',
+          '[Mail Admin] Tin tốt quá; tôi cũng sẽ báo nhóm thanh toán thêm giới hạn thử lại rõ ràng vào kịch bản của họ.',
+        hint: 'clear retry limit',
       },
       {
-        text: 'Should we set a queue size alert so operations gets notified if more than five hundred emails wait?',
+        text: 'Should we set a queue size alert so operations gets a message if more than five hundred emails wait?',
         translation:
           '[Helpdesk] Ta có nên đặt cảnh báo kích thước hàng đợi để vận hành nhận tin khi có hơn năm trăm thư chờ không?',
-        hint: 'queue size alert, notified',
+        hint: 'queue size alert',
       },
       {
         text: 'Yes, I am adding that monitoring rule right now along with a per minute sending limit.',
@@ -953,21 +953,21 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-05',
     title: 'B1 | 05. Cleaning Up Inodes & Stuck Background Jobs (IT Ops)',
     description:
-      'A 2-minute B1 Linux operations conversation solving a tricky "no space left" error caused by 100% inode usage from tiny session files (~2 min, B1, UK English).',
+      'A 2-minute B1 Linux operations conversation solving a "no space left" error caused by 100% inode usage from tiny session files (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hi Lucas, I am confused because the web server says no space left, even though disk space looks fine.',
+        text: 'Hi, I am confused because the web server says no space left, even though disk space looks fine.',
         translation:
-          '[Junior Ops] Chào Lucas, mình hơi rối vì máy chủ web báo hết dung lượng dù dung lượng ổ đĩa trông vẫn ổn.',
+          '[Junior Ops] Chào bạn, mình hơi rối vì máy chủ web báo hết dung lượng dù dung lượng ổ đĩa trông vẫn ổn.',
         hint: 'confused, no space left',
       },
       {
-        text: 'How much free space did the standard disk command report when you checked it?',
+        text: 'How much free space did the normal disk command show when you checked it?',
         translation:
-          '[Linux Eng] Lệnh kiểm tra đĩa thông thường báo còn bao nhiêu dung lượng trống khi cậu xem?',
-        hint: 'disk command, report',
+          '[Linux Eng] Lệnh kiểm tra đĩa thông thường báo còn bao nhiêu dung lượng trống khi bạn xem?',
+        hint: 'disk command, free space',
       },
       {
         text: 'It showed thirty five percent free, about forty gigabytes available, yet nothing can create a new file.',
@@ -976,21 +976,21 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'available, create a new file',
       },
       {
-        text: 'Aha, that is a classic Linux surprise; please check the inode usage table right now.',
+        text: 'Aha, that is a common Linux problem; please check the inode usage table right now.',
         translation:
-          '[Linux Eng] À ha, đó là một tình huống Linux kinh điển; cậu kiểm tra ngay bảng mức dùng inode đi.',
-        hint: 'classic surprise, inode usage',
+          '[Linux Eng] À ha, đó là một sự cố Linux rất hay gặp; bạn kiểm tra ngay bảng mức dùng inode đi.',
+        hint: 'common problem, inode usage',
       },
       {
-        text: 'Oh wow, inode usage on the root drive is sitting at one hundred percent.',
+        text: 'Oh wow, inode usage on the root drive is at one hundred percent.',
         translation:
           '[Junior Ops] Ồ chà, mức sử dụng inode trên ổ đĩa gốc đang chạm đúng 100%.',
-        hint: 'root drive, sitting at',
+        hint: 'root drive, one hundred percent',
       },
       {
         text: 'Could you quickly explain why a drive runs out of inodes while gigabytes are still free?',
         translation:
-          '[Junior Ops] Anh giải thích nhanh giúp vì sao ổ đĩa hết inode trong khi vẫn còn thừa hàng chục gigabyte được không?',
+          '[Junior Ops] Bạn giải thích nhanh giúp vì sao ổ đĩa hết inode trong khi vẫn còn thừa hàng chục gigabyte được không?',
         hint: 'quickly explain, runs out of',
       },
       {
@@ -1000,10 +1000,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'inode record, tiny files, use up',
       },
       {
-        text: 'Let us find which directory holds the highest number of small files on this machine.',
+        text: 'Let us find which folder holds the highest number of small files on this machine.',
         translation:
           '[Linux Eng] Hãy tìm xem thư mục nào đang chứa số lượng tệp nhỏ nhiều nhất trên máy này.',
-        hint: 'directory, highest number',
+        hint: 'folder, highest number',
       },
       {
         text: 'Found it; the temporary session folder has over two million tiny files created over three months.',
@@ -1018,28 +1018,28 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'nightly cleanup job',
       },
       {
-        text: 'Let me inspect the scheduled task file; someone commented out the cleanup line during testing and forgot.',
+        text: 'Let me check the scheduled task file; someone turned off the cleanup line during testing and forgot.',
         translation:
-          '[Junior Ops] Để mình kiểm tra tệp tác vụ định kỳ; có ai đó đã vô hiệu dòng dọn dẹp lúc thử nghiệm rồi quên bật lại.',
-        hint: 'inspect, commented out, forgot',
+          '[Junior Ops] Để mình kiểm tra tệp tác vụ định kỳ; có ai đó đã tắt dòng dọn dẹp lúc thử nghiệm rồi quên bật lại.',
+        hint: 'scheduled task, turned off, forgot',
       },
       {
-        text: 'Good catch; remember not to run a plain delete wildcard on two million files at once.',
+        text: 'Good catch; remember not to run a simple delete all command on two million files at once.',
         translation:
-          '[Linux Eng] Phát hiện tốt đấy; nhớ đừng chạy lệnh xóa ký tự đại diện thông thường trên hai triệu tệp cùng lúc nhé.',
-        hint: 'good catch, wildcard, at once',
+          '[Linux Eng] Phát hiện tốt đấy; nhớ đừng chạy lệnh xóa tất cả thông thường trên hai triệu tệp cùng lúc nhé.',
+        hint: 'good catch, at once',
       },
       {
-        text: 'Right, because the shell command will fail with an argument list too long error.',
+        text: 'Right, because the shell command will fail with a too many files error.',
         translation:
-          '[Junior Ops] Đúng rồi, vì lệnh shell sẽ báo lỗi danh sách tham số quá dài.',
-        hint: 'shell command, argument list',
+          '[Junior Ops] Đúng rồi, vì lệnh shell sẽ báo lỗi quá nhiều tệp.',
+        hint: 'shell command, too many files',
       },
       {
-        text: 'Use the find command with delete in batches for files older than two days so active sessions stay safe.',
+        text: 'Use the find command to delete in small groups for files older than two days so active sessions stay safe.',
         translation:
-          '[Linux Eng] Hãy dùng lệnh find kèm xóa theo lô cho tệp cũ hơn hai ngày để các phiên đang chạy vẫn an toàn.',
-        hint: 'in batches, older than, stay safe',
+          '[Linux Eng] Hãy dùng lệnh find để xóa theo từng nhóm nhỏ cho tệp cũ hơn hai ngày để các phiên đang chạy vẫn an toàn.',
+        hint: 'small groups, older than, stay safe',
       },
       {
         text: 'It is running smoothly now, and inode usage already dropped from one hundred down to twenty percent.',
@@ -1048,10 +1048,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'running smoothly, dropped',
       },
       {
-        text: 'Next, re enable the nightly cleanup schedule and verify that the web application writes logs cleanly.',
+        text: 'Next, turn the nightly cleanup schedule back on and check that the web app writes logs cleanly.',
         translation:
           '[Linux Eng] Tiếp theo hãy bật lại lịch dọn dẹp hằng đêm và kiểm tra xem ứng dụng web ghi log ổn chưa.',
-        hint: 're enable, verify',
+        hint: 'turn back on, writes logs',
       },
       {
         text: 'Application logs are writing again, and I added an inode alert at eighty percent to our monitoring tool.',
@@ -1060,10 +1060,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'inode alert, monitoring tool',
       },
       {
-        text: 'Nice work today; checking inodes is a great troubleshooting habit every Linux engineer should know.',
+        text: 'Nice work today; checking inodes is a very useful habit every Linux engineer should know.',
         translation:
-          '[Linux Eng] Hôm nay làm tốt lắm; kiểm tra inode là thói quen xử lý sự cố rất hay mà kỹ sư Linux nào cũng nên biết.',
-        hint: 'troubleshooting habit',
+          '[Linux Eng] Hôm nay làm tốt lắm; kiểm tra inode là thói quen rất hữu ích mà kỹ sư Linux nào cũng nên biết.',
+        hint: 'useful habit',
       },
     ],
   },
@@ -1072,39 +1072,39 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-06',
     title: 'B1 | 06. Planning a Safe Database Migration Weekend (IT Ops)',
     description:
-      'A 2-minute B1 planning conversation preparing a customer database migration to a larger server with staging rehearsals, verification, and rollback readiness (~2 min, B1, UK English).',
+      'A 2-minute B1 planning conversation preparing a customer database move to a larger server with test runs, checks, and a backup plan (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Good afternoon Priya, let us finalise our checklist for Saturday’s customer database migration.',
+        text: 'Good afternoon, let us finish our checklist for Saturday’s customer database migration.',
         translation:
-          '[Project Lead] Chào buổi chiều Priya, cùng chốt danh sách kiểm tra cho đợt chuyển đổi cơ sở dữ liệu khách hàng thứ Bảy này nhé.',
-        hint: 'finalise, checklist, database migration',
+          '[Project Lead] Chào buổi chiều, cùng chốt danh sách kiểm tra cho đợt chuyển cơ sở dữ liệu khách hàng thứ Bảy này nhé.',
+        hint: 'checklist, database migration',
       },
       {
-        text: 'Sure, our current server is running close to capacity, so moving to the new machine is essential.',
+        text: 'Sure, our current server is almost full, so moving to the new machine is very important.',
         translation:
-          '[DBA] Chắc chắn rồi, máy chủ hiện tại đã chạy gần kịch ngưỡng nên chuyển sang máy mới là rất cần thiết.',
-        hint: 'close to capacity, essential',
+          '[DBA] Chắc chắn rồi, máy chủ hiện tại gần đầy rồi nên chuyển sang máy mới là rất quan trọng.',
+        hint: 'almost full, very important',
       },
       {
-        text: 'How much total downtime should we communicate to customers for the Saturday night window?',
+        text: 'How much total downtime should we tell customers to expect on Saturday night?',
         translation:
-          '[Project Lead] Chúng ta nên thông báo tổng thời gian tạm ngưng là bao lâu cho khung giờ tối thứ Bảy?',
-        hint: 'communicate, downtime',
+          '[Project Lead] Chúng ta nên báo khách hàng dự kiến tổng thời gian tạm ngưng là bao lâu vào tối thứ Bảy?',
+        hint: 'downtime, expect',
       },
       {
-        text: 'In our staging rehearsal yesterday, the final switchover took twenty five minutes from start to finish.',
+        text: 'In our test run on staging yesterday, the final switch took twenty five minutes from start to finish.',
         translation:
-          '[DBA] Trong buổi diễn tập trên staging hôm qua, bước chuyển đổi cuối cùng mất hai mươi lăm phút từ đầu đến cuối.',
-        hint: 'staging rehearsal, switchover',
+          '[DBA] Trong lần chạy thử trên staging hôm qua, bước chuyển cuối cùng mất hai mươi lăm phút từ đầu đến cuối.',
+        hint: 'test run, final switch',
       },
       {
-        text: 'Let us announce a one hour maintenance window so we have plenty of safety margin.',
+        text: 'Let us share a one hour maintenance window so we have plenty of extra time.',
         translation:
-          '[Project Lead] Hãy thông báo khung bảo trì một tiếng để ta có đủ biên độ an toàn.',
-        hint: 'announce, safety margin',
+          '[Project Lead] Hãy thông báo khung bảo trì một tiếng để ta có nhiều thời gian dự phòng.',
+        hint: 'maintenance window, extra time',
       },
       {
         text: 'How are we copying such a large database without keeping the website offline for hours?',
@@ -1113,10 +1113,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'copying, offline for hours',
       },
       {
-        text: 'We already set up live replication, so the new server receives every change in real time.',
+        text: 'We already set up live syncing, so the new server gets every change in real time.',
         translation:
-          '[DBA] Tụi mình đã thiết lập nhân bản trực tiếp rồi, nên máy chủ mới nhận mọi thay đổi theo thời gian thực.',
-        hint: 'live replication, real time',
+          '[DBA] Tụi mình đã thiết lập đồng bộ trực tiếp rồi, nên máy chủ mới nhận mọi thay đổi theo thời gian thực.',
+        hint: 'live syncing, real time',
       },
       {
         text: 'That means during maintenance we only pause writes briefly and wait for the last few rows to catch up.',
@@ -1125,64 +1125,64 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'pause writes, catch up',
       },
       {
-        text: 'Once the data matches completely, how will we verify that nothing was missed during the transfer?',
+        text: 'Once the data matches completely, how will we check that nothing was missed during the move?',
         translation:
-          '[Project Lead] Khi dữ liệu khớp hoàn toàn, ta sẽ kiểm chứng thế nào để chắc không sót gì trong quá trình chuyển?',
-        hint: 'matches completely, transfer',
+          '[Project Lead] Khi dữ liệu khớp hoàn toàn, ta sẽ kiểm tra thế nào để chắc không sót gì trong quá trình chuyển?',
+        hint: 'matches completely, missed',
       },
       {
-        text: 'I wrote a verification script that compares table row counts and checksums across all key tables.',
+        text: 'I wrote a check script that compares table row counts and data checks across all main tables.',
         translation:
-          '[DBA] Tôi đã viết một kịch bản kiểm chứng so sánh số dòng và mã kiểm tra trên mọi bảng chính.',
-        hint: 'verification script, row counts, checksums',
+          '[DBA] Tôi đã viết một kịch bản kiểm tra so sánh số dòng và kiểm tra dữ liệu trên mọi bảng chính.',
+        hint: 'check script, row counts',
       },
       {
-        text: 'And what happens if our application servers show unexpected errors right after pointing to the new database?',
+        text: 'And what happens if our application servers show unexpected errors right after using the new database?',
         translation:
-          '[Project Lead] Còn chuyện gì xảy ra nếu các máy chủ ứng dụng báo lỗi bất ngờ ngay sau khi trỏ sang database mới?',
-        hint: 'unexpected errors, pointing to',
+          '[Project Lead] Còn chuyện gì xảy ra nếu các máy chủ ứng dụng báo lỗi bất ngờ ngay sau khi dùng database mới?',
+        hint: 'unexpected errors',
       },
       {
-        text: 'We will keep the old database server untouched and online in read only mode all weekend.',
+        text: 'We will keep the old database server safe and online in read only mode all weekend.',
         translation:
-          '[DBA] Ta sẽ giữ nguyên máy chủ database cũ không đụng chạm và chạy ở chế độ chỉ đọc suốt cuối tuần.',
-        hint: 'untouched, read only mode',
+          '[DBA] Ta sẽ giữ nguyên máy chủ database cũ an toàn và chạy ở chế độ chỉ đọc suốt cuối tuần.',
+        hint: 'read only mode',
       },
       {
-        text: 'If any critical smoke test fails within fifteen minutes, we simply point traffic back to the old server.',
+        text: 'If any important quick test fails within fifteen minutes, we simply point traffic back to the old server.',
         translation:
           '[DBA] Nếu bất kỳ bài kiểm thử nhanh quan trọng nào lỗi trong mười lăm phút, ta chỉ việc trỏ lưu lượng về lại máy cũ.',
-        hint: 'smoke test, point traffic back',
+        hint: 'quick test, point traffic back',
       },
       {
-        text: 'Have we checked firewall rules and connection passwords so every app server can reach the new host?',
+        text: 'Have we checked firewall rules and login passwords so every app server can reach the new host?',
         translation:
-          '[Project Lead] Ta đã kiểm tra quy tắc tường lửa và mật khẩu kết nối để mọi máy chủ ứng dụng nối được tới máy mới chưa?',
-        hint: 'connection passwords, reach the new host',
+          '[Project Lead] Ta đã kiểm tra quy tắc tường lửa và mật khẩu đăng nhập để mọi máy chủ ứng dụng nối được tới máy mới chưa?',
+        hint: 'login passwords, reach the new host',
       },
       {
-        text: 'Yes, we tested network connectivity and login permissions from every production node earlier today.',
+        text: 'Yes, we tested network access and login permissions from every production server earlier today.',
         translation:
           '[DBA] Rồi ạ, đầu ngày hôm nay ta đã thử kết nối mạng và quyền đăng nhập từ từng máy chủ production.',
-        hint: 'network connectivity, login permissions',
+        hint: 'network access, login permissions',
       },
       {
-        text: 'Also remember to take a fresh full backup snapshot right before pausing production writes.',
+        text: 'Also remember to take a fresh full backup right before pausing production writes.',
         translation:
-          '[Project Lead] Cũng nhớ chụp một bản sao lưu đầy đủ mới ngay trước khi tạm dừng ghi trên production nhé.',
-        hint: 'full backup snapshot',
+          '[Project Lead] Cũng nhớ tạo một bản sao lưu đầy đủ mới ngay trước khi tạm dừng ghi trên production nhé.',
+        hint: 'fresh full backup',
       },
       {
-        text: 'It is step two on our runbook, and two engineers will double check every command together.',
+        text: 'It is step two on our guide, and two engineers will double check every command together.',
         translation:
-          '[DBA] Đó là bước hai trong sổ tay rồi, và hai kỹ sư sẽ cùng kiểm tra chéo từng câu lệnh.',
-        hint: 'runbook, double check',
+          '[DBA] Đó là bước hai trong hướng dẫn rồi, và hai kỹ sư sẽ cùng kiểm tra chéo từng câu lệnh.',
+        hint: 'guide, double check',
       },
       {
-        text: 'Everything looks well prepared; let us meet on the bridge call at ten forty five Saturday night.',
+        text: 'Everything looks well prepared; let us meet on the team call at ten forty five Saturday night.',
         translation:
-          '[Project Lead] Mọi thứ chuẩn bị rất chu đáo rồi; hẹn gặp nhau trên cuộc gọi trực chiến lúc mười giờ bốn lăm tối thứ Bảy nhé.',
-        hint: 'well prepared, bridge call',
+          '[Project Lead] Mọi thứ chuẩn bị rất chu đáo rồi; hẹn gặp nhau trên cuộc gọi nhóm lúc mười giờ bốn lăm tối thứ Bảy nhé.',
+        hint: 'well prepared, team call',
       },
     ],
   },
@@ -1191,18 +1191,18 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-07',
     title: 'B1 | 07. Responding to a Phishing Email & Account Check (IT Ops)',
     description:
-      'A 2-minute B1 security operations phone call helping an employee who clicked a fake invoice link, revoking sessions, blocking the domain, and enabling two-factor login (~2 min, B1, UK English).',
+      'A 2-minute B1 security operations phone call helping an employee who clicked a fake invoice link, signing out sessions, blocking the site, and turning on two-factor login (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hello security desk, I think I just made a mistake and clicked a suspicious invoice link in my email.',
+        text: 'Hello security desk, I think I just made a mistake and clicked a strange invoice link in my email.',
         translation:
-          '[Staff] Xin chào bộ phận bảo mật, tôi nghĩ mình vừa lỡ tay bấm vào một đường dẫn hóa đơn đáng ngờ trong email.',
-        hint: 'made a mistake, suspicious invoice link',
+          '[Staff] Xin chào bộ phận bảo mật, tôi nghĩ mình vừa lỡ tay bấm vào một đường dẫn hóa đơn lạ trong email.',
+        hint: 'made a mistake, strange invoice link',
       },
       {
-        text: 'Thank you for calling immediately; reporting it fast is the best thing you could possibly do.',
+        text: 'Thank you for calling right away; reporting it fast is the best thing you could do.',
         translation:
           '[Security Ops] Cảm ơn bạn đã gọi ngay lập tức; báo sớm là điều tốt nhất bạn có thể làm lúc này.',
         hint: 'reporting it fast',
@@ -1214,58 +1214,58 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'calmly, login page',
       },
       {
-        text: 'Yes, it looked exactly like our company portal, so I typed my work email and password before noticing the strange address.',
+        text: 'Yes, it looked just like our company portal, so I typed my work email and password before seeing the strange address.',
         translation:
-          '[Staff] Có, nó giống hệt cổng nội bộ công ty nên tôi đã nhập email và mật khẩu trước khi nhận ra địa chỉ lạ.',
+          '[Staff] Có, nó giống hệt cổng nội bộ công ty nên tôi đã nhập email và mật khẩu trước khi thấy địa chỉ lạ.',
         hint: 'company portal, strange address',
       },
       {
-        text: 'Okay, do not panic; let me check your account login history and active sessions right now.',
+        text: 'Okay, do not worry; let me check your account login history and active sessions right now.',
         translation:
-          '[Security Ops] Được rồi, đừng hoảng; để tôi kiểm tra lịch sử đăng nhập và các phiên đang mở của bạn ngay đây.',
-        hint: 'do not panic, login history, active sessions',
+          '[Security Ops] Được rồi, đừng lo; để tôi kiểm tra lịch sử đăng nhập và các phiên đang mở của bạn ngay đây.',
+        hint: 'login history, active sessions',
       },
       {
-        text: 'I see a login attempt from an unfamiliar city two minutes ago, so we need to lock it down fast.',
+        text: 'I see a login attempt from an unknown city two minutes ago, so we need to lock it down fast.',
         translation:
           '[Security Ops] Tôi thấy một lượt đăng nhập từ một thành phố lạ hai phút trước, nên ta cần khóa chặt ngay.',
-        hint: 'unfamiliar city, lock it down',
+        hint: 'unknown city, lock it down',
       },
       {
-        text: 'First, I am signing out all active sessions across every device and temporarily resetting your password.',
+        text: 'First, I am signing out all active sessions on every device and resetting your password right now.',
         translation:
-          '[Security Ops] Trước tiên, tôi đăng xuất toàn bộ phiên đang hoạt động trên mọi thiết bị và đặt lại mật khẩu tạm thời.',
+          '[Security Ops] Trước tiên, tôi đăng xuất toàn bộ phiên đang hoạt động trên mọi thiết bị và đặt lại mật khẩu ngay.',
         hint: 'signing out, active sessions',
       },
       {
-        text: 'Did the attacker manage to open any shared files or forward emails from my mailbox?',
+        text: 'Did the attacker open any shared files or forward emails from my mailbox?',
         translation:
           '[Staff] Kẻ tấn công có kịp mở tệp dùng chung nào hay chuyển tiếp email từ hộp thư của tôi không?',
         hint: 'attacker, forward emails, mailbox',
       },
       {
-        text: 'Good news, the audit log shows zero file downloads and no hidden forwarding rules were added.',
+        text: 'Good news, the activity log shows zero file downloads and no hidden forwarding rules were added.',
         translation:
-          '[Security Ops] Tin tốt là nhật ký kiểm toán không ghi nhận lượt tải tệp nào và cũng chưa có quy tắc chuyển tiếp ẩn.',
-        hint: 'audit log, forwarding rules',
+          '[Security Ops] Tin tốt là nhật ký hoạt động không ghi nhận lượt tải tệp nào và cũng chưa có quy tắc chuyển tiếp ẩn.',
+        hint: 'activity log, forwarding rules',
       },
       {
-        text: 'What a relief; did the website download any strange attachment onto my laptop?',
+        text: 'I am so glad; did the website download any strange file onto my laptop?',
         translation:
-          '[Staff] Thật nhẹ nhõm; trang web đó có tải tệp đính kèm lạ nào xuống máy tính xách tay của tôi không?',
-        hint: 'relief, attachment',
+          '[Staff] Thật nhẹ nhõm quá; trang web đó có tải tệp lạ nào xuống máy tính xách tay của tôi không?',
+        hint: 'glad, strange file',
       },
       {
-        text: 'Our endpoint protection scan shows your laptop is clean, though I will trigger a full quick check.',
+        text: 'Our antivirus scan shows your laptop is clean, though I will run one more quick check.',
         translation:
-          '[Security Ops] Công cụ bảo vệ thiết bị đầu cuối báo máy bạn sạch, nhưng tôi vẫn sẽ chạy thêm một lượt quét nhanh.',
-        hint: 'endpoint protection, scan',
+          '[Security Ops] Công cụ diệt virus báo máy bạn sạch, nhưng tôi vẫn sẽ chạy thêm một lượt quét nhanh.',
+        hint: 'antivirus scan, quick check',
       },
       {
-        text: 'Please forward the phishing message to our security inbox so we can block that fake domain company wide.',
+        text: 'Please forward the fake email to our security inbox so we can block that website for the whole company.',
         translation:
-          '[Security Ops] Bạn hãy chuyển tiếp thư lừa đảo đó tới hộp thư bảo mật để ta chặn tên miền giả trên toàn công ty.',
-        hint: 'phishing message, fake domain, company wide',
+          '[Security Ops] Bạn hãy chuyển tiếp thư giả đó tới hộp thư bảo mật để ta chặn trang web đó trên toàn công ty.',
+        hint: 'fake email, whole company',
       },
       {
         text: 'I am forwarding it now; do I also need to change my password on any other work apps?',
@@ -1274,34 +1274,34 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'change my password',
       },
       {
-        text: 'Only if you reused the same password anywhere else; always keep your work password completely unique.',
+        text: 'Only if you used the same password anywhere else; always keep your work password different from other accounts.',
         translation:
-          '[Security Ops] Chỉ khi bạn dùng lại đúng mật khẩu đó ở nơi khác; hãy luôn giữ mật khẩu công việc hoàn toàn riêng biệt.',
-        hint: 'reused, completely unique',
+          '[Security Ops] Chỉ khi bạn dùng lại đúng mật khẩu đó ở nơi khác; hãy luôn giữ mật khẩu công việc khác với các tài khoản khác.',
+        hint: 'same password, different',
       },
       {
-        text: 'Next, let us turn on two factor authentication on your phone so a stolen password alone cannot log in.',
+        text: 'Next, let us turn on two factor login on your phone so a stolen password alone cannot sign in.',
         translation:
-          '[Security Ops] Tiếp theo hãy bật xác thực hai yếu tố trên điện thoại để riêng mật khẩu bị lộ không thể đăng nhập.',
-        hint: 'two factor authentication, stolen password',
+          '[Security Ops] Tiếp theo hãy bật đăng nhập hai bước trên điện thoại để riêng mật khẩu bị lộ không thể đăng nhập.',
+        hint: 'two factor login, stolen password',
       },
       {
-        text: 'I just scanned the setup code in my authenticator app and entered the six digit code.',
+        text: 'I just scanned the setup code in my phone app and typed in the six digit code.',
         translation:
-          '[Staff] Tôi vừa quét mã cài đặt trong ứng dụng xác thực và nhập mã sáu chữ số rồi.',
-        hint: 'authenticator app, six digit code',
+          '[Staff] Tôi vừa quét mã cài đặt trong ứng dụng điện thoại và nhập mã sáu chữ số rồi.',
+        hint: 'setup code, six digit code',
       },
       {
-        text: 'Your account is secure again, and I have already blocked the sender and removed the email from other inboxes.',
+        text: 'Your account is safe again, and I have already blocked the sender and removed the email from other inboxes.',
         translation:
           '[Security Ops] Tài khoản của bạn đã an toàn trở lại, và tôi đã chặn người gửi cũng như gỡ thư đó khỏi hộp thư người khác.',
         hint: 'blocked the sender, removed',
       },
       {
-        text: 'Thanks so much for your patience; I will always check the sender address carefully from now on.',
+        text: 'Thanks so much for your help; I will always check the sender address carefully from now on.',
         translation:
-          '[Staff] Cảm ơn bạn rất nhiều vì sự kiên nhẫn; từ giờ tôi sẽ luôn kiểm tra kỹ địa chỉ người gửi.',
-        hint: 'patience, carefully',
+          '[Staff] Cảm ơn bạn rất nhiều vì đã hỗ trợ; từ giờ tôi sẽ luôn kiểm tra kỹ địa chỉ người gửi.',
+        hint: 'sender address, carefully',
       },
     ],
   },
@@ -1310,14 +1310,14 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-08',
     title: 'B1 | 08. Fixing Broken Scheduled Backups & Storage Alerts (IT Ops)',
     description:
-      'A 2-minute B1 operations call investigating three failed overnight backup jobs, expired cloud storage permissions, manual recovery, and restore verification (~2 min, B1, UK English).',
+      'A 2-minute B1 operations call fixing three failed overnight backup jobs, expired cloud storage keys, manual upload, and restore tests (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Morning Liam, I noticed on the daily report that our file server backup failed three nights in a row.',
+        text: 'Good morning, I saw on the daily report that our file server backup failed three nights in a row.',
         translation:
-          '[Shift Operator] Chào buổi sáng Liam, mình thấy trên báo cáo hằng ngày là bản sao lưu máy chủ tệp lỗi ba đêm liên tiếp rồi.',
+          '[Shift Operator] Chào buổi sáng, mình thấy trên báo cáo hằng ngày là bản sao lưu máy chủ tệp lỗi ba đêm liên tiếp rồi.',
         hint: 'daily report, three nights in a row',
       },
       {
@@ -1327,16 +1327,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'monitoring board, instead of',
       },
       {
-        text: 'The alert rule only turns red after five failures, which feels far too late for important business files.',
+        text: 'The alert rule only turns red after five failures, which feels much too late for important company files.',
         translation:
-          '[Shift Operator] Quy tắc cảnh báo chỉ chuyển đỏ sau năm lần lỗi, như vậy quá trễ đối với dữ liệu doanh nghiệp quan trọng.',
-        hint: 'far too late, business files',
+          '[Shift Operator] Quy tắc cảnh báo chỉ chuyển đỏ sau năm lần lỗi, như vậy quá trễ đối với dữ liệu công ty quan trọng.',
+        hint: 'too late, company files',
       },
       {
-        text: 'You are completely right; let us fix the broken backup first and tighten that alert rule immediately after.',
+        text: 'You are completely right; let us fix the broken backup first and change that alert rule right after.',
         translation:
-          '[Backup Eng] Cậu nói hoàn toàn đúng; trước hết hãy sửa bản sao lưu hỏng rồi siết chặt quy tắc cảnh báo ngay sau đó.',
-        hint: 'tighten, alert rule',
+          '[Backup Eng] Bạn nói hoàn toàn đúng; trước hết hãy sửa bản sao lưu hỏng rồi đổi quy tắc cảnh báo ngay sau đó.',
+        hint: 'broken backup, alert rule',
       },
       {
         text: 'I opened last night’s backup log, and the job failed right at the start with an access denied message.',
@@ -1357,22 +1357,22 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'service account, access key',
       },
       {
-        text: 'Are all our local snapshots from the past week still safe on the office storage server?',
+        text: 'Are all our local backup copies from the past week still safe on the office storage server?',
         translation:
-          '[Shift Operator] Toàn bộ bản chụp nội bộ tuần qua vẫn an toàn trên máy chủ lưu trữ văn phòng chứ?',
-        hint: 'local snapshots, storage server',
+          '[Shift Operator] Toàn bộ bản sao lưu nội bộ tuần qua vẫn an toàn trên máy chủ lưu trữ văn phòng chứ?',
+        hint: 'local backup copies, storage server',
       },
       {
-        text: 'Yes, local snapshots worked fine; only the offsite cloud upload failed because of the expired key.',
+        text: 'Yes, local backups worked fine; only the cloud backup upload failed because of the expired key.',
         translation:
-          '[Backup Eng] Có, bản chụp nội bộ vẫn chạy tốt; chỉ bước tải lên đám mây ngoài site bị lỗi do khóa hết hạn.',
-        hint: 'offsite cloud upload',
+          '[Backup Eng] Có, bản sao lưu nội bộ vẫn chạy tốt; chỉ bước tải lên đám mây bị lỗi do khóa hết hạn.',
+        hint: 'cloud backup upload',
       },
       {
-        text: 'I am creating a new service key now and updating the encrypted secret inside our backup tool.',
+        text: 'I am creating a new service key now and updating the saved key inside our backup tool.',
         translation:
-          '[Backup Eng] Tôi đang tạo khóa dịch vụ mới và cập nhật bí mật mã hóa bên trong công cụ sao lưu.',
-        hint: 'encrypted secret, backup tool',
+          '[Backup Eng] Tôi đang tạo khóa dịch vụ mới và cập nhật khóa đã lưu bên trong công cụ sao lưu.',
+        hint: 'saved key, backup tool',
       },
       {
         text: 'Should we wait until midnight to see if it works, or run a manual backup right now?',
@@ -1381,46 +1381,46 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'manual backup',
       },
       {
-        text: 'Never wait until midnight after three failures; let us start an incremental upload right away.',
+        text: 'Never wait until midnight after three failures; let us start a quick upload of new files right away.',
         translation:
-          '[Backup Eng] Đừng bao giờ đợi tới nửa đêm sau ba lần lỗi; hãy chạy tải lên gia tăng ngay lập tức.',
-        hint: 'incremental upload',
+          '[Backup Eng] Đừng bao giờ đợi tới nửa đêm sau ba lần lỗi; hãy chạy tải lên nhanh các tệp mới ngay lập tức.',
+        hint: 'quick upload, right away',
       },
       {
-        text: 'The upload started cleanly and is transferring files at forty megabytes per second.',
+        text: 'The upload started cleanly and is sending files at forty megabytes per second.',
         translation:
-          '[Shift Operator] Quá trình tải lên đã chạy gọn và đang truyền tệp ở tốc độ bốn mươi megabyte mỗi giây.',
-        hint: 'transferring files, per second',
+          '[Shift Operator] Quá trình tải lên đã chạy gọn và đang gửi tệp ở tốc độ bốn mươi megabyte mỗi giây.',
+        hint: 'sending files, per second',
       },
       {
-        text: 'Since it is only an incremental sync, it should finish uploading within five minutes.',
+        text: 'Since it only uploads changed files, it should finish within five minutes.',
         translation:
-          '[Backup Eng] Vì chỉ là đồng bộ gia tăng nên chắc sẽ tải xong trong vòng năm phút thôi.',
-        hint: 'incremental sync',
+          '[Backup Eng] Vì chỉ tải lên các tệp đã thay đổi nên chắc sẽ xong trong vòng năm phút thôi.',
+        hint: 'changed files, within five minutes',
       },
       {
-        text: 'It just finished with zero errors! Let us also restore one test folder to staging to be certain.',
+        text: 'It just finished with zero errors! Let us also restore one test folder to staging to be sure.',
         translation:
           '[Shift Operator] Vừa chạy xong không một lỗi nào! Mình cũng khôi phục thử một thư mục mẫu lên staging cho chắc nhé.',
-        hint: 'to be certain, staging',
+        hint: 'to be sure, staging',
       },
       {
-        text: 'The test restore succeeded and every document opened without any corruption.',
+        text: 'The test restore worked and every document opened with no errors.',
         translation:
-          '[Backup Eng] Bản khôi phục thử thành công và mọi tài liệu đều mở được không bị hỏng.',
-        hint: 'succeeded, corruption',
+          '[Backup Eng] Bản khôi phục thử đã chạy tốt và mọi tài liệu đều mở được không có lỗi nào.',
+        hint: 'test restore, no errors',
       },
       {
-        text: 'Now I am updating the alert policy so even a single missed backup sends a red ticket the next morning.',
+        text: 'Now I am updating the alert rule so even a single missed backup sends a red ticket the next morning.',
         translation:
-          '[Backup Eng] Giờ tôi cập nhật chính sách cảnh báo để chỉ cần lỡ một lần sao lưu là gửi phiếu đỏ ngay sáng hôm sau.',
-        hint: 'alert policy, missed backup',
+          '[Backup Eng] Giờ tôi cập nhật quy tắc cảnh báo để chỉ cần lỡ một lần sao lưu là gửi phiếu đỏ ngay sáng hôm sau.',
+        hint: 'alert rule, missed backup',
       },
       {
-        text: 'Thanks Liam, I will add a reminder to rotate the storage key before it expires next quarter.',
+        text: 'Thanks a lot, I will add a calendar reminder to change the storage key before it expires in three months.',
         translation:
-          '[Shift Operator] Cảm ơn Liam, mình sẽ thêm nhắc lịch xoay khóa lưu trữ trước khi hết hạn vào quý sau.',
-        hint: 'next quarter, rotate',
+          '[Shift Operator] Cảm ơn nhiều nhé, mình sẽ thêm nhắc lịch đổi khóa lưu trữ trước khi hết hạn trong ba tháng tới.',
+        hint: 'calendar reminder, in three months',
       },
     ],
   },
@@ -1429,18 +1429,18 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-09',
     title: 'B1 | 09. Troubleshooting Slow API Calls & Timeout Errors (IT Ops)',
     description:
-      'A 2-minute B1 incident call tracing mobile app timeouts through API gateway logs to a slow third-party payment provider and adding safe timeouts (~2 min, B1, UK English).',
+      'A 2-minute B1 incident call tracing mobile app timeouts through API gateway logs to a slow payment partner and switching to a backup service (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
       {
-        text: 'Hi Noah, mobile app users are reporting loading spinners and timeout errors when paying for orders.',
+        text: 'Hi, mobile app users are reporting loading spinners and timeout errors when paying for orders.',
         translation:
-          '[App Support] Chào Noah, người dùng ứng dụng di động đang báo vòng xoay tải mãi và lỗi quá thời gian khi thanh toán đơn hàng.',
+          '[App Support] Chào bạn, người dùng ứng dụng di động đang báo vòng xoay tải mãi và lỗi quá thời gian khi thanh toán đơn hàng.',
         hint: 'loading spinners, timeout errors',
       },
       {
-        text: 'Let me open the API gateway dashboard; yes, the error rate on the payment endpoint just climbed to twelve percent.',
+        text: 'Let me open the API gateway dashboard; yes, the error rate on the payment endpoint just rose to twelve percent.',
         translation:
           '[SRE] Để tôi mở bảng điều khiển cổng API; đúng rồi, tỷ lệ lỗi trên điểm cuối thanh toán vừa tăng lên 12%.',
         hint: 'API gateway, error rate, endpoint',
@@ -1458,64 +1458,64 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'responds, hanging',
       },
       {
-        text: 'Let us inspect the request traces to see whether the delay is inside our own code or an external partner.',
+        text: 'Let us check the request logs to see whether the delay is inside our own code or an outside partner.',
         translation:
-          '[SRE] Hãy kiểm tra dấu vết yêu cầu xem độ trễ nằm trong mã của ta hay ở phía đối tác bên ngoài.',
-        hint: 'request traces, external partner',
+          '[SRE] Hãy kiểm tra nhật ký yêu cầu xem độ trễ nằm trong mã của ta hay ở phía đối tác bên ngoài.',
+        hint: 'request logs, outside partner',
       },
       {
-        text: 'Look at the timing breakdown: our internal service finishes in twenty milliseconds, then waits thirty seconds for the bank API.',
+        text: 'Look at the time details: our internal service finishes in twenty milliseconds, then waits thirty seconds for the bank API.',
         translation:
-          '[SRE] Nhìn bảng phân tách thời gian này: dịch vụ nội bộ của ta xử lý xong trong 20 mili giây, rồi chờ 30 giây cho API ngân hàng.',
-        hint: 'timing breakdown, internal service',
+          '[SRE] Nhìn chi tiết thời gian này: dịch vụ nội bộ của ta xử lý xong trong 20 mili giây, rồi chờ 30 giây cho API ngân hàng.',
+        hint: 'time details, internal service',
       },
       {
-        text: 'Thirty seconds is way too long! Let me check the payment provider’s public status page.',
+        text: 'Thirty seconds is way too long! Let me check the payment partner’s public status page.',
         translation:
-          '[App Support] Ba mươi giây là quá lâu rồi! Để tôi kiểm tra trang trạng thái công khai của nhà cung cấp thanh toán.',
-        hint: 'payment provider, public status page',
+          '[App Support] Ba mươi giây là quá lâu rồi! Để tôi kiểm tra trang trạng thái công khai của đối tác thanh toán.',
+        hint: 'payment partner, public status page',
       },
       {
-        text: 'They just posted an incident notice confirming degraded performance on their European payment gateway.',
+        text: 'They just posted an incident notice saying their European payment gateway is running slowly.',
         translation:
-          '[App Support] Họ vừa đăng thông báo sự cố xác nhận hiệu năng bị suy giảm trên cổng thanh toán châu Âu của họ.',
-        hint: 'incident notice, degraded performance',
+          '[App Support] Họ vừa đăng thông báo sự cố nói rằng cổng thanh toán châu Âu của họ đang chạy chậm.',
+        hint: 'incident notice, running slowly',
       },
       {
-        text: 'Because our timeout was set to thirty seconds, waiting calls are tying up all our payment worker threads.',
+        text: 'Because our timeout was set to thirty seconds, waiting calls are keeping all our payment workers busy.',
         translation:
-          '[SRE] Vì thời gian chờ của ta đặt tới ba mươi giây, các cuộc gọi đang chờ đã chiếm hết luồng xử lý thanh toán.',
-        hint: 'tying up, worker threads',
+          '[SRE] Vì thời gian chờ của ta đặt tới ba mươi giây, các cuộc gọi đang chờ đã làm bận hết toàn bộ luồng xử lý thanh toán.',
+        hint: 'keeping busy, payment workers',
       },
       {
-        text: 'Can we lower the outgoing timeout to six seconds and show a polite retry message to users?',
+        text: 'Can we lower the timeout to six seconds and show a polite retry message to users?',
         translation:
           '[App Support] Ta có thể hạ thời gian chờ xuống sáu giây và hiện thông báo mời người dùng thử lại lịch sự không?',
         hint: 'lower the timeout, retry message',
       },
       {
-        text: 'Even better, we also have a secondary payment processor configured for backup routing.',
+        text: 'Even better, we also have a backup payment service set up and ready for traffic.',
         translation:
-          '[SRE] Tốt hơn nữa, ta còn cấu hình sẵn một nhà cung cấp thanh toán dự phòng để chuyển hướng.',
-        hint: 'secondary processor, backup routing',
+          '[SRE] Tốt hơn nữa, ta còn cấu hình sẵn một dịch vụ thanh toán dự phòng và sẵn sàng nhận lưu lượng.',
+        hint: 'backup payment service, ready',
       },
       {
-        text: 'Let us shift fifty percent of checkout traffic to the backup processor first and watch the success rate.',
+        text: 'Let us move fifty percent of checkout traffic to the backup service first and watch the success rate.',
         translation:
-          '[SRE] Hãy chuyển trước 50% lưu lượng thanh toán sang nhà cung cấp dự phòng rồi theo dõi tỷ lệ thành công.',
-        hint: 'shift traffic, success rate',
+          '[SRE] Hãy chuyển trước 50% lưu lượng thanh toán sang dịch vụ dự phòng rồi theo dõi tỷ lệ thành công.',
+        hint: 'move traffic, success rate',
       },
       {
-        text: 'Transactions on the backup gateway are succeeding in less than one second with zero timeouts.',
+        text: 'Payments on the backup gateway are finishing in less than one second with zero timeouts.',
         translation:
-          '[App Support] Các giao dịch qua cổng dự phòng đang thành công dưới một giây và không có lỗi quá thời gian nào.',
-        hint: 'transactions, succeeding',
+          '[App Support] Các giao dịch qua cổng dự phòng đang hoàn tất dưới một giây và không có lỗi quá thời gian nào.',
+        hint: 'finishing, zero timeouts',
       },
       {
-        text: 'Great, I am moving one hundred percent of payment traffic over until the primary partner recovers.',
+        text: 'Great, I am moving one hundred percent of payment traffic over until the main partner recovers.',
         translation:
           '[SRE] Tuyệt, tôi chuyển toàn bộ 100% lưu lượng thanh toán sang cho tới khi đối tác chính phục hồi.',
-        hint: 'primary partner, recovers',
+        hint: 'main partner, recovers',
       },
       {
         text: 'I also lowered the gateway timeout to eight seconds and added a safe limit on automatic retries.',
@@ -1524,16 +1524,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'automatic retries',
       },
       {
-        text: 'Support tickets already stopped coming in, and checkout conversion is back to its normal level.',
+        text: 'Support tickets already stopped coming in, and payment success is back to its normal level.',
         translation:
-          '[App Support] Phiếu hỗ trợ đã ngừng đổ về rồi, và tỷ lệ hoàn tất thanh toán đã quay về mức bình thường.',
-        hint: 'checkout conversion, normal level',
+          '[App Support] Phiếu hỗ trợ đã ngừng đổ về rồi, và tỷ lệ thanh toán thành công đã quay về mức bình thường.',
+        hint: 'payment success, normal level',
       },
       {
-        text: 'Let us keep an eye on the vendor status page before switching traffic back tomorrow morning.',
+        text: 'Let us keep an eye on the partner status page before switching traffic back tomorrow morning.',
         translation:
           '[SRE] Hãy theo dõi trang trạng thái của đối tác trước khi chuyển lưu lượng quay lại vào sáng mai.',
-        hint: 'keep an eye on, vendor',
+        hint: 'keep an eye on, switching back',
       },
       {
         text: 'Agreed; having a tested backup gateway really saved our afternoon today.',
@@ -1548,7 +1548,7 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
     videoId: 'audio-itops-b1-10',
     title: 'B1 | 10. Running a Weekly Incident Review & Runbook Update (IT Ops)',
     description:
-      'A 2-minute B1 team operations meeting reviewing weekly incidents, reducing noisy alerts, improving step-by-step runbooks, and mentoring new engineers (~2 min, B1, UK English).',
+      'A 2-minute B1 team operations meeting reviewing weekly incidents, reducing noisy alerts, improving step-by-step guides, and helping new engineers (~2 min, B1, UK English).',
     voiceAccent: 'en-GB',
     level: 'Intermediate',
     items: [
@@ -1559,10 +1559,10 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'operations review, handled',
       },
       {
-        text: 'Overall uptime stayed above ninety nine percent, though Tuesday’s night alert took longer than expected.',
+        text: 'Total uptime stayed above ninety nine percent, though Tuesday’s night alert took longer than expected.',
         translation:
-          '[SysAdmin] Thời gian hoạt động chung vẫn trên 99%, nhưng cảnh báo đêm thứ Ba mất thời gian xử lý lâu hơn dự kiến.',
-        hint: 'overall uptime, longer than expected',
+          '[SysAdmin] Tổng thời gian hoạt động vẫn trên 99%, nhưng cảnh báo đêm thứ Ba mất thời gian xử lý lâu hơn dự kiến.',
+        hint: 'total uptime, longer than expected',
       },
       {
         text: 'What slowed the response down on Tuesday when the queue server stopped processing jobs?',
@@ -1571,16 +1571,16 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'slowed down, processing jobs',
       },
       {
-        text: 'First, our monitoring chat received nearly forty minor warnings that night, so the real problem was easy to miss.',
+        text: 'First, our monitoring chat received nearly forty small warnings that night, so the real problem was easy to miss.',
         translation:
           '[SysAdmin] Thứ nhất, nhóm chat giám sát nhận gần bốn mươi cảnh báo nhỏ đêm đó nên rất dễ bỏ sót sự cố thật.',
-        hint: 'minor warnings, easy to miss',
+        hint: 'small warnings, easy to miss',
       },
       {
-        text: 'Second, the restart instructions in our wiki were outdated after last month’s server upgrade.',
+        text: 'Second, the restart steps in our wiki were old after last month’s server upgrade.',
         translation:
-          '[SysAdmin] Thứ hai, hướng dẫn khởi động lại trên wiki đã cũ sau đợt nâng cấp máy chủ tháng trước.',
-        hint: 'instructions, outdated, upgrade',
+          '[SysAdmin] Thứ hai, các bước khởi động lại trên wiki đã cũ sau đợt nâng cấp máy chủ tháng trước.',
+        hint: 'restart steps, server upgrade',
       },
       {
         text: 'That is very clear feedback; noisy alerts tire out the on call team and slow down real fixes.',
@@ -1589,75 +1589,75 @@ const RAW_IT_OPS_B1_SPECS: RawAudioLessonSpec[] = [
         hint: 'noisy alerts, tire out',
       },
       {
-        text: 'Which of those forty minor warnings can we safely silence or turn into a daily summary email?',
+        text: 'Which of those forty small warnings can we safely turn off or put into a daily summary email?',
         translation:
           '[Ops Manager] Trong bốn mươi cảnh báo nhỏ đó, loại nào ta có thể tắt an toàn hoặc gom thành email tổng hợp hằng ngày?',
-        hint: 'safely silence, daily summary',
+        hint: 'turn off, daily summary',
       },
       {
-        text: 'Short CPU spikes that last under thirty seconds never require waking someone up at three in the morning.',
+        text: 'Short CPU jumps that last under thirty seconds never need to wake someone up at three in the morning.',
         translation:
           '[SysAdmin] Các đợt tăng CPU ngắn dưới ba mươi giây không bao giờ cần đánh thức ai đó lúc ba giờ sáng.',
-        hint: 'CPU spikes, waking someone up',
+        hint: 'CPU jumps, wake someone up',
       },
       {
-        text: 'Agreed; let us require high CPU to stay above eighty five percent for five minutes before paging.',
+        text: 'Agreed; let us wait until high CPU stays above eighty five percent for five minutes before calling the on call engineer.',
         translation:
-          '[Ops Manager] Nhất trí; hãy yêu cầu CPU cao duy trì trên 85% suốt năm phút mới gọi trực.',
-        hint: 'require, before paging',
+          '[Ops Manager] Nhất trí; hãy chờ CPU cao duy trì trên 85% suốt năm phút rồi mới gọi kỹ sư trực.',
+        hint: 'on call engineer, stays above',
       },
       {
-        text: 'What about updating our incident runbooks so new shift engineers can follow them with confidence?',
+        text: 'What about updating our incident guides so new shift engineers can follow them easily?',
         translation:
-          '[Ops Manager] Còn việc cập nhật sổ tay sự cố để các kỹ sư ca mới làm theo thật tự tin thì sao?',
-        hint: 'shift engineers, with confidence',
+          '[Ops Manager] Còn việc cập nhật hướng dẫn sự cố để các kỹ sư ca mới làm theo thật dễ dàng thì sao?',
+        hint: 'shift engineers, easily',
       },
       {
-        text: 'I already rewrote the queue server runbook with exact commands, expected outputs, and clear rollback steps.',
+        text: 'I already rewrote the queue server guide with exact commands, expected results, and clear rollback steps.',
         translation:
-          '[SysAdmin] Tôi đã viết lại sổ tay máy chủ hàng đợi với câu lệnh chính xác, kết quả mong đợi và bước hoàn tác rõ ràng.',
-        hint: 'exact commands, expected outputs',
+          '[SysAdmin] Tôi đã viết lại hướng dẫn máy chủ hàng đợi với câu lệnh chính xác, kết quả mong đợi và bước hoàn tác rõ ràng.',
+        hint: 'exact commands, expected results',
       },
       {
-        text: 'Can we ask one of our newer engineers to test that runbook on staging next Tuesday?',
+        text: 'Can we ask one of our newer engineers to test that guide on staging next Tuesday?',
         translation:
-          '[Ops Manager] Ta có thể nhờ một kỹ sư mới chạy thử sổ tay đó trên môi trường staging thứ Ba tới không?',
+          '[Ops Manager] Ta có thể nhờ một kỹ sư mới chạy thử hướng dẫn đó trên môi trường staging thứ Ba tới không?',
         hint: 'newer engineers, test on staging',
       },
       {
-        text: 'Great idea; if a new team member can follow every step smoothly, we know the document is truly clear.',
+        text: 'Great idea; if a new team member can follow every step smoothly, we know the document is really clear.',
         translation:
           '[SysAdmin] Ý tuyệt vời; nếu thành viên mới làm theo trôi chảy từng bước thì ta biết tài liệu thực sự rõ ràng.',
-        hint: 'truly clear, follow every step',
+        hint: 'really clear, follow every step',
       },
       {
-        text: 'Let us also link each monitoring alert directly to its matching runbook page.',
+        text: 'Let us also link each monitoring alert directly to its matching guide page.',
         translation:
-          '[Ops Manager] Hãy gắn luôn đường dẫn trực tiếp từ mỗi cảnh báo giám sát tới trang sổ tay tương ứng.',
-        hint: 'link directly, matching runbook',
+          '[Ops Manager] Hãy gắn luôn đường dẫn trực tiếp từ mỗi cảnh báo giám sát tới trang hướng dẫn tương ứng.',
+        hint: 'link directly, matching guide',
       },
       {
-        text: 'That saves precious minutes during an urgent phone call because nobody has to search through old folders.',
+        text: 'That saves important minutes during an urgent phone call because nobody has to search through old folders.',
         translation:
-          '[SysAdmin] Việc đó tiết kiệm những phút quý giá trong cuộc gọi khẩn cấp vì không ai phải lục tìm thư mục cũ.',
-        hint: 'precious minutes, urgent phone call',
+          '[SysAdmin] Việc đó tiết kiệm những phút quan trọng trong cuộc gọi khẩn cấp vì không ai phải lục tìm thư mục cũ.',
+        hint: 'important minutes, urgent phone call',
       },
       {
-        text: 'Before we wrap up, is there any upcoming maintenance or risky release planned for next week?',
+        text: 'Before we finish, is there any maintenance or risky release planned for next week?',
         translation:
           '[Ops Manager] Trước khi kết thúc, tuần tới có lịch bảo trì hay bản phát hành rủi ro nào không?',
-        hint: 'wrap up, upcoming maintenance',
+        hint: 'maintenance, planned',
       },
       {
-        text: 'Only a routine security patch on Wednesday evening, and backups are already verified ready.',
+        text: 'Only a normal security update on Wednesday evening, and backups are already checked and ready.',
         translation:
-          '[SysAdmin] Chỉ có một đợt vá bảo mật định kỳ tối thứ Tư, và các bản sao lưu đều đã kiểm tra sẵn sàng.',
-        hint: 'routine security patch, verified',
+          '[SysAdmin] Chỉ có một đợt cập nhật bảo mật bình thường tối thứ Tư, và các bản sao lưu đều đã kiểm tra sẵn sàng.',
+        hint: 'security update, checked and ready',
       },
       {
-        text: 'Brilliant work everyone; fewer noisy alerts and clearer runbooks will make next week much calmer.',
+        text: 'Great work everyone; fewer noisy alerts and clearer guides will make next week much calmer.',
         translation:
-          '[Ops Manager] Cả đội làm rất tốt; ít cảnh báo nhiễu hơn và sổ tay rõ hơn sẽ giúp tuần tới nhẹ nhàng hơn nhiều.',
+          '[Ops Manager] Cả đội làm rất tốt; ít cảnh báo nhiễu hơn và hướng dẫn rõ hơn sẽ giúp tuần tới nhẹ nhàng hơn nhiều.',
         hint: 'much calmer',
       },
     ],
