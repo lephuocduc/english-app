@@ -18,6 +18,7 @@ import {
   calculateNextReview,
   getIntervalPreviewText,
   speakWord,
+  speakSentence,
   createClozeSentence,
 } from '../../lib/srs/sm2'
 
@@ -53,9 +54,10 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
   })
   const [missedItems, setMissedItems] = useState<VocabularyItem[]>([])
 
-  // Reset or initialize session queue when opened
+  // Initialize session queue once when the modal opens (avoid resetting mid-session when itemsToReview updates)
+  const wasOpenRef = React.useRef(false)
   useEffect(() => {
-    if (isOpen && itemsToReview.length > 0) {
+    if (isOpen && !wasOpenRef.current && itemsToReview.length > 0) {
       setQueue([...itemsToReview])
       setCurrentIndex(0)
       setIsFlipped(false)
@@ -63,6 +65,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
       setStats({ again: 0, hard: 0, good: 0, easy: 0, totalReviewed: 0 })
       setMissedItems([])
     }
+    wasOpenRef.current = isOpen
   }, [isOpen, itemsToReview])
 
   const currentCard: VocabularyItem | undefined = queue[currentIndex]
@@ -181,6 +184,13 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
         if (currentCard) {
           e.preventDefault()
           speakWord(currentCard.word)
+        }
+      }
+
+      if (e.key === 'e' || e.key === 'E') {
+        if (currentCard?.contextSentence) {
+          e.preventDefault()
+          speakSentence(currentCard.contextSentence)
         }
       }
 
@@ -402,9 +412,24 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                   {/* Context sentence with optional Cloze Test */}
                   {currentCard.contextSentence && (
                     <div className="max-w-lg mx-auto bg-white/70 dark:bg-slate-800/60 p-3 sm:p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                        Context from video:
-                      </span>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Context from video:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            speakSentence(currentCard.contextSentence)
+                          }}
+                          title="Listen to example sentence (E)"
+                          aria-label="Listen to example sentence"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700/80 transition cursor-pointer active:scale-95"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                          <span>Nghe ví dụ (E)</span>
+                        </button>
+                      </div>
                       <p className="italic">
                         &quot;
                         {isCloze && !isFlipped

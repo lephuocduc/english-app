@@ -166,6 +166,41 @@ describe('VocabularyView & Flashcard Anki SRS Integration Tests', () => {
     expect(onRemoveVocabulary).toHaveBeenCalledWith('v1')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('provides a listen button for each vocabulary example sentence', () => {
+    const speakMock = vi.fn()
+    const cancelMock = vi.fn()
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: { speak: speakMock, cancel: cancelMock, getVoices: () => [] },
+    })
+    ;(globalThis as unknown as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance =
+      class {
+        text: string
+        lang = ''
+        rate = 1
+        constructor(t: string) {
+          this.text = t
+        }
+      }
+
+    render(
+      <VocabularyView
+        vocabularyList={mockVocabList}
+        onRemoveVocabulary={vi.fn()}
+      />
+    )
+
+    const listenSentenceBtns = screen.getAllByRole('button', { name: /Listen to example sentence/i })
+    expect(listenSentenceBtns).toHaveLength(2)
+
+    fireEvent.click(listenSentenceBtns[0])
+    expect(cancelMock).toHaveBeenCalled()
+    expect(speakMock).toHaveBeenCalledTimes(1)
+    expect((speakMock.mock.calls[0][0] as { text: string }).text).toBe(
+      mockVocabList[0].contextSentence
+    )
+  })
 })
 
 describe('FlashcardReviewModal Component', () => {
@@ -184,8 +219,9 @@ describe('FlashcardReviewModal Component', () => {
 
     // Modal title
     expect(screen.getByText(/Flashcard Review/i)).toBeInTheDocument()
-    // Front side shows English word
+    // Front side shows English word & example sentence listen button
     expect(screen.getByText('resilient')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Listen to example sentence/i })).toBeInTheDocument()
 
     // Meaning not shown before flip
     expect(screen.queryByText('kiên cường, có khả năng phục hồi')).not.toBeInTheDocument()

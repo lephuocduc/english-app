@@ -63,52 +63,54 @@ export function calculateNextReview(
 
   switch (rating) {
     case 1: {
-      // Again: card failed, reset reps and review again tomorrow
+      // Again: card failed, reset reps and review again today
       newReps = 0
-      newInterval = 1
+      newInterval = 0
       newEase = Math.max(MIN_EASE_FACTOR, prevEase - 0.2)
       newMastered = false
       break
     }
     case 2: {
-      // Hard: successful but difficult
+      // Hard: successful recall with effort — gentle growth, slightly lowers ease
       newReps = prevReps + 1
       if (prevInterval <= 1) {
         newInterval = 1
       } else {
-        newInterval = Math.max(1, Math.round(prevInterval * 1.2))
+        newInterval = Math.max(prevInterval, Math.round(prevInterval * 1.2))
       }
       newEase = Math.max(MIN_EASE_FACTOR, prevEase - 0.15)
+      newMastered = false
       break
     }
     case 3: {
-      // Good: standard successful recall
+      // Good: standard successful recall (always strictly progresses when reps >= 3)
       newReps = prevReps + 1
       if (newReps === 1) {
         newInterval = 1
       } else if (newReps === 2) {
         newInterval = 3
       } else {
-        newInterval = Math.max(1, Math.round(prevInterval * prevEase))
+        newInterval = Math.max(prevInterval + 1, Math.round(prevInterval * prevEase))
       }
-      // If long interval achieved, mark as mastered
-      if (newInterval >= 30 || newReps >= 5) {
+      // Require both long-term retention (>= 30 days) and consistent reviews (>= 5 reps)
+      if (newInterval >= 30 && newReps >= 5) {
         newMastered = true
       }
       break
     }
     case 4: {
-      // Easy: very quick recall, bonus interval
+      // Easy: effortless recall — larger jump (always strictly > Good) & higher ease
       newReps = prevReps + 1
       if (newReps === 1) {
         newInterval = 4
       } else if (newReps === 2) {
         newInterval = 7
       } else {
-        newInterval = Math.max(1, Math.round(prevInterval * prevEase * 1.3))
+        const goodInterval = Math.max(prevInterval + 1, Math.round(prevInterval * prevEase))
+        newInterval = Math.max(goodInterval + 1, Math.round(prevInterval * prevEase * 1.3))
       }
       newEase = prevEase + 0.15
-      if (newInterval >= 14 || newReps >= 3) {
+      if (newInterval >= 30 && newReps >= 4) {
         newMastered = true
       }
       break
@@ -137,6 +139,7 @@ export function getIntervalPreviewText(
   now: Date = new Date()
 ): string {
   const result = calculateNextReview(item, rating, now)
+  if (result.interval === 0) return 'Today'
   if (result.interval === 1) return '1 day'
   if (result.interval < 30) return `${result.interval} days`
   const months = Math.round((result.interval / 30) * 10) / 10
@@ -148,7 +151,7 @@ export function getIntervalPreviewText(
  */
 export function isWordDue(item: VocabularyItem, targetDate: Date = new Date()): boolean {
   if (item.mastered) return false
-  // Never reviewed words are considered due
+  // Never reviewed words or failed (reps === 0) words are considered due
   if (!item.dueDate || !item.lastReviewedAt || (item.repetitions ?? 0) === 0) {
     return true
   }
@@ -157,10 +160,21 @@ export function isWordDue(item: VocabularyItem, targetDate: Date = new Date()): 
 }
 
 /**
- * Filters vocabulary list for items due for review
+ * Filters vocabulary list for items due for review, prioritized by:
+ * 1) Overdue & due-today review cards (oldest dueDate first)
+ * 2) New / never-reviewed cards
  */
 export function getDueVocabulary(items: VocabularyItem[], targetDate: Date = new Date()): VocabularyItem[] {
-  return items.filter((item) => isWordDue(item, targetDate))
+  const due = items.filter((item) => isWordDue(item, targetDate))
+  return due.sort((a, b) => {
+    const aIsNew = !a.lastReviewedAt || (a.repetitions ?? 0) === 0
+    const bIsNew = !b.lastReviewedAt || (b.repetitions ?? 0) === 0
+    if (aIsNew !== bIsNew) return aIsNew ? 1 : -1
+    if (a.dueDate && b.dueDate && a.dueDate !== b.dueDate) {
+      return a.dueDate.localeCompare(b.dueDate)
+    }
+    return 0
+  })
 }
 
 /**
@@ -248,19 +262,41 @@ export function createClozeSentence(sentence: string, targetWord: string): strin
   return sentence.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), '[ ... ]')
 }
 
-/**
- * Pronounce word using Web Speech API
- */
-export function speakWord(word: string, lang = 'en-GB'): void {
+function speakText(text: string, lang = 'en-GB', rate = 0.95): void {
+  const trimmed = text?.trim()
+  if (!trimmed) return
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(word)
+      const utterance = new SpeechSynthesisUtterance(trimmed)
       utterance.lang = lang
-      utterance.rate = 0.95
+      utterance.rate = rate
+      const voices = window.speechSynthesis.getVoices?.() || []
+      if (voices.length > 0) {
+        const lowerLang = lang.toLowerCase()
+        const matched =
+          voices.find((v) => v.lang?.toLowerCase() === lowerLang && /natural|google|libby|ryan|sonia|neural/i.test(v.name)) ||
+          voices.find((v) => v.lang?.toLowerCase() === lowerLang) ||
+          voices.find((v) => v.lang?.toLowerCase().startsWith(lowerLang.slice(0, 2)))
+        if (matched) utterance.voice = matched
+      }
       window.speechSynthesis.speak(utterance)
     } catch {
       // ignore
     }
   }
+}
+
+/**
+ * Pronounce word using Web Speech API
+ */
+export function speakWord(word: string, lang = 'en-GB'): void {
+  speakText(word, lang, 0.92)
+}
+
+/**
+ * Pronounce an example sentence using Web Speech API
+ */
+export function speakSentence(sentence: string, lang = 'en-GB'): void {
+  speakText(sentence, lang, 0.95)
 }

@@ -20,6 +20,7 @@ import {
   isWordDue,
   getDueVocabulary,
   speakWord,
+  speakSentence,
 } from '../../lib/srs/sm2'
 import { FlashcardReviewModal } from './FlashcardReviewModal'
 import { AddVocabularyModal } from './AddVocabularyModal'
@@ -379,9 +380,23 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   {/* Context sentence from video and translation */}
                   <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-100 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-2">
                     <div>
-                      <span className="font-bold text-slate-500 dark:text-slate-400 block text-[10px] uppercase tracking-wide mb-0.5">
-                        Context from video:
-                      </span>
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className="font-bold text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wide">
+                          Context from video:
+                        </span>
+                        {item.contextSentence && (
+                          <button
+                            type="button"
+                            onClick={() => speakSentence(item.contextSentence)}
+                            title="Listen to example sentence"
+                            aria-label="Listen to example sentence"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/80 dark:hover:bg-indigo-950/70 rounded-md transition cursor-pointer"
+                          >
+                            <Volume2 className="w-3 h-3" />
+                            <span>Nghe câu</span>
+                          </button>
+                        )}
+                      </div>
                       <p className="font-medium text-slate-800 dark:text-slate-200">
                         &quot;{item.contextSentence}&quot;
                       </p>

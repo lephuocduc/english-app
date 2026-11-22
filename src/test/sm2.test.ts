@@ -63,7 +63,7 @@ describe('SM-2 Spaced Repetition Engine', () => {
     expect(r3.interval).toBe(8)
   })
 
-  it('resets interval and repetitions on rating 1 (Again)', () => {
+  it('resets interval to 0 (due today) and repetitions on rating 1 (Again)', () => {
     const now = new Date('2026-10-11T12:00:00Z')
     const experiencedWord: VocabularyItem = {
       ...baseMockWord,
@@ -74,7 +74,8 @@ describe('SM-2 Spaced Repetition Engine', () => {
 
     const result = calculateNextReview(experiencedWord, 1, now)
     expect(result.repetitions).toBe(0)
-    expect(result.interval).toBe(1)
+    expect(result.interval).toBe(0)
+    expect(result.dueDate).toBe('2026-10-11')
     expect(result.easeFactor).toBe(2.3) // 2.5 - 0.2
     expect(result.mastered).toBe(false)
   })
@@ -94,17 +95,39 @@ describe('SM-2 Spaced Repetition Engine', () => {
     expect(result.easeFactor).toBe(2.35) // 2.5 - 0.15
   })
 
-  it('boosts interval and increases ease factor on rating 4 (Easy)', () => {
+  it('boosts interval and increases ease factor on rating 4 (Easy) without premature mastery', () => {
     const now = new Date('2026-10-11T12:00:00Z')
     const result = calculateNextReview(baseMockWord, 4, now)
     expect(result.repetitions).toBe(1)
     expect(result.interval).toBe(4) // initial easy is 4 days
     expect(result.easeFactor).toBe(2.65) // 2.5 + 0.15
+    expect(result.mastered).toBe(false)
+
+    // Even after 3rd Easy with interval < 30 days, should not be mastered too early
+    const thirdEasy = calculateNextReview(
+      { ...baseMockWord, repetitions: 2, interval: 7, easeFactor: 2.8 },
+      4,
+      now
+    )
+    expect(thirdEasy.interval).toBe(25)
+    expect(thirdEasy.mastered).toBe(false)
+  })
+
+  it('ensures Good always progresses at least +1 day even at minimum ease factor', () => {
+    const now = new Date('2026-10-11T12:00:00Z')
+    const hardWord: VocabularyItem = {
+      ...baseMockWord,
+      repetitions: 2,
+      interval: 1,
+      easeFactor: 1.3,
+    }
+    const res = calculateNextReview(hardWord, 3, now)
+    expect(res.interval).toBeGreaterThan(hardWord.interval!)
   })
 
   it('generates accurate interval preview text for buttons', () => {
     const now = new Date('2026-10-11T12:00:00Z')
-    expect(getIntervalPreviewText(baseMockWord, 1, now)).toBe('1 day')
+    expect(getIntervalPreviewText(baseMockWord, 1, now)).toBe('Today')
     expect(getIntervalPreviewText(baseMockWord, 3, now)).toBe('1 day')
     expect(getIntervalPreviewText(baseMockWord, 4, now)).toBe('4 days')
   })
@@ -169,7 +192,8 @@ describe('SM-2 Spaced Repetition Engine', () => {
     ]
 
     const dueList = getDueVocabulary(list, today)
-    expect(dueList.map((x) => x.id)).toEqual(['1', '2'])
+    // Due review cards are prioritized before brand-new words
+    expect(dueList.map((x) => x.id)).toEqual(['2', '1'])
 
     const stats = getSRSStats(list, today)
     expect(stats.total).toBe(4)
