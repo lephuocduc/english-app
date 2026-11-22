@@ -136,6 +136,7 @@ describe('ListenFlow Improvement Requirements', () => {
         useYouTubePlayer({
           containerId: 'test-player',
           videoId: 'test-vid',
+          initialLoop: false,
           onSegmentEnd,
         })
       )
@@ -208,6 +209,7 @@ describe('ListenFlow Improvement Requirements', () => {
         useYouTubePlayer({
           containerId: 'race-player',
           videoId: 'test-vid-race',
+          initialLoop: false,
           onSegmentEnd,
         })
       )
@@ -282,6 +284,7 @@ describe('ListenFlow Improvement Requirements', () => {
         useYouTubePlayer({
           containerId: 'pause-resume-player',
           videoId: 'test-vid-pause',
+          initialLoop: false,
           onSegmentEnd,
         })
       )

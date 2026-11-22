@@ -91,7 +91,9 @@ const DEFAULT_PREFERENCES: StudyPreferences = {
   isBlindListening: false,
   isFocusMode: false,
   showSubtitles: false,
-  hasAudioLeadIn: true,
+  hasAudioLeadIn: false,
+  isPhoneCallMode: true,
+  isLooping: true,
   ttsAccent: 'en-GB',
 }
 
@@ -224,12 +226,28 @@ export const storage = {
     const result = recordSegmentCompleted(current, new Date())
     this.saveStreak(result.streak)
 
-    // Save to Cloudflare D1 in background
-    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+    // Only notify Cloudflare D1 when today's streak actually advanced (prevents redundant calls per sentence)
+    if (result.justCompleted && typeof window !== 'undefined' && typeof fetch === 'function') {
       apiClient.recordStreak().catch(() => { })
     }
 
     return result
+  },
+
+  resetStreak(keepTodayIfCompleted = true): StreakData {
+    const current = this.loadStreak()
+    const fresh = createInitialStreak()
+    const next: StreakData =
+      keepTodayIfCompleted && current.todayCompleted
+        ? recordSegmentCompleted(fresh, new Date()).streak
+        : fresh
+    this.saveStreak(next)
+
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient.syncStreak(next, true).catch(() => { })
+    }
+
+    return next
   },
 
   loadLessonProgress(lessonId: string): UserLessonProgress | null {

@@ -94,6 +94,7 @@ export interface StudyPreferences {
   showSubtitles?: boolean
   hasAudioLeadIn?: boolean
   isPhoneCallMode?: boolean
+  isLooping?: boolean
   ttsAccent?: VoiceAccent
 }
 

@@ -1,4 +1,5 @@
 import type { Lesson, UserLessonProgress, SentenceSegment, UserSentenceProgress } from '../../types'
+import { isAudioLesson } from '../audio/textToLesson'
 
 /**
  * Calculates the highest sentence index currently unlocked for sequential study.
@@ -202,5 +203,48 @@ export function selectHomeLessonId(
     (l) => !isLessonFinished(l.sentences, progressMap[l.id]?.sentenceProgress)
   )
   return firstUncompleted ? firstUncompleted.id : lessons[0].id
+}
+
+/**
+ * Finds the next lesson matching the same source type (Audio vs YouTube) and the same level.
+ * Prioritizes the next uncompleted lesson after the current one (wrapping around),
+ * and falls back to the immediate next same-level lesson if all are already completed.
+ */
+export function getNextSameLevelLesson(
+  lessons: Lesson[],
+  currentLesson?: Lesson | null,
+  allLessonsProgress?: Record<string, UserLessonProgress>
+): Lesson | null {
+  if (!currentLesson || !lessons || lessons.length <= 1) {
+    return null
+  }
+
+  const currentIsAudio = isAudioLesson(currentLesson)
+  const currentLevel = currentLesson.level || 'Intermediate'
+
+  const sameGroup = lessons.filter(
+    (l) => isAudioLesson(l) === currentIsAudio && (l.level || 'Intermediate') === currentLevel
+  )
+
+  if (sameGroup.length <= 1) {
+    return null
+  }
+
+  const curIdx = sameGroup.findIndex((l) => l.id === currentLesson.id)
+  const orderedAfterCurrent =
+    curIdx >= 0
+      ? [...sameGroup.slice(curIdx + 1), ...sameGroup.slice(0, curIdx)]
+      : sameGroup.filter((l) => l.id !== currentLesson.id)
+
+  if (orderedAfterCurrent.length === 0) {
+    return null
+  }
+
+  // Prefer the first uncompleted same-level lesson
+  const nextUncompleted = orderedAfterCurrent.find(
+    (l) => !isLessonFinished(l.sentences, allLessonsProgress?.[l.id]?.sentenceProgress)
+  )
+
+  return nextUncompleted || orderedAfterCurrent[0]
 }
 

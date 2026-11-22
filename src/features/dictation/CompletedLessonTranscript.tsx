@@ -10,6 +10,8 @@ import {
   Languages,
   Volume2,
   BookmarkPlus,
+  Play,
+  Square,
   ArrowRight,
 } from 'lucide-react'
 import type { Lesson, SentenceSegment, UserSentenceProgress } from '../../types'
@@ -27,8 +29,12 @@ interface CompletedLessonTranscriptProps {
   lesson: Lesson
   activeSegmentIndex: number
   isPlaying?: boolean
+  isPlayingFullLesson?: boolean
   savedProgressMap: Record<string, UserSentenceProgress>
   onSelectSegment: (index: number) => void
+  onPlayFullLesson?: () => void
+  nextLessonTitle?: string
+  onNextLesson?: () => void
   onBookmarkVocabulary?: (
     word: string,
     contextSentence: string,
@@ -36,8 +42,6 @@ interface CompletedLessonTranscriptProps {
     meaning?: string,
     contextSentenceTranslation?: string
   ) => void
-  nextLessonTitle?: string
-  onGoToNextLesson?: () => void
 }
 
 function formatTime(secs: number): string {
@@ -50,11 +54,13 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
   lesson,
   activeSegmentIndex,
   isPlaying = false,
+  isPlayingFullLesson = false,
   savedProgressMap,
   onSelectSegment,
-  onBookmarkVocabulary,
+  onPlayFullLesson,
   nextLessonTitle,
-  onGoToNextLesson,
+  onNextLesson,
+  onBookmarkVocabulary,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true)
   const [viewMode, setViewMode] = useState<'lines' | 'passage'>('lines')
@@ -154,18 +160,6 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {onGoToNextLesson && (
-              <button
-                type="button"
-                onClick={onGoToNextLesson}
-                title={nextLessonTitle ? `Chuyển sang bài tiếp theo: ${nextLessonTitle}` : 'Chuyển sang bài tiếp theo'}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition active:scale-95 cursor-pointer"
-              >
-                <span>Bài tiếp theo</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => setIsExpanded((prev) => !prev)}
@@ -219,6 +213,55 @@ export const CompletedLessonTranscript: React.FC<CompletedLessonTranscriptProps>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {onPlayFullLesson && totalSentences > 0 && (
+              <button
+                type="button"
+                onClick={onPlayFullLesson}
+                aria-pressed={isPlayingFullLesson}
+                title={
+                  isPlayingFullLesson
+                    ? 'Dừng phát toàn bộ bài nghe'
+                    : 'Nghe liền mạch toàn bộ bài từ câu 1 đến câu cuối (1 lần)'
+                }
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer ${
+                  isPlayingFullLesson
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                }`}
+              >
+                {isPlayingFullLesson ? (
+                  <>
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>
+                      Dừng nghe full ({Math.min(activeSegmentIndex + 1, totalSentences)}/
+                      {totalSentences})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Nghe full bài (1 lần)</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {onNextLesson && (
+              <button
+                type="button"
+                onClick={onNextLesson}
+                title={
+                  nextLessonTitle
+                    ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                    : 'Chuyển nhanh sang bài tiếp theo cùng level'
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer"
+              >
+                <span>Bài tiếp theo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             {hasAnyTranslation && (
               <button
                 type="button"

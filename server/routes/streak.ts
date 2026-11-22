@@ -5,6 +5,7 @@ import {
   evaluateStreakStatus,
   recordSegmentCompleted,
   createInitialStreak,
+  parseLocalDateString,
 } from '../../src/lib/streak/streakManager'
 import type { StreakData } from '../../src/types'
 
@@ -30,6 +31,7 @@ const syncStreakSchema = z.object({
   lastFreezeWeek: z.string().nullable().optional(),
   freezeAvailable: z.boolean().default(true),
   totalDaysActive: z.number().int().min(0).default(0),
+  force: z.boolean().optional(),
 })
 
 function rowToStreakData(row: StreakRow | null): StreakData {
@@ -75,7 +77,8 @@ streakRouter.get('/', async (c) => {
       .first<StreakRow>()
 
     const rawStreak = rowToStreakData(row)
-    const evaluated = evaluateStreakStatus(rawStreak, new Date())
+    const clientDate = parseLocalDateString(c.req.query('date')) || new Date()
+    const evaluated = evaluateStreakStatus(rawStreak, clientDate)
 
     // If evaluated status changed (e.g. freeze consumed for yesterday), save updated row
     const hadChanges =
@@ -138,8 +141,17 @@ streakRouter.post('/record', async (c) => {
       .bind(userId)
       .first<StreakRow>()
 
+    let clientDate: Date | null = null
+    try {
+      const body = (await c.req.json()) as { localDate?: string }
+      clientDate = parseLocalDateString(body?.localDate)
+    } catch {
+      // Optional JSON body; fall back to query param or server clock
+      clientDate = parseLocalDateString(c.req.query('date'))
+    }
+
     const rawStreak = rowToStreakData(row)
-    const result = recordSegmentCompleted(rawStreak, new Date())
+    const result = recordSegmentCompleted(rawStreak, clientDate || new Date())
     const updated = result.streak
 
     await db
@@ -199,9 +211,19 @@ streakRouter.put('/sync', async (c) => {
 
   const data = parsed.data
   try {
-    await db
-      .prepare(
-        `INSERT INTO user_streaks (user_id, current_streak, longest_streak, last_active_date, freeze_used_dates, last_freeze_week, freeze_available, total_days_active, updated_at)
+    const upsertSql = data.force
+      ? `INSERT INTO user_streaks (user_id, current_streak, longest_streak, last_active_date, freeze_used_dates, last_freeze_week, freeze_available, total_days_active, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+           current_streak = excluded.current_streak,
+           longest_streak = excluded.longest_streak,
+           last_active_date = excluded.last_active_date,
+           freeze_used_dates = excluded.freeze_used_dates,
+           last_freeze_week = excluded.last_freeze_week,
+           freeze_available = excluded.freeze_available,
+           total_days_active = excluded.total_days_active,
+           updated_at = datetime('now')`
+      : `INSERT INTO user_streaks (user_id, current_streak, longest_streak, last_active_date, freeze_used_dates, last_freeze_week, freeze_available, total_days_active, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
          ON CONFLICT(user_id) DO UPDATE SET
            current_streak = MAX(user_streaks.current_streak, excluded.current_streak),
@@ -212,7 +234,9 @@ streakRouter.put('/sync', async (c) => {
            freeze_available = excluded.freeze_available,
            total_days_active = MAX(user_streaks.total_days_active, excluded.total_days_active),
            updated_at = datetime('now')`
-      )
+
+    await db
+      .prepare(upsertSql)
       .bind(
         userId,
         data.currentStreak,

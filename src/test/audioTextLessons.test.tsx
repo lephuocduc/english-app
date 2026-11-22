@@ -55,19 +55,20 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
     })
   })
 
-  describe('2. 16 IT System Operations Audio Conversations (6 A2-B1 ~1m + 10 B1 ~2m)', () => {
-    it('provides 6 A2-B1 (~1m) and 10 B1 (~2m) UK-default IT Ops conversations with translations and hints', () => {
-      expect(DEFAULT_A2_B1_AUDIO_LESSONS).toHaveLength(6)
+  describe('2. 22 IT System Operations Audio Conversations (12 A2-B1 ~1m + 10 B1 ~2m)', () => {
+    it('provides 12 A2-B1 (~1m) and 10 B1 (~2m) UK-default IT Ops conversations with translations and hints', () => {
+      expect(DEFAULT_A2_B1_AUDIO_LESSONS).toHaveLength(12)
       for (const lesson of DEFAULT_A2_B1_AUDIO_LESSONS) {
         expect(lesson.level).toBe('Beginner')
         expect(lesson.id).toMatch(/^lesson-audio-itops-a2-\d{2}$/)
+        expect(lesson.videoId).toMatch(/^audio-itops-a2-\d{2}$/)
         expect(lesson.voiceAccent).toBe('en-GB')
         const totalDuration = lesson.sentences[lesson.sentences.length - 1].endTime
         expect(totalDuration).toBeGreaterThanOrEqual(40)
         expect(totalDuration).toBeLessThanOrEqual(75)
       }
 
-      expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(16)
+      expect(DEFAULT_B1_B2_AUDIO_LESSONS).toHaveLength(22)
       const b1Lessons = DEFAULT_B1_B2_AUDIO_LESSONS.filter((l) => l.level === 'Intermediate')
       expect(b1Lessons).toHaveLength(10)
 
@@ -97,9 +98,13 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       }
     })
 
-    it('uses UK English (en-GB) as default voice accent across preferences, form helpers, API URL, and player hook', () => {
+    it('uses UK English (en-GB), Phone Mode on, Loop on, and +1s lead-in off as default preferences and player state', () => {
       window.localStorage.clear()
-      expect(storage.loadPreferences().ttsAccent).toBe('en-GB')
+      const prefs = storage.loadPreferences()
+      expect(prefs.ttsAccent).toBe('en-GB')
+      expect(prefs.hasAudioLeadIn).toBe(false)
+      expect(prefs.isPhoneCallMode).toBe(true)
+      expect(prefs.isLooping).toBe(true)
 
       const customLesson = createAudioLessonFromText({
         title: 'Quick UK Default Check',
@@ -110,13 +115,17 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
 
       const { result } = renderHook(() => useAudioLessonPlayer())
       expect(result.current.voiceAccent).toBe('en-GB')
+      expect(result.current.isPhoneCallMode).toBe(true)
+      expect(result.current.isLooping).toBe(true)
     })
 
-    it('retires legacy general-topic preset conversations from local storage', () => {
+    it('retires legacy general-topic and old B1-B2 IT Ops preset conversations from local storage', () => {
       for (let i = 1; i <= 10; i++) {
         const suffix = String(i).padStart(2, '0')
         expect(RETIRED_PRESET_AUDIO_IDS.has(`lesson-audio-b1b2-${suffix}`)).toBe(true)
         expect(RETIRED_PRESET_AUDIO_IDS.has(`audio-b1b2-${suffix}`)).toBe(true)
+        expect(RETIRED_PRESET_AUDIO_IDS.has(`lesson-audio-itops-${suffix}`)).toBe(true)
+        expect(RETIRED_PRESET_AUDIO_IDS.has(`audio-itops-${suffix}`)).toBe(true)
       }
 
       storage.saveVideos([
@@ -130,13 +139,66 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
             { id: 'legacy-seg-1', startTime: 0, endTime: 4, text: 'Legacy sentence.' },
           ],
         },
-        DEFAULT_B1_B2_AUDIO_LESSONS[0],
+        {
+          id: 'lesson-audio-itops-01',
+          videoId: 'audio-itops-01',
+          sourceType: 'audio',
+          title: 'Retired B1-B2 Lesson',
+          language: 'en',
+          sentences: [
+            { id: 'old-b1b2-seg-1', startTime: 0, endTime: 4, text: 'Retired B1-B2 sentence.' },
+          ],
+        },
+        DEFAULT_A2_B1_AUDIO_LESSONS[0],
       ])
 
       const loaded = storage.loadVideos() || []
       expect(loaded.some((v) => v.id === 'lesson-audio-b1b2-01')).toBe(false)
-      expect(loaded.some((v) => v.id === DEFAULT_B1_B2_AUDIO_LESSONS[0].id)).toBe(true)
+      expect(loaded.some((v) => v.id === 'lesson-audio-itops-01')).toBe(false)
+      expect(loaded.some((v) => v.id === DEFAULT_A2_B1_AUDIO_LESSONS[0].id)).toBe(true)
       window.localStorage.clear()
+    })
+
+    it('plays all sentences sequentially once via playFullLesson in useAudioLessonPlayer', async () => {
+      vi.useFakeTimers()
+      const playedTexts: string[] = []
+      const segmentChanges: number[] = []
+      const onComplete = vi.fn()
+
+      const playSpy = vi
+        .spyOn(sharedTtsAudioEngine, 'playSegment')
+        .mockImplementation(async (opts) => {
+          playedTexts.push(opts.text)
+          opts.onStart?.()
+          opts.onEnd?.()
+        })
+
+      try {
+        const { result } = renderHook(() => useAudioLessonPlayer({ initialAccent: 'en-GB' }))
+
+        await act(async () => {
+          await result.current.playFullLesson(
+            [
+              { text: 'First sentence.', speakerIndex: 0 },
+              { text: 'Second sentence.', speakerIndex: 1 },
+              { text: 'Third sentence.', speakerIndex: 0 },
+            ],
+            {
+              onSegmentChange: (idx) => segmentChanges.push(idx),
+              onComplete,
+            }
+          )
+          await vi.advanceTimersByTimeAsync(1000)
+        })
+
+        expect(playedTexts).toEqual(['First sentence.', 'Second sentence.', 'Third sentence.'])
+        expect(segmentChanges).toEqual([0, 1, 2])
+        expect(onComplete).toHaveBeenCalledTimes(1)
+        expect(result.current.isPlayingFullLesson).toBe(false)
+      } finally {
+        playSpy.mockRestore()
+        vi.useRealTimers()
+      }
     })
   })
 
@@ -251,7 +313,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       }
 
       try {
-        ;(globalThis as any).SpeechSynthesisUtterance = StubSpeechSynthesisUtterance
+        ; (globalThis as any).SpeechSynthesisUtterance = StubSpeechSynthesisUtterance
         Object.defineProperty(window, 'speechSynthesis', {
           configurable: true,
           writable: true,
@@ -289,7 +351,7 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
         expect(onFallbackUsed).toHaveBeenCalledWith(true, true)
       } finally {
         globalThis.fetch = prevFetch
-        ;(globalThis as any).SpeechSynthesisUtterance = prevUtterance
+          ; (globalThis as any).SpeechSynthesisUtterance = prevUtterance
         if (prevSpeechDescriptor) {
           Object.defineProperty(window, 'speechSynthesis', prevSpeechDescriptor)
         } else {

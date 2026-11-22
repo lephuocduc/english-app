@@ -5,6 +5,7 @@ import type {
   VocabularyItem,
   StreakData,
 } from '../../types'
+import { formatLocalDate } from '../streak/streakManager'
 
 const USER_ID_KEY = 'listenflow_user_id_v1'
 
@@ -257,13 +258,16 @@ export class ApiClient {
 
   // --- Daily Streak Endpoints ---
   async getStreak(): Promise<StreakData | null> {
-    const res = await this.request<StreakData>('/streak')
+    const localDate = formatLocalDate(new Date())
+    const res = await this.request<StreakData>(`/streak?date=${encodeURIComponent(localDate)}`)
     return res.success && res.data ? res.data : null
   }
 
   async recordStreak(): Promise<{ success: boolean; data?: StreakData; justCompleted?: boolean; freezeUsed?: boolean }> {
+    const localDate = formatLocalDate(new Date())
     const res = await this.request<StreakData>('/streak/record', {
       method: 'POST',
+      body: JSON.stringify({ localDate }),
     })
     return {
       success: res.success,
@@ -273,10 +277,10 @@ export class ApiClient {
     }
   }
 
-  async syncStreak(streak: StreakData): Promise<StreakData | null> {
+  async syncStreak(streak: StreakData, force = false): Promise<StreakData | null> {
     const res = await this.request<StreakData>('/streak/sync', {
       method: 'PUT',
-      body: JSON.stringify(streak),
+      body: JSON.stringify({ ...streak, ...(force ? { force: true } : {}) }),
     })
     return res.success && res.data ? res.data : null
   }

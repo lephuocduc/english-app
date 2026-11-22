@@ -5,6 +5,7 @@ import { sharedTtsAudioEngine } from '../../lib/audio/ttsAudioPlayer'
 export interface UseAudioLessonPlayerOptions {
   initialSpeed?: number
   initialPhoneCallMode?: boolean
+  initialLoop?: boolean
   initialAccent?: VoiceAccent
 }
 
@@ -16,18 +17,30 @@ export interface PlayAudioTextParams {
   leadInSpeakerIndex?: number
 }
 
+export interface FullLessonSegmentInput {
+  text: string
+  speakerIndex?: number
+}
+
+export interface PlayFullLessonOptions {
+  onSegmentChange?: (index: number) => void
+  onComplete?: () => void
+}
+
 export function useAudioLessonPlayer({
   initialSpeed = 1.0,
-  initialPhoneCallMode = false,
+  initialPhoneCallMode = true,
+  initialLoop = true,
   initialAccent = 'en-GB',
 }: UseAudioLessonPlayerOptions = {}) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlayingFullLesson, setIsPlayingFullLesson] = useState(false)
   const [isLoadingAudio, setIsLoadingAudio] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
   const [usingFallbackSpeech, setUsingFallbackSpeech] = useState(false)
   const [fallbackAccentMissing, setFallbackAccentMissing] = useState(false)
   const [playbackRate, setPlaybackRate] = useState<number>(initialSpeed)
-  const [isLooping, setIsLooping] = useState(false)
+  const [isLooping, setIsLooping] = useState(initialLoop)
   const [isPhoneCallMode, setIsPhoneCallMode] = useState(initialPhoneCallMode)
   const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>(initialAccent)
 
@@ -37,6 +50,8 @@ export function useAudioLessonPlayer({
   const accentRef = useRef(voiceAccent)
   const lastPlayedRef = useRef<PlayAudioTextParams | null>(null)
   const loopTimerRef = useRef<number | null>(null)
+  const fullLessonRunIdRef = useRef<number>(0)
+  const fullLessonTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     speedRef.current = playbackRate
@@ -59,17 +74,25 @@ export function useAudioLessonPlayer({
       window.clearTimeout(loopTimerRef.current)
       loopTimerRef.current = null
     }
+    if (fullLessonTimerRef.current !== null) {
+      window.clearTimeout(fullLessonTimerRef.current)
+      fullLessonTimerRef.current = null
+    }
   }, [])
 
   const stopAudio = useCallback(() => {
+    fullLessonRunIdRef.current += 1
     clearLoopTimer()
     sharedTtsAudioEngine.stop()
     setIsPlaying(false)
+    setIsPlayingFullLesson(false)
     setIsLoadingAudio(false)
   }, [clearLoopTimer])
 
   const playTextSegment = useCallback(
     async (params: PlayAudioTextParams) => {
+      fullLessonRunIdRef.current += 1
+      setIsPlayingFullLesson(false)
       clearLoopTimer()
       lastPlayedRef.current = {
         text: params.text,
@@ -124,6 +147,76 @@ export function useAudioLessonPlayer({
     [clearLoopTimer]
   )
 
+  const playFullLesson = useCallback(
+    async (segments: FullLessonSegmentInput[], options: PlayFullLessonOptions = {}) => {
+      if (!segments || segments.length === 0) return
+
+      const runId = ++fullLessonRunIdRef.current
+      clearLoopTimer()
+      sharedTtsAudioEngine.stop()
+      setAudioError(null)
+      setIsPlayingFullLesson(true)
+      setIsLoadingAudio(true)
+
+      const playIndex = async (idx: number) => {
+        if (fullLessonRunIdRef.current !== runId) return
+        if (idx >= segments.length) {
+          setIsLoadingAudio(false)
+          setIsPlaying(false)
+          setIsPlayingFullLesson(false)
+          options.onComplete?.()
+          return
+        }
+
+        const seg = segments[idx]
+        options.onSegmentChange?.(idx)
+        setIsLoadingAudio(true)
+
+        await sharedTtsAudioEngine.playSegment({
+          text: seg.text,
+          accent: accentRef.current,
+          speed: speedRef.current,
+          speakerIndex: seg.speakerIndex ?? 0,
+          isPhoneCallMode: phoneCallModeRef.current,
+          onFallbackUsed: (used, exactMatch) => {
+            setUsingFallbackSpeech(used)
+            setFallbackAccentMissing(Boolean(used && exactMatch === false))
+          },
+          onStart: () => {
+            if (fullLessonRunIdRef.current !== runId) return
+            setIsLoadingAudio(false)
+            setIsPlaying(true)
+          },
+          onEnd: () => {
+            if (fullLessonRunIdRef.current !== runId) return
+            if (idx + 1 < segments.length) {
+              fullLessonTimerRef.current = window.setTimeout(() => {
+                if (fullLessonRunIdRef.current === runId) {
+                  void playIndex(idx + 1)
+                }
+              }, 260)
+            } else {
+              setIsLoadingAudio(false)
+              setIsPlaying(false)
+              setIsPlayingFullLesson(false)
+              options.onComplete?.()
+            }
+          },
+          onError: (msg) => {
+            if (fullLessonRunIdRef.current !== runId) return
+            setIsLoadingAudio(false)
+            setIsPlaying(false)
+            setIsPlayingFullLesson(false)
+            setAudioError(msg)
+          },
+        })
+      }
+
+      await playIndex(0)
+    },
+    [clearLoopTimer]
+  )
+
   const replayLast = useCallback(() => {
     if (lastPlayedRef.current) {
       void playTextSegment(lastPlayedRef.current)
@@ -165,6 +258,7 @@ export function useAudioLessonPlayer({
 
   return {
     isPlaying,
+    isPlayingFullLesson,
     isLoadingAudio,
     audioError,
     usingFallbackSpeech,
@@ -174,6 +268,7 @@ export function useAudioLessonPlayer({
     isPhoneCallMode,
     voiceAccent,
     playTextSegment,
+    playFullLesson,
     stopAudio,
     replayLast,
     toggleLoop,

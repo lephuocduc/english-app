@@ -1,21 +1,22 @@
 /**
- * Pure-TypeScript time-preserving pitch shifter using WSOLA
- * (Waveform Similarity Overlap-Add) + linear resampling.
- * Shifts fundamental vocal pitch without changing speaking duration.
+ * Pure-TypeScript WSOLA (Waveform Similarity Overlap-Add) time-stretcher
+ * and time-preserving pitch shifter.
+ * - `timeStretchChannel` / `timeStretchAudioBuffer`: changes speaking speed WITHOUT altering vocal pitch.
+ * - `pitchShiftChannel` / `pitchShiftAudioBuffer`: shifts fundamental vocal pitch WITHOUT changing speaking duration.
  */
 
-export function pitchShiftChannel(
+export function timeStretchChannel(
   input: Float32Array,
   sampleRate: number,
-  pitchRatio: number
+  stretchRatio: number
 ): Float32Array {
-  if (input.length < 64 || Math.abs(pitchRatio - 1.0) < 0.01) {
+  if (input.length < 64 || Math.abs(stretchRatio - 1.0) < 0.01) {
     return input.slice()
   }
 
-  const ratio = Math.min(1.5, Math.max(0.6, pitchRatio))
+  const ratio = Math.min(2.0, Math.max(0.5, stretchRatio))
 
-  // Stage 1: WSOLA time-scale input by `ratio` (so Stage 2 resample restores original duration)
+  // WSOLA time-scale input by `ratio` (duration becomes `input.length * ratio`, pitch unchanged)
   const winSize = Math.max(128, Math.round(sampleRate * 0.03) & ~1)
   const halfWin = winSize >> 1
   const analysisHop = halfWin / ratio
@@ -102,9 +103,27 @@ export function pitchShiftChannel(
 
   for (let i = 0; i < stretchedLen; i++) {
     if (norm[i] > 1e-4) {
-      stretched[i] /= norm[i]
+      stretched[i] = Math.max(-1, Math.min(1, stretched[i] / norm[i]))
     }
   }
+
+  return stretched
+}
+
+export function pitchShiftChannel(
+  input: Float32Array,
+  sampleRate: number,
+  pitchRatio: number
+): Float32Array {
+  if (input.length < 64 || Math.abs(pitchRatio - 1.0) < 0.01) {
+    return input.slice()
+  }
+
+  const ratio = Math.min(1.5, Math.max(0.6, pitchRatio))
+
+  // Stage 1: WSOLA time-scale input by `ratio`
+  const stretched = timeStretchChannel(input, sampleRate, ratio)
+  const stretchedLen = stretched.length
 
   // Stage 2: Resample `stretchedLen` back to exact `input.length` to shift pitch by `ratio`
   const output = new Float32Array(input.length)
@@ -120,6 +139,36 @@ export function pitchShiftChannel(
   }
 
   return output
+}
+
+export function timeStretchAudioBuffer(
+  ctx: AudioContext,
+  source: AudioBuffer,
+  speed: number
+): AudioBuffer {
+  const safeSpeed = Math.min(2.0, Math.max(0.5, speed))
+  if (Math.abs(safeSpeed - 1.0) < 0.01) {
+    return source
+  }
+
+  const stretchRatio = 1 / safeSpeed
+  const channels: Float32Array[] = []
+  let outLength = 0
+  for (let ch = 0; ch < source.numberOfChannels; ch++) {
+    const stretchedData = timeStretchChannel(
+      source.getChannelData(ch),
+      source.sampleRate,
+      stretchRatio
+    )
+    channels.push(stretchedData)
+    outLength = Math.max(outLength, stretchedData.length)
+  }
+
+  const outBuffer = ctx.createBuffer(source.numberOfChannels, outLength, source.sampleRate)
+  for (let ch = 0; ch < source.numberOfChannels; ch++) {
+    outBuffer.getChannelData(ch).set(channels[ch])
+  }
+  return outBuffer
 }
 
 export function pitchShiftAudioBuffer(

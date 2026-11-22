@@ -22,6 +22,8 @@ import {
   Compass,
   MoreVertical,
   Lock,
+  Play,
+  Square,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import type {
@@ -71,6 +73,10 @@ interface DictationStudioProps {
   onOpenStreakModal?: () => void
   isLessonFinished?: boolean
   onJumpToFullTranscript?: () => void
+  isPlayingFullLesson?: boolean
+  onPlayFullLesson?: () => void
+  nextLessonTitle?: string
+  onNextLesson?: () => void
 }
 
 export const DictationStudio: React.FC<DictationStudioProps> = ({
@@ -99,6 +105,10 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   onOpenStreakModal: _onOpenStreakModal,
   isLessonFinished,
   onJumpToFullTranscript,
+  isPlayingFullLesson = false,
+  onPlayFullLesson,
+  nextLessonTitle,
+  onNextLesson,
 }) => {
   const currentSegment: SentenceSegment | undefined = lesson?.sentences?.[activeSegmentIndex]
   const saved = currentSegment ? savedProgressMap[currentSegment.id] : undefined
@@ -787,6 +797,36 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             </button>
           )}
 
+          {lessonDone && onPlayFullLesson && (
+            <button
+              type="button"
+              onClick={onPlayFullLesson}
+              aria-pressed={isPlayingFullLesson}
+              title={
+                isPlayingFullLesson
+                  ? 'Dừng phát toàn bộ bài nghe'
+                  : 'Nghe liền mạch toàn bộ bài từ đầu đến cuối (1 lần)'
+              }
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap ${
+                isPlayingFullLesson
+                  ? 'text-white bg-rose-600 hover:bg-rose-700 border-rose-600'
+                  : 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border-indigo-200/80 dark:border-indigo-800'
+              }`}
+            >
+              {isPlayingFullLesson ? (
+                <>
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                  <span>Dừng nghe full</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Nghe full bài</span>
+                </>
+              )}
+            </button>
+          )}
+
           {lessonDone && onJumpToFullTranscript && (
             <button
               type="button"
@@ -796,6 +836,22 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
             >
               <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Full Transcript</span>
+            </button>
+          )}
+
+          {lessonDone && onNextLesson && (
+            <button
+              type="button"
+              onClick={onNextLesson}
+              title={
+                nextLessonTitle
+                  ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                  : 'Chuyển nhanh sang bài tiếp theo cùng level'
+              }
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <span>Bài tiếp theo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -1571,16 +1627,58 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                   )}
                 </button>
               ) : (
-                lessonDone &&
-                onJumpToFullTranscript && (
-                  <button
-                    type="button"
-                    onClick={onJumpToFullTranscript}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>Xem Full Transcript</span>
-                  </button>
+                lessonDone && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {onPlayFullLesson && (
+                      <button
+                        type="button"
+                        onClick={onPlayFullLesson}
+                        aria-pressed={isPlayingFullLesson}
+                        className={`px-4 py-2.5 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:outline-none ${
+                          isPlayingFullLesson
+                            ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-500/20 focus-visible:ring-rose-500'
+                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20 focus-visible:ring-indigo-500'
+                        }`}
+                      >
+                        {isPlayingFullLesson ? (
+                          <>
+                            <Square className="w-4 h-4 fill-current" />
+                            <span>Dừng nghe full</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 fill-current" />
+                            <span>Nghe full bài (1 lần)</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {onJumpToFullTranscript && (
+                      <button
+                        type="button"
+                        onClick={onJumpToFullTranscript}
+                        className="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm font-bold rounded-xl shadow-xs transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Xem Full Transcript</span>
+                      </button>
+                    )}
+                    {onNextLesson && (
+                      <button
+                        type="button"
+                        onClick={onNextLesson}
+                        title={
+                          nextLessonTitle
+                            ? `Chuyển nhanh sang bài cùng level: ${nextLessonTitle}`
+                            : 'Chuyển nhanh sang bài tiếp theo cùng level'
+                        }
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                      >
+                        <span>Bài tiếp theo</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 )
               )}
             </div>
