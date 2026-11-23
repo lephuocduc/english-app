@@ -145,6 +145,37 @@ attemptsRouter.post('/', async (c) => {
   }
 })
 
+// GET /first-attempt-stats - Retrieve the very first graded attempt per (lesson, segment) for progress analytics
+attemptsRouter.get('/first-attempt-stats', async (c) => {
+  const userId = c.get('userId')
+  const db = c.env.DB
+
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT lesson_id as lessonId, segment_id as segmentId, score, created_at as createdAt
+         FROM (
+           SELECT lesson_id, segment_id, score, created_at,
+                  ROW_NUMBER() OVER (PARTITION BY lesson_id, segment_id ORDER BY created_at ASC, rowid ASC) as rn
+           FROM dictation_attempts
+           WHERE user_id = ?
+         )
+         WHERE rn = 1
+         ORDER BY created_at ASC`
+      )
+      .bind(userId)
+      .all<{ lessonId: string; segmentId: string; score: number; createdAt: string }>()
+
+    return c.json({
+      success: true,
+      data: results || [],
+    })
+  } catch (err) {
+    console.error('[API attempts:firstAttemptStats error]', err)
+    return c.json({ success: false, error: 'Failed to retrieve first-attempt stats' }, 500)
+  }
+})
+
 // GET /lessons/:lessonId - Retrieve attempts for a lesson
 attemptsRouter.get('/lessons/:lessonId', async (c) => {
   const userId = c.get('userId')

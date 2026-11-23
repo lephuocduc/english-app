@@ -1,14 +1,25 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   TrendingUp,
+  TrendingDown,
+  Minus,
   Award,
   CheckCircle2,
   BookOpen,
   RotateCcw,
   AlertTriangle,
   Flame,
+  Calendar,
+  BarChart3,
 } from 'lucide-react'
-import type { Lesson, UserLessonProgress } from '../../types'
+import type { FirstAttemptRecord, Lesson, UserLessonProgress } from '../../types'
+import { apiClient } from '../../lib/api/client'
+import {
+  computeFirstAttemptAnalytics,
+  extractLocalFirstAttempts,
+  mergeFirstAttemptRecords,
+  type ProgressPeriodMode,
+} from '../../lib/progress/firstAttemptAnalytics'
 
 interface ProgressViewProps {
   lessons: Lesson[]
@@ -24,6 +35,49 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
   onNavigateToPractice,
 }) => {
   const [showConfirmReset, setShowConfirmReset] = useState(false)
+  const [periodMode, setPeriodMode] = useState<ProgressPeriodMode>('weekly')
+  const [cloudFirstAttempts, setCloudFirstAttempts] = useState<FirstAttemptRecord[]>([])
+
+  useEffect(() => {
+    let active = true
+    if (typeof window !== 'undefined' && typeof fetch === 'function') {
+      apiClient
+        .getFirstAttemptRecords()
+        .then((rows) => {
+          if (active && Array.isArray(rows)) {
+            setCloudFirstAttempts(rows)
+          }
+        })
+        .catch(() => {})
+    }
+    return () => {
+      active = false
+    }
+  }, [allProgressMap])
+
+  const mergedFirstAttempts = useMemo(() => {
+    const local = extractLocalFirstAttempts(allProgressMap)
+    return mergeFirstAttemptRecords(local, cloudFirstAttempts)
+  }, [allProgressMap, cloudFirstAttempts])
+
+  const firstAttemptAnalytics = useMemo(
+    () => computeFirstAttemptAnalytics(mergedFirstAttempts, periodMode, 8),
+    [mergedFirstAttempts, periodMode]
+  )
+
+  const firstAttemptByLesson = useMemo(() => {
+    const map = new Map<string, { sum: number; count: number }>()
+    for (const rec of mergedFirstAttempts) {
+      const cur = map.get(rec.lessonId)
+      if (cur) {
+        cur.sum += rec.score
+        cur.count += 1
+      } else {
+        map.set(rec.lessonId, { sum: rec.score, count: 1 })
+      }
+    }
+    return map
+  }, [mergedFirstAttempts])
 
   // Calculate statistics across all lessons
   let totalSentencesAttempted = 0
@@ -149,17 +203,19 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           </div>
         </div>
 
-        {/* Card 2: Average Score */}
+        {/* Card 2: Average First-Attempt Score */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex items-center gap-4 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <Award className="w-6 h-6" />
           </div>
           <div>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Avg Word Similarity
+              {firstAttemptAnalytics.totalCount > 0 ? 'First-Attempt Avg' : 'Avg Word Similarity'}
             </span>
             <span className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">
-              {averageScore}%
+              {firstAttemptAnalytics.totalCount > 0
+                ? `${firstAttemptAnalytics.overallAvg}%`
+                : `${averageScore}%`}
             </span>
           </div>
         </div>
@@ -192,6 +248,197 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
               {totalCompletedLessons}/{lessons.length}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* First-Attempt Score Progress Chart (Weekly / Monthly Comparison) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Tiến bộ điểm chấm lần đầu (First-Attempt Progress)
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Chỉ tính điểm lần chấm đầu tiên của mỗi câu để phản ánh đúng năng lực nghe thực tế
+              </p>
+            </div>
+          </div>
+
+          <div
+            role="group"
+            aria-label="Chọn kỳ so sánh"
+            className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-2xs"
+          >
+            <button
+              type="button"
+              onClick={() => setPeriodMode('weekly')}
+              aria-pressed={periodMode === 'weekly'}
+              className={`px-3 py-1 rounded-lg font-semibold transition cursor-pointer ${
+                periodMode === 'weekly'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Hàng tuần
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodMode('monthly')}
+              aria-pressed={periodMode === 'monthly'}
+              className={`px-3 py-1 rounded-lg font-semibold transition cursor-pointer ${
+                periodMode === 'monthly'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Hàng tháng
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {firstAttemptAnalytics.periods.length === 0 ? (
+            <div className="py-6 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 space-y-1">
+              <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                Chưa có dữ liệu điểm lần chấm đầu tiên
+              </p>
+              <p>Hoàn thành các câu nghe trong tab Practice để xem biểu đồ tiến bộ theo tuần và tháng.</p>
+            </div>
+          ) : (
+            <>
+              {/* Current vs Previous Period Comparison Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60">
+                  <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 block">
+                    {periodMode === 'weekly' ? 'Tuần gần nhất' : 'Tháng gần nhất'} (
+                    {firstAttemptAnalytics.currentPeriod?.label})
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl font-extrabold font-mono text-indigo-950 dark:text-white">
+                      {firstAttemptAnalytics.currentPeriod?.avgScore}%
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      ({firstAttemptAnalytics.currentPeriod?.count} câu)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+                    {periodMode === 'weekly' ? 'Tuần trước đó' : 'Tháng trước đó'}
+                    {firstAttemptAnalytics.previousPeriod
+                      ? ` (${firstAttemptAnalytics.previousPeriod.label})`
+                      : ''}
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl font-extrabold font-mono text-slate-800 dark:text-slate-100">
+                      {firstAttemptAnalytics.previousPeriod
+                        ? `${firstAttemptAnalytics.previousPeriod.avgScore}%`
+                        : '—'}
+                    </span>
+                    {firstAttemptAnalytics.previousPeriod && (
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        ({firstAttemptAnalytics.previousPeriod.count} câu)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+                    So sánh tiến bộ
+                  </span>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    {firstAttemptAnalytics.delta === null ? (
+                      <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
+                        Cần ít nhất 2 {periodMode === 'weekly' ? 'tuần' : 'tháng'}
+                      </span>
+                    ) : firstAttemptAnalytics.delta > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                        <TrendingUp className="w-5 h-5" />
+                        <span>+{firstAttemptAnalytics.delta}%</span>
+                      </span>
+                    ) : firstAttemptAnalytics.delta < 0 ? (
+                      <span className="inline-flex items-center gap-1 text-xl font-extrabold font-mono text-rose-600 dark:text-rose-400">
+                        <TrendingDown className="w-5 h-5" />
+                        <span>{firstAttemptAnalytics.delta}%</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xl font-extrabold font-mono text-slate-600 dark:text-slate-300">
+                        <Minus className="w-5 h-5" />
+                        <span>0%</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bar Chart across Periods */}
+              <div className="pt-2">
+                <div className="flex items-end justify-between gap-2 sm:gap-4 h-44 px-2 pt-6 pb-2 bg-slate-50/70 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  {firstAttemptAnalytics.periods.map((bucket, idx) => {
+                    const isLatest = idx === firstAttemptAnalytics.periods.length - 1
+                    const barHeight = Math.max(8, Math.min(100, Math.round(bucket.avgScore)))
+                    return (
+                      <div
+                        key={bucket.key}
+                        className="flex-1 flex flex-col items-center justify-end h-full min-w-0"
+                      >
+                        <div className="text-center mb-1">
+                          <span
+                            className={`text-xs font-extrabold font-mono block ${
+                              isLatest
+                                ? 'text-indigo-700 dark:text-indigo-300'
+                                : 'text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {bucket.avgScore}%
+                          </span>
+                          {bucket.deltaFromPrev !== null && (
+                            <span
+                              className={`text-[10px] font-bold font-mono ${
+                                bucket.deltaFromPrev > 0
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : bucket.deltaFromPrev < 0
+                                    ? 'text-rose-600 dark:text-rose-400'
+                                    : 'text-slate-400'
+                              }`}
+                            >
+                              {bucket.deltaFromPrev > 0
+                                ? `+${bucket.deltaFromPrev}%`
+                                : `${bucket.deltaFromPrev}%`}
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-full max-w-12 h-24 bg-slate-200/70 dark:bg-slate-800 rounded-t-xl flex items-end overflow-hidden">
+                          <div
+                            className={`w-full rounded-t-xl transition-all duration-500 ${
+                              isLatest
+                                ? 'bg-gradient-to-t from-indigo-600 to-violet-500'
+                                : 'bg-indigo-400/75 dark:bg-indigo-500/60'
+                            }`}
+                            style={{ height: `${barHeight}%` }}
+                            title={`${bucket.label} (${bucket.subLabel}): ${bucket.avgScore}% từ ${bucket.count} câu`}
+                          />
+                        </div>
+                        <div className="mt-1.5 text-center leading-tight">
+                          <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 block truncate">
+                            {bucket.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">
+                            {bucket.count} câu
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -256,6 +503,22 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                    {(() => {
+                      const firstStats = firstAttemptByLesson.get(lesson.id)
+                      if (!firstStats || firstStats.count === 0) return null
+                      const firstAvg = Math.round(firstStats.sum / firstStats.count)
+                      return (
+                        <div className="text-right">
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400 block">
+                            Lần đầu TB
+                          </span>
+                          <span className="text-base font-extrabold text-indigo-700 dark:text-indigo-300 font-mono">
+                            {firstAvg}%
+                          </span>
+                        </div>
+                      )
+                    })()}
+
                     <div className="text-right">
                       <span className="text-xs text-slate-500 dark:text-slate-400 block">Average Score</span>
                       <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">

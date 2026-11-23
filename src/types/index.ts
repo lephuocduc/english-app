@@ -70,10 +70,19 @@ export interface UserSentenceProgress {
   sentenceId: string
   userInput: string
   score: number
+  firstAttemptScore?: number
+  firstAttemptAt?: string
   isRevealed: boolean
   attempts: number
   completed: boolean
   lastAttemptAt: string
+}
+
+export interface FirstAttemptRecord {
+  lessonId: string
+  segmentId: string
+  score: number
+  createdAt: string
 }
 
 export interface UserLessonProgress {

@@ -305,15 +305,25 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
       }
     }
 
-    const previousAttempts = savedProgressMap[currentSegment.id]?.attempts || 0
+    const existingProgress = savedProgressMap[currentSegment.id]
+    const previousAttempts = existingProgress?.attempts || 0
+    const nowIso = new Date().toISOString()
+    const isFirstGradedAttempt =
+      existingProgress?.firstAttemptScore === undefined && previousAttempts === 0
     const progress: UserSentenceProgress = {
       sentenceId: currentSegment.id,
       userInput,
       score: result.score,
+      firstAttemptScore: isFirstGradedAttempt
+        ? result.score
+        : existingProgress?.firstAttemptScore,
+      firstAttemptAt: isFirstGradedAttempt
+        ? nowIso
+        : existingProgress?.firstAttemptAt,
       isRevealed: true,
       attempts: previousAttempts + 1,
       completed: result.score >= 80,
-      lastAttemptAt: new Date().toISOString(),
+      lastAttemptAt: nowIso,
     }
     onSaveProgress(progress)
 

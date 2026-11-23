@@ -4,6 +4,7 @@ import type {
   UserLessonProgress,
   VocabularyItem,
   StreakData,
+  FirstAttemptRecord,
 } from '../../types'
 import { formatLocalDate } from '../streak/streakManager'
 
@@ -254,6 +255,11 @@ export class ApiClient {
       method: 'DELETE',
     })
     return res.success
+  }
+
+  async getFirstAttemptRecords(): Promise<FirstAttemptRecord[]> {
+    const res = await this.request<FirstAttemptRecord[]>('/attempts/first-attempt-stats')
+    return res.success && Array.isArray(res.data) ? res.data : []
   }
 
   // --- Daily Streak Endpoints ---
