@@ -48,7 +48,7 @@ export const PHONE_MODE_PRESETS: Record<PhoneCallLevel, PhoneModePreset> = {
     midFreqHz: 1250,
     midGainDb: 5.0,
     distortion: 14,
-    noiseGain: 0.014,
+    noiseGain: 0,
     compressorThreshold: -22,
     compressorRatio: 6,
     masterGain: 1.15,
@@ -65,7 +65,7 @@ export const PHONE_MODE_PRESETS: Record<PhoneCallLevel, PhoneModePreset> = {
     midFreqHz: 1350,
     midGainDb: 6.5,
     distortion: 28,
-    noiseGain: 0.036,
+    noiseGain: 0,
     compressorThreshold: -26,
     compressorRatio: 9,
     masterGain: 1.25,
@@ -82,7 +82,7 @@ export const PHONE_MODE_PRESETS: Record<PhoneCallLevel, PhoneModePreset> = {
     midFreqHz: 1450,
     midGainDb: 8.0,
     distortion: 48,
-    noiseGain: 0.068,
+    noiseGain: 0,
     compressorThreshold: -30,
     compressorRatio: 12,
     masterGain: 1.35,
@@ -829,8 +829,10 @@ export class TtsAudioEngine {
       if (isPhoneCallMode) {
         const ctx = this.getAudioContext()
         if (ctx) {
-          const { noiseTarget } = this.createDestinationChain(ctx, true)
-          if (noiseTarget) this.startPhoneLineStatic(ctx, noiseTarget)
+          const { noiseTarget, preset } = this.createDestinationChain(ctx, true)
+          if (noiseTarget && preset.noiseGain > 0) {
+            this.startPhoneLineStatic(ctx, noiseTarget, preset.noiseGain)
+          }
         }
       }
 
@@ -901,7 +903,7 @@ export class TtsAudioEngine {
         phoneCallLevel,
         false
       )
-      if (isPhoneCallMode && noiseTarget) {
+      if (isPhoneCallMode && noiseTarget && preset.noiseGain > 0) {
         this.startPhoneLineStatic(offlineCtx, noiseTarget, preset.noiseGain, false)
       }
 
@@ -1154,7 +1156,7 @@ export class TtsAudioEngine {
         isPhoneCallMode,
         phoneCallLevel
       )
-      if (isPhoneCallMode && noiseTarget) {
+      if (isPhoneCallMode && noiseTarget && preset.noiseGain > 0) {
         this.startPhoneLineStatic(ctx, noiseTarget, preset.noiseGain)
       }
 
