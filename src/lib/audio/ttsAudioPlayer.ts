@@ -227,7 +227,98 @@ function selectBestSpeechVoice(
 const bufferCache = new Map<string, AudioBuffer>()
 const rawBlobCache = new Map<string, Blob>()
 
-function decodeAudioDataCompat(ctx: AudioContext, arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
+// Tiny valid 10ms silent 16-bit PCM WAV (22050Hz mono) for synchronous mobile HTMLAudioElement unlock
+const SILENT_WAV_DATA_URI = (() => {
+  const numSamples = 220
+  const sampleRate = 22050
+  const dataSize = numSamples * 2
+  const buf = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(buf)
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i))
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+  const bytes = new Uint8Array(buf)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return typeof btoa === 'function' ? `data:audio/wav;base64,${btoa(binary)}` : ''
+})()
+
+export function isMobileBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  if (/Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    return true
+  }
+  // iPadOS 13+ reports Macintosh in UA but has multi-touch
+  if (/Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1) {
+    return true
+  }
+  return false
+}
+
+export function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
+  const numChannels = Math.min(2, Math.max(1, buffer.numberOfChannels || 1))
+  const sampleRate = buffer.sampleRate || 24000
+  const numFrames = buffer.length
+  const bytesPerSample = 2
+  const blockAlign = numChannels * bytesPerSample
+  const dataSize = numFrames * blockAlign
+  const arrayBuffer = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(arrayBuffer)
+
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i))
+    }
+  }
+
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * blockAlign, true)
+  view.setUint16(32, blockAlign, true)
+  view.setUint16(34, 16, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+
+  const channels: Float32Array[] = []
+  for (let ch = 0; ch < numChannels; ch++) {
+    channels.push(buffer.getChannelData(ch))
+  }
+
+  let offset = 44
+  for (let i = 0; i < numFrames; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const sample = Math.max(-1, Math.min(1, channels[ch][i] || 0))
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true)
+      offset += 2
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: 'audio/wav' })
+}
+
+function decodeAudioDataCompat(ctx: BaseAudioContext, arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
   const copy = arrayBuffer.slice(0)
   return new Promise((resolve, reject) => {
     try {
@@ -256,7 +347,7 @@ function createPhoneDistortionCurve(amount = 16): Float32Array<ArrayBuffer> {
   return curve
 }
 
-function createLineNoiseBuffer(ctx: AudioContext, durationSec = 2): AudioBuffer {
+function createLineNoiseBuffer(ctx: BaseAudioContext, durationSec = 2): AudioBuffer {
   const sampleRate = ctx.sampleRate || 44100
   const length = Math.floor(sampleRate * durationSec)
   const buffer = ctx.createBuffer(1, length, sampleRate)
@@ -273,7 +364,8 @@ export class TtsAudioEngine {
   private leadInSource: AudioBufferSourceNode | null = null
   private noiseSource: AudioBufferSourceNode | null = null
   private wobbleOsc: OscillatorNode | null = null
-  private activeHtmlAudio: HTMLAudioElement | null = null
+  private sharedAudioEl: HTMLAudioElement | null = null
+  private htmlAudioUnlocked = false
   private activeBlobUrl: string | null = null
   private outputGain: GainNode | null = null
   private playbackToken = 0
@@ -291,7 +383,7 @@ export class TtsAudioEngine {
     this.unlockListenersBound = true
     const handleGesture = () => {
       this.unlockAudio()
-      if (this.isUnlocked) {
+      if (this.isUnlocked && this.htmlAudioUnlocked) {
         window.removeEventListener('touchstart', handleGesture)
         window.removeEventListener('pointerdown', handleGesture)
         window.removeEventListener('click', handleGesture)
@@ -302,7 +394,59 @@ export class TtsAudioEngine {
     window.addEventListener('click', handleGesture, { passive: true })
   }
 
+  private getOrCreateSharedAudioElement(): HTMLAudioElement | null {
+    if (typeof window === 'undefined' || typeof Audio === 'undefined') return null
+    if (!this.sharedAudioEl) {
+      const el = new Audio()
+      el.preload = 'auto'
+      try {
+        ;(el as HTMLAudioElement & { playsInline?: boolean }).playsInline = true
+        el.setAttribute?.('playsinline', '')
+        el.setAttribute?.('webkit-playsinline', '')
+      } catch {
+        // ignore attribute errors in test environments
+      }
+      this.sharedAudioEl = el
+    }
+    return this.sharedAudioEl
+  }
+
   unlockAudio(): AudioContext | null {
+    // Request iOS 17+ Safari playback audio session so audio plays even when hardware Silent Switch is ON
+    try {
+      const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { audioSession?: { type: string } }) : null
+      if (nav?.audioSession && nav.audioSession.type !== 'playback') {
+        nav.audioSession.type = 'playback'
+      }
+    } catch {
+      // ignore unsupported audioSession
+    }
+
+    // Synchronously unlock the persistent HTMLAudioElement inside the user gesture
+    // so iOS Safari & Android Chrome permit .play() after async fetch/decode and on media channel
+    const sharedEl = this.getOrCreateSharedAudioElement()
+    if (sharedEl && !this.htmlAudioUnlocked && SILENT_WAV_DATA_URI) {
+      try {
+        sharedEl.onended = null
+        sharedEl.onerror = null
+        sharedEl.muted = false
+        sharedEl.volume = 1
+        sharedEl.src = SILENT_WAV_DATA_URI
+        const p = sharedEl.play()
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
+            this.htmlAudioUnlocked = true
+          }).catch(() => {
+            // Will retry on next user tap
+          })
+        } else {
+          this.htmlAudioUnlocked = true
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const ctx = this.getAudioContext()
     if (!ctx) return null
     try {
@@ -344,15 +488,18 @@ export class TtsAudioEngine {
   }
 
   private createDestinationChain(
-    ctx: AudioContext,
+    ctx: BaseAudioContext,
     isPhoneCallMode: boolean,
-    phoneCallLevel: PhoneCallLevel = 1
+    phoneCallLevel: PhoneCallLevel = 1,
+    trackActiveNodes = true
   ): { inputNode: AudioNode; noiseTarget: AudioNode | null; preset: PhoneModePreset } {
     const preset = PHONE_MODE_PRESETS[phoneCallLevel] || PHONE_MODE_PRESETS[1]
     const masterGain = ctx.createGain()
     masterGain.gain.value = isPhoneCallMode ? preset.masterGain : 1.0
     masterGain.connect(ctx.destination)
-    this.outputGain = masterGain
+    if (trackActiveNodes) {
+      this.outputGain = masterGain
+    }
 
     if (!isPhoneCallMode) {
       return { inputNode: masterGain, noiseTarget: null, preset }
@@ -410,7 +557,9 @@ export class TtsAudioEngine {
         lfo.connect(lfoDepth)
         lfoDepth.connect(wobbleGain.gain)
         lfo.start()
-        this.wobbleOsc = lfo
+        if (trackActiveNodes) {
+          this.wobbleOsc = lfo
+        }
 
         compressor.connect(wobbleGain)
         wobbleGain.connect(masterGain)
@@ -425,16 +574,17 @@ export class TtsAudioEngine {
   }
 
   private startPhoneLineStatic(
-    ctx: AudioContext,
+    ctx: BaseAudioContext,
     target: AudioNode,
-    noiseLevel = 0.014
+    noiseLevel = 0.014,
+    trackActiveNodes = true
   ): void {
     try {
-      if (!this.lineNoiseBuffer) {
-        this.lineNoiseBuffer = createLineNoiseBuffer(ctx, 2)
-      }
+      const noiseBuf = trackActiveNodes
+        ? (this.lineNoiseBuffer || (this.lineNoiseBuffer = createLineNoiseBuffer(ctx, 2)))
+        : createLineNoiseBuffer(ctx, 2)
       const noise = ctx.createBufferSource()
-      noise.buffer = this.lineNoiseBuffer
+      noise.buffer = noiseBuf
       noise.loop = true
 
       const noiseGain = ctx.createGain()
@@ -443,7 +593,9 @@ export class TtsAudioEngine {
       noise.connect(noiseGain)
       noiseGain.connect(target)
       noise.start()
-      this.noiseSource = noise
+      if (trackActiveNodes) {
+        this.noiseSource = noise
+      }
     } catch {
       // ignore if noise buffer fails
     }
@@ -519,7 +671,7 @@ export class TtsAudioEngine {
   }
 
   private connectWithSpeakerEq(
-    ctx: AudioContext,
+    ctx: BaseAudioContext,
     src: AudioNode,
     target: AudioNode,
     speakerIndex = 0
@@ -545,6 +697,17 @@ export class TtsAudioEngine {
     highShelf.connect(target)
   }
 
+  private revokeActiveBlobUrl(): void {
+    if (this.activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      try {
+        URL.revokeObjectURL(this.activeBlobUrl)
+      } catch {
+        // ignore
+      }
+      this.activeBlobUrl = null
+    }
+  }
+
   stop(): void {
     this.playbackToken += 1
     try {
@@ -567,23 +730,18 @@ export class TtsAudioEngine {
     } catch {
       // ignore
     }
-    if (this.activeHtmlAudio) {
+    // Pause the persistent HTMLAudioElement WITHOUT destroying it or clearing src=''
+    // so iOS Safari keeps the element gesture-unlocked for subsequent plays and loops.
+    if (this.sharedAudioEl) {
       try {
-        this.activeHtmlAudio.pause()
-        this.activeHtmlAudio.src = ''
+        this.sharedAudioEl.onended = null
+        this.sharedAudioEl.onerror = null
+        this.sharedAudioEl.pause()
       } catch {
         // ignore
       }
-      this.activeHtmlAudio = null
     }
-    if (this.activeBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
-      try {
-        URL.revokeObjectURL(this.activeBlobUrl)
-      } catch {
-        // ignore
-      }
-      this.activeBlobUrl = null
-    }
+    this.revokeActiveBlobUrl()
     this.activeSource = null
     this.leadInSource = null
     this.noiseSource = null
@@ -713,6 +871,116 @@ export class TtsAudioEngine {
     }
   }
 
+  private async renderBufferWithEffects(
+    mainBuffer: AudioBuffer,
+    leadInBuffer: AudioBuffer | null,
+    speakerIndex: number,
+    effectiveLeadInSpeaker: number,
+    isPhoneCallMode: boolean,
+    phoneCallLevel: PhoneCallLevel
+  ): Promise<AudioBuffer> {
+    if (typeof window === 'undefined') return mainBuffer
+    const OfflineCtx =
+      window.OfflineAudioContext ||
+      (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+        .webkitOfflineAudioContext
+    if (!OfflineCtx) return mainBuffer
+
+    try {
+      const sampleRate = mainBuffer.sampleRate || 24000
+      const hasLeadIn = Boolean(leadInBuffer && leadInBuffer.duration > 0.3)
+      const leadInSlice = hasLeadIn && leadInBuffer ? Math.min(1.1, leadInBuffer.duration) : 0
+      const mainStartAt = hasLeadIn ? leadInSlice + 0.08 : 0
+      const totalDuration = mainStartAt + mainBuffer.duration + 0.05
+      const totalSamples = Math.max(1, Math.ceil(totalDuration * sampleRate))
+
+      const offlineCtx = new OfflineCtx(1, totalSamples, sampleRate)
+      const { inputNode, noiseTarget, preset } = this.createDestinationChain(
+        offlineCtx,
+        isPhoneCallMode,
+        phoneCallLevel,
+        false
+      )
+      if (isPhoneCallMode && noiseTarget) {
+        this.startPhoneLineStatic(offlineCtx, noiseTarget, preset.noiseGain, false)
+      }
+
+      if (hasLeadIn && leadInBuffer) {
+        const leadInSrc = offlineCtx.createBufferSource()
+        leadInSrc.buffer = leadInBuffer
+        this.connectWithSpeakerEq(offlineCtx, leadInSrc, inputNode, effectiveLeadInSpeaker)
+        const offset = Math.max(0, leadInBuffer.duration - leadInSlice)
+        leadInSrc.start(0, offset, leadInSlice)
+      }
+
+      const mainSrc = offlineCtx.createBufferSource()
+      mainSrc.buffer = mainBuffer
+      this.connectWithSpeakerEq(offlineCtx, mainSrc, inputNode, speakerIndex)
+      mainSrc.start(mainStartAt)
+
+      return await offlineCtx.startRendering()
+    } catch {
+      return mainBuffer
+    }
+  }
+
+  private async playSourceOnSharedAudio(
+    srcUrl: string,
+    isBlobUrl: boolean,
+    playbackRate: number,
+    token: number,
+    onStart?: () => void,
+    onEnd?: () => void,
+    onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
+  ): Promise<boolean> {
+    const audioEl = this.getOrCreateSharedAudioElement()
+    if (!audioEl) return false
+
+    try {
+      this.revokeActiveBlobUrl()
+      if (isBlobUrl) {
+        this.activeBlobUrl = srcUrl
+      }
+
+      audioEl.onended = null
+      audioEl.onerror = null
+      audioEl.pause()
+      audioEl.muted = false
+      audioEl.volume = 1
+      audioEl.src = srcUrl
+      audioEl.playbackRate = Math.min(2.0, Math.max(0.5, playbackRate))
+      try {
+        audioEl.currentTime = 0
+      } catch {
+        // ignore if metadata not loaded yet
+      }
+
+      audioEl.onended = () => {
+        if (this.playbackToken !== token) return
+        onEnd?.()
+      }
+      audioEl.onerror = () => {
+        if (this.playbackToken !== token) return
+        onEnd?.()
+      }
+
+      const playPromise = audioEl.play()
+      if (playPromise && typeof playPromise.then === 'function') {
+        await playPromise
+      }
+      if (this.playbackToken !== token) {
+        audioEl.pause()
+        return false
+      }
+      this.htmlAudioUnlocked = true
+      onFallbackUsed?.(false)
+      onStart?.()
+      return true
+    } catch {
+      return false
+    }
+  }
+
   private async playWithHtmlAudioFallback(
     cleanText: string,
     accent: VoiceAccent,
@@ -723,58 +991,68 @@ export class TtsAudioEngine {
     onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
   ): Promise<boolean> {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return false
+    const ttsUrl = apiClient.getTtsAudioUrl(cleanText, accent)
+    const baseCacheKey = `${accent}:::${cleanText}`
+
+    // Tier A: Play cached or freshly fetched MP3 Blob via persistent gesture-unlocked HTMLAudioElement
     try {
-      const baseCacheKey = `${accent}:::${cleanText}`
       let blob = rawBlobCache.get(baseCacheKey)
       if (!blob) {
-        const url = apiClient.getTtsAudioUrl(cleanText, accent)
-        const res = await fetch(url)
-        if (!res.ok) return false
-        const contentType = (res.headers?.get?.('content-type') || '').toLowerCase()
-        if (contentType.includes('text/html') || contentType.includes('application/json')) {
-          return false
+        const res = await fetch(ttsUrl)
+        if (res.ok) {
+          const contentType = (res.headers?.get?.('content-type') || '').toLowerCase()
+          if (!contentType.includes('text/html') && !contentType.includes('application/json')) {
+            const fetchedBlob = await res.blob()
+            if (fetchedBlob.size >= 64) {
+              blob = fetchedBlob
+              rawBlobCache.set(baseCacheKey, blob)
+            }
+          }
         }
-        blob = await res.blob()
-        if (blob.size < 64) return false
-        rawBlobCache.set(baseCacheKey, blob)
       }
       if (this.playbackToken !== token) return false
 
-      const blobUrl = URL.createObjectURL(blob)
-      this.activeBlobUrl = blobUrl
-      const audioEl = new Audio(blobUrl)
-      audioEl.playbackRate = Math.min(2.0, Math.max(0.5, speed))
-      this.activeHtmlAudio = audioEl
-
-      audioEl.onended = () => {
-        if (this.playbackToken !== token) return
-        this.activeHtmlAudio = null
-        onEnd?.()
+      if (blob && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blobUrl = URL.createObjectURL(blob)
+        const played = await this.playSourceOnSharedAudio(
+          blobUrl,
+          true,
+          speed,
+          token,
+          onStart,
+          onEnd,
+          onFallbackUsed
+        )
+        if (played) return true
       }
-      audioEl.onerror = () => {
-        if (this.playbackToken !== token) return
-        this.activeHtmlAudio = null
-        onEnd?.()
-      }
-
-      await audioEl.play()
-      if (this.playbackToken !== token) {
-        audioEl.pause()
-        return false
-      }
-      onFallbackUsed?.(false)
-      onStart?.()
-      return true
     } catch {
-      return false
+      // fall through to direct URL on sharedAudioEl
     }
+
+    if (this.playbackToken !== token) return false
+
+    // Tier B: Direct /api/tts stream URL on persistent HTMLAudioElement (only if fetch wasn't blocked by HTTP 4xx/5xx)
+    if (isMobileBrowser()) {
+      const directPlayed = await this.playSourceOnSharedAudio(
+        ttsUrl,
+        false,
+        speed,
+        token,
+        onStart,
+        onEnd,
+        onFallbackUsed
+      )
+      if (directPlayed) return true
+    }
+
+    return false
   }
 
   async playSegment(options: PlayAudioSegmentOptions): Promise<void> {
     this.stop()
     const token = this.playbackToken
 
-    // Unlock AudioContext synchronously inside tap/click gesture for iOS Safari & Android Chrome
+    // Unlock BOTH persistent HTMLAudioElement and AudioContext synchronously inside tap/click gesture
     const unlockedCtx = this.unlockAudio()
 
     const {
@@ -798,6 +1076,8 @@ export class TtsAudioEngine {
       return
     }
 
+    const preferHtmlAudio = isMobileBrowser()
+
     try {
       const ctx = unlockedCtx || this.getAudioContext()
       if (!ctx) throw new Error('AudioContext unavailable')
@@ -816,6 +1096,35 @@ export class TtsAudioEngine {
       ])
 
       if (this.playbackToken !== token) return
+
+      // On mobile browsers (iOS Safari/Chrome & Android), always route final audio through
+      // the pre-unlocked persistent HTMLAudioElement so it plays on the Media channel
+      // (bypassing the iOS physical Silent Switch and mobile AudioContext suspension)
+      // while preserving Phone Mode Lv 1-3 DSP, speaker pitch, and speed!
+      if (preferHtmlAudio && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const processedBuffer = await this.renderBufferWithEffects(
+          mainBuffer,
+          leadInBuffer,
+          speakerIndex,
+          effectiveLeadInSpeaker,
+          isPhoneCallMode,
+          phoneCallLevel
+        )
+        if (this.playbackToken !== token) return
+
+        const wavBlob = audioBufferToWavBlob(processedBuffer)
+        const wavUrl = URL.createObjectURL(wavBlob)
+        const htmlPlayed = await this.playSourceOnSharedAudio(
+          wavUrl,
+          true,
+          1.0,
+          token,
+          onStart,
+          onEnd,
+          onFallbackUsed
+        )
+        if (htmlPlayed) return
+      }
 
       if (ctx.state !== 'running') {
         try {

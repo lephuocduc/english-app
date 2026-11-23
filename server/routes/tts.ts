@@ -115,6 +115,8 @@ ttsRouter.get('/', async (c) => {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
+        'Content-Length': String(merged.byteLength),
+        'Accept-Ranges': 'bytes',
         'Access-Control-Allow-Origin': '*',
         'Cross-Origin-Resource-Policy': 'cross-origin',
         'Cache-Control': 'public, max-age=86400',

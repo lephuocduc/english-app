@@ -6,7 +6,11 @@ import {
   createAudioLessonFromText,
   isAudioLesson,
 } from '../lib/audio/textToLesson'
-import { TtsAudioEngine, sharedTtsAudioEngine } from '../lib/audio/ttsAudioPlayer'
+import {
+  TtsAudioEngine,
+  sharedTtsAudioEngine,
+  audioBufferToWavBlob,
+} from '../lib/audio/ttsAudioPlayer'
 import { useAudioLessonPlayer } from '../features/audio/useAudioLessonPlayer'
 import {
   DEFAULT_A2_B1_AUDIO_LESSONS,
@@ -394,6 +398,102 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
         )
       } finally {
         playSpy.mockRestore()
+      }
+    })
+
+    it('encodes an AudioBuffer into a valid PCM WAV Blob for mobile HTMLAudioElement playback', async () => {
+      const sampleData = new Float32Array([0, 0.5, -0.5, 1.0, -1.0])
+      const fakeBuffer = {
+        numberOfChannels: 1,
+        sampleRate: 24000,
+        length: sampleData.length,
+        duration: sampleData.length / 24000,
+        getChannelData: () => sampleData,
+      } as unknown as AudioBuffer
+
+      const wavBlob = audioBufferToWavBlob(fakeBuffer)
+      expect(wavBlob.type).toBe('audio/wav')
+      expect(wavBlob.size).toBe(44 + sampleData.length * 2)
+
+      const bytes = new Uint8Array(await wavBlob.arrayBuffer())
+      const header = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])
+      const waveTag = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11])
+      expect(header).toBe('RIFF')
+      expect(waveTag).toBe('WAVE')
+    })
+
+    it('reuses a single pre-unlocked HTMLAudioElement on mobile browsers', async () => {
+      const prevUa = Object.getOwnPropertyDescriptor(window.navigator, 'userAgent')
+      const prevAudio = globalThis.Audio
+      const prevFetch = globalThis.fetch
+      const prevCreateObjectURL = URL.createObjectURL
+      const prevRevokeObjectURL = URL.revokeObjectURL
+
+      const createdAudioInstances: any[] = []
+      class StubAudio {
+        src = ''
+        preload = ''
+        muted = false
+        volume = 1
+        playbackRate = 1
+        currentTime = 0
+        onended: (() => void) | null = null
+        onerror: (() => void) | null = null
+        playCalls: string[] = []
+        constructor() {
+          createdAudioInstances.push(this)
+        }
+        setAttribute() {}
+        pause() {}
+        play() {
+          this.playCalls.push(this.src)
+          if (this.src.startsWith('blob:') && this.onended) {
+            this.onended()
+          }
+          return Promise.resolve()
+        }
+      }
+
+      try {
+        Object.defineProperty(window.navigator, 'userAgent', {
+          configurable: true,
+          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1',
+        })
+        ;(globalThis as any).Audio = StubAudio
+        URL.createObjectURL = vi.fn(() => 'blob:mock-mobile-audio')
+        URL.revokeObjectURL = vi.fn()
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'audio/mpeg' }),
+          blob: async () => new Blob([new Uint8Array(128)], { type: 'audio/mpeg' }),
+          arrayBuffer: async () => new ArrayBuffer(128),
+        }) as unknown as typeof fetch
+
+        const onStart = vi.fn()
+        const onEnd = vi.fn()
+        const engine = new TtsAudioEngine()
+        await engine.playSegment({
+          text: 'Mobile playback verification sentence.',
+          accent: 'en-GB',
+          onStart,
+          onEnd,
+        })
+
+        // Exactly ONE persistent HTMLAudioElement is created and reused (unlocked with silent WAV, then played)
+        expect(createdAudioInstances).toHaveLength(1)
+        expect(createdAudioInstances[0].playCalls[0]).toMatch(/^data:audio\/wav;base64,/)
+        expect(createdAudioInstances[0].playCalls).toContain('blob:mock-mobile-audio')
+        expect(onStart).toHaveBeenCalledTimes(1)
+        expect(onEnd).toHaveBeenCalledTimes(1)
+      } finally {
+        if (prevUa) {
+          Object.defineProperty(window.navigator, 'userAgent', prevUa)
+        }
+        ;(globalThis as any).Audio = prevAudio
+        globalThis.fetch = prevFetch
+        URL.createObjectURL = prevCreateObjectURL
+        URL.revokeObjectURL = prevRevokeObjectURL
       }
     })
   })
