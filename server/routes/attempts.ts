@@ -135,16 +135,28 @@ attemptsRouter.post('/', async (c) => {
 
     await db.batch([insertAttemptStmt, upsertProgressStmt])
 
-    // 4. Silently update hidden adaptive learning database (Weak Words, Mastered Words, Recent 5 Lessons)
+    // 4. Silently update hidden adaptive learning database ONLY on the very first graded attempt
+    //    for this (lesson, segment); subsequent retries are ignored so revealed answers don't skew Weak/Mastered stats.
     try {
-      await updateHiddenAdaptiveMemoryInD1(db, {
-        userId,
-        lessonId: data.lessonId,
-        segmentId: data.segmentId,
-        userInput: data.userInput,
-        expectedText: data.expectedText,
-        wordOutcomes: data.wordOutcomes,
-      })
+      const attemptCountRow = await db
+        .prepare(
+          `SELECT COUNT(*) as cnt
+           FROM dictation_attempts
+           WHERE user_id = ? AND lesson_id = ? AND segment_id = ?`
+        )
+        .bind(userId, data.lessonId, data.segmentId)
+        .first<{ cnt: number }>()
+
+      if (Number(attemptCountRow?.cnt || 0) === 1) {
+        await updateHiddenAdaptiveMemoryInD1(db, {
+          userId,
+          lessonId: data.lessonId,
+          segmentId: data.segmentId,
+          userInput: data.userInput,
+          expectedText: data.expectedText,
+          wordOutcomes: data.wordOutcomes,
+        })
+      }
     } catch (adaptiveErr) {
       // Never block normal dictation attempt recording if silent memory update fails
       console.warn('[API attempts:adaptive silent update error]', adaptiveErr)

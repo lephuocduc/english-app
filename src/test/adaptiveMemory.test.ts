@@ -154,22 +154,28 @@ describe('Hidden Adaptive Learning Database & 85% Difficulty Controller', () => 
       nowIso: '2026-11-23T10:00:00Z',
     })
 
-    // Retry on same segment should NOT overwrite first-attempt score for Lesson A
+    // Retry on same segment should NOT overwrite first-attempt score OR alter Weak/Mastered word memory
     const resRetry = scoreDictation('Restart the database replica immediately.', 'Restart the database replica immediately.')
-    hiddenAdaptiveStore.recordGradedCheck({
-      lessonId: 'lesson-a',
-      lessonTitle: 'Lesson A',
-      segmentId: 'seg-1',
-      score: resRetry.score,
-      alignments: resRetry.alignments,
-      isFirstAttempt: false,
-      nowIso: '2026-11-23T10:01:00Z',
-    })
+    for (let k = 0; k < 3; k++) {
+      hiddenAdaptiveStore.recordGradedCheck({
+        lessonId: 'lesson-a',
+        lessonTitle: 'Lesson A',
+        segmentId: 'seg-1',
+        score: resRetry.score,
+        alignments: resRetry.alignments,
+        isFirstAttempt: false,
+        nowIso: `2026-11-23T10:0${k + 1}:00Z`,
+      })
+    }
 
     const bp = hiddenAdaptiveStore.getBlueprint()
     expect(bp.recentLessons).toHaveLength(1)
     expect(bp.recentLessons[0].firstAttemptAvg).toBe(res1.score)
-    expect(bp.weakWords.some((w) => w.word === 'database')).toBe(true)
+    // "database" stays weak (0 consecutive correct) and "replica" is NOT artificially mastered via retries!
+    const dbWord = bp.weakWords.find((w) => w.word === 'database')
+    expect(dbWord).toBeDefined()
+    expect(dbWord?.consecutiveCorrect).toBe(0)
+    expect(bp.masteredWords.some((w) => w.word === 'replica')).toBe(false)
   })
 
   it('silently updates D1 adaptive tables on POST /api/attempts and supports GET /api/adaptive/profile & POST /api/adaptive/backfill', async () => {
@@ -242,6 +248,36 @@ describe('Hidden Adaptive Learning Database & 85% Difficulty Controller', () => 
       expect(res.status).toBe(201)
     }
 
+    // 2b. Submit 3 retries on seg-a1 with "failover" typed correctly (after seeing answer) -> MUST BE IGNORED!
+    for (let retry = 0; retry < 3; retry++) {
+      const scoredRetry = scoreDictation(
+        'Monitor firewall failover immediately.',
+        'Monitor firewall failover immediately.'
+      )
+      const retryRes = await serverApp.request(
+        '/api/attempts',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-user-id': user },
+          body: JSON.stringify({
+            lessonId: 'lesson-adapt-1',
+            segmentId: 'seg-a1',
+            userInput: 'Monitor firewall failover immediately.',
+            score: scoredRetry.score,
+            accuracy: scoredRetry.accuracy,
+            correctCount: scoredRetry.correctCount,
+            missingCount: scoredRetry.missingCount,
+            incorrectCount: scoredRetry.incorrectCount,
+            extraCount: scoredRetry.extraCount,
+            expectedText: 'Monitor firewall failover immediately.',
+            wordOutcomes: extractWordOutcomesFromAlignment(scoredRetry.alignments),
+          }),
+        },
+        { DB: db }
+      )
+      expect(retryRes.status).toBe(201)
+    }
+
     // 3. Query hidden adaptive profile
     const profileRes = await serverApp.request(
       '/api/adaptive/profile',
@@ -261,14 +297,16 @@ describe('Hidden Adaptive Learning Database & 85% Difficulty Controller', () => 
     }
 
     expect(profileJson.success).toBe(true)
-    expect(profileJson.data.weakWords.some((w) => w.word === 'failover')).toBe(true)
+    const failoverEntry = profileJson.data.weakWords.find((w) => w.word === 'failover')
+    expect(failoverEntry).toBeDefined()
+    expect(failoverEntry?.consecutiveCorrect).toBe(0) // retries did NOT erase weakness!
     expect(profileJson.data.priorityWeakWords.some((w) => w.word === 'failover')).toBe(true)
     expect(profileJson.data.masteredWords.some((w) => w.word === 'firewall' && w.consecutiveCorrect === 3)).toBe(true)
     expect(profileJson.data.recentLessons).toHaveLength(1)
     expect(profileJson.data.recentLessons[0].firstAttemptAvg).toBeGreaterThan(90)
     expect(profileJson.data.directive.action).toBe('increase')
 
-    // 4. Verify backfill produces identical results from historical dictation_attempts
+    // 4. Verify backfill also processes ONLY the 3 first attempts (ignoring the 3 retries on seg-a1)
     const backfillRes = await serverApp.request(
       '/api/adaptive/backfill',
       { method: 'POST', headers: { 'x-user-id': user } },

@@ -20,7 +20,7 @@ Nhật ký phát triển tổng hợp từ `git log` của dự án **ListenFlow
 
 - *(Adaptive Hidden DB)* — **Cơ sở dữ liệu ẩn theo dõi Weak Words / Mastered Words / 5 bài gần nhất & quy tắc tạo bài nghe quanh 85%**
   - Tạo migration `migrations/0007_add_hidden_adaptive_memory.sql` (đã chạy trên D1): thêm 2 bảng ẩn `adaptive_word_memory` và `adaptive_lesson_history` (không hiển thị bất kỳ UI nào ra màn hình).
-  - Tự động ghi ngầm sau mỗi lần chấm điểm (`DictationStudio` → `hiddenAdaptiveStore` + `POST /api/attempts` → `updateHiddenAdaptiveMemoryInD1`):
+  - Tự động ghi ngầm **chỉ ở lần chấm điểm đầu tiên** của mỗi câu (`DictationStudio` → `hiddenAdaptiveStore` + `POST /api/attempts` kiểm tra `COUNT(*) === 1` → `updateHiddenAdaptiveMemoryInD1`; các lần chấm lại sau khi đã xem đáp án sẽ không ghi đè dữ liệu từ vựng):
     - **Từ hay sai (`weak`)**: lưu từ nghe sai / nghe thiếu / sai chính tả, reset chuỗi đúng liên tiếp về 0.
     - **Lỗi âm đuôi `-s` (`ending_s_count`)**: tự động phân biệt các lỗi chỉ thiếu/thừa đuôi `-s / -es / -ies / 's` (vd: `servers` ↔ `server`, `patches` ↔ `patch`, `queries` ↔ `query`) vào nhóm luyện âm đuôi riêng, **không** đánh nhầm từ đó vào danh sách Từ hay sai.
     - **Từ đã vững (`mastered`)**: tự động nâng hạng khi nghe đúng liên tiếp ≥ 3 lần.

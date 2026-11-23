@@ -74,10 +74,24 @@ export const hiddenAdaptiveStore = {
     isFirstAttempt: boolean
     nowIso?: string
   }): void {
+    // Only record Weak/Mastered words & lesson score on the VERY FIRST graded attempt per segment;
+    // subsequent retries (after seeing the answer) must not pollute adaptive word memory.
+    if (!params.isFirstAttempt) {
+      return
+    }
+
     const nowIso = params.nowIso || new Date().toISOString()
     const state = loadState()
 
-    // 1 & 2. Silently update Weak Words & Mastered Words from word-level alignment
+    if (
+      params.lessonId &&
+      params.segmentId &&
+      state.lessons[params.lessonId]?.firstAttemptBySegment[params.segmentId] !== undefined
+    ) {
+      return
+    }
+
+    // 1 & 2. Silently update Weak Words, Ending-S & Mastered Words from first-attempt alignment
     const wordMap = new Map<string, AdaptiveWordEntry>(Object.entries(state.words))
     const outcomes = extractWordOutcomesFromAlignment(params.alignments)
     applyWordOutcomesToMap(wordMap, outcomes, nowIso)
@@ -94,13 +108,8 @@ export const hiddenAdaptiveStore = {
       if (params.lessonTitle) {
         existingLesson.lessonTitle = params.lessonTitle
       }
-      if (
-        params.isFirstAttempt ||
-        existingLesson.firstAttemptBySegment[params.segmentId] === undefined
-      ) {
-        existingLesson.firstAttemptBySegment[params.segmentId] = params.score
-        existingLesson.lastGradedAt = nowIso
-      }
+      existingLesson.firstAttemptBySegment[params.segmentId] = params.score
+      existingLesson.lastGradedAt = nowIso
       state.lessons[params.lessonId] = existingLesson
     }
 

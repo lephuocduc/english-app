@@ -270,7 +270,7 @@ adaptiveRouter.get('/profile', async (c) => {
   }
 })
 
-// POST /backfill - Rebuild hidden adaptive memory from all historical dictation_attempts in D1
+// POST /backfill - Rebuild hidden adaptive memory strictly from FIRST-ATTEMPT dictation_attempts per (lesson, segment)
 adaptiveRouter.post('/backfill', async (c) => {
   const userId = c.get('userId')
   const db = c.env.DB
@@ -278,12 +278,23 @@ adaptiveRouter.post('/backfill', async (c) => {
   try {
     const { results: attempts } = await db
       .prepare(
-        `SELECT da.lesson_id as lessonId, da.segment_id as segmentId, da.user_input as userInput,
-                da.created_at as createdAt, ts.text as expectedText
-         FROM dictation_attempts da
-         INNER JOIN transcript_segments ts ON ts.id = da.segment_id AND ts.user_id = da.user_id
-         WHERE da.user_id = ? AND LENGTH(TRIM(ts.text)) > 0
-         ORDER BY da.created_at ASC, da.rowid ASC`
+        `SELECT lessonId, segmentId, userInput, createdAt, expectedText
+         FROM (
+           SELECT da.lesson_id as lessonId,
+                  da.segment_id as segmentId,
+                  da.user_input as userInput,
+                  da.created_at as createdAt,
+                  ts.text as expectedText,
+                  ROW_NUMBER() OVER (
+                    PARTITION BY da.lesson_id, da.segment_id
+                    ORDER BY da.created_at ASC, da.rowid ASC
+                  ) as rn
+           FROM dictation_attempts da
+           INNER JOIN transcript_segments ts ON ts.id = da.segment_id AND ts.user_id = da.user_id
+           WHERE da.user_id = ? AND LENGTH(TRIM(ts.text)) > 0
+         )
+         WHERE rn = 1
+         ORDER BY createdAt ASC`
       )
       .bind(userId)
       .all<{
