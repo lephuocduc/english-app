@@ -112,6 +112,22 @@ export interface StudyPreferences {
 
 export type SRSRating = 1 | 2 | 3 | 4 // 1: Again, 2: Hard, 3: Good, 4: Easy
 
+export type FSRSStateValue = 0 | 1 | 2 | 3 // 0: New, 1: Learning, 2: Review, 3: Relearning
+
+export interface VocabularyReviewLog {
+  id?: string
+  card_id: string
+  rating: SRSRating
+  state: FSRSStateValue
+  due: string | null
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  learning_steps: number
+  review_time: string
+}
+
 export interface VocabularyItem {
   id: string
   word: string
@@ -123,13 +139,25 @@ export interface VocabularyItem {
   lessonTitle: string
   savedAt: string
 
-  // SRS (Spaced Repetition / Anki SM-2) fields:
+  // FSRS (ts-fsrs) spaced repetition fields:
+  due?: string // UTC ISO timestamp when next review is due
+  stability?: number // Memory stability in days
+  difficulty?: number // Card difficulty (1 to 10; 0 for brand-new card)
+  elapsed_days?: number // Days elapsed since previous review
+  scheduled_days?: number // Days scheduled until next review
+  reps?: number // Total number of reviews
+  lapses?: number // Number of times card was forgotten (Again)
+  learning_steps?: number // Current FSRS short-term learning step index
+  state?: FSRSStateValue // 0: New, 1: Learning, 2: Review, 3: Relearning
+  last_review?: string | null // UTC ISO timestamp of most recent review
+
+  // Legacy / compatibility SRS fields (kept in sync with FSRS):
   mastered?: boolean
-  interval?: number // Days until next review
-  easeFactor?: number // Ease factor multiplier (default 2.5, min 1.3)
-  repetitions?: number // Number of consecutive successful recall reviews
-  dueDate?: string // Due date for review in YYYY-MM-DD
-  lastReviewedAt?: string // Last review ISO date
+  interval?: number // Mirrors scheduled_days
+  easeFactor?: number // Legacy SM-2 field
+  repetitions?: number // Mirrors reps
+  dueDate?: string // Mirrors due.slice(0, 10)
+  lastReviewedAt?: string // Mirrors last_review
 }
 
 export type NavTab = 'practice' | 'lessons' | 'vocabulary' | 'progress'

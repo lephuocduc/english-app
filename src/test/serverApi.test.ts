@@ -518,6 +518,92 @@ describe('ListenFlow Cloudflare D1 & Hono API', () => {
       const listAfterJson = await listAfter.json() as { data: Array<{ id: string }> }
       expect(listAfterJson.data.some((v) => v.id === vocabId)).toBe(false)
     })
+
+    it('persists FSRS scheduling fields, filters dueOnly cards, and stores review_logs', async () => {
+      const pastDue = new Date(Date.now() - 60_000).toISOString()
+      const futureDue = new Date(Date.now() + 5 * 86_400_000).toISOString()
+      const nowIso = new Date().toISOString()
+
+      // 1. Save a due card with FSRS fields + reviewLog
+      const saveDue = await makeRequest('/api/vocabulary', {
+        method: 'POST',
+        headers: { 'x-user-id': user },
+        body: {
+          word: 'throughput',
+          meaning: '(n) thông lượng xử lý',
+          contextSentence: 'We doubled network throughput.',
+          due: pastDue,
+          stability: 2.3065,
+          difficulty: 4.5,
+          elapsed_days: 0,
+          scheduled_days: 0,
+          reps: 1,
+          lapses: 0,
+          learning_steps: 1,
+          state: 1,
+          last_review: nowIso,
+          reviewLog: {
+            rating: 3,
+            state: 0,
+            due: nowIso,
+            stability: 0,
+            difficulty: 0,
+            elapsed_days: 0,
+            scheduled_days: 0,
+            learning_steps: 0,
+            review_time: nowIso,
+          },
+        },
+      })
+      expect(saveDue.status).toBe(201)
+      const dueJson = (await saveDue.json()) as {
+        data: { id: string; stability: number; difficulty: number; state: number; reps: number }
+      }
+      expect(dueJson.data.stability).toBeCloseTo(2.3065, 3)
+      expect(dueJson.data.difficulty).toBe(4.5)
+      expect(dueJson.data.state).toBe(1)
+      expect(dueJson.data.reps).toBe(1)
+
+      // 2. Save a future-scheduled card
+      const saveFuture = await makeRequest('/api/vocabulary', {
+        method: 'POST',
+        headers: { 'x-user-id': user },
+        body: {
+          word: 'idempotent',
+          meaning: '(adj) bất biến khi lặp lại',
+          due: futureDue,
+          stability: 8.3,
+          difficulty: 2.1,
+          scheduled_days: 5,
+          reps: 2,
+          lapses: 0,
+          state: 2,
+          last_review: nowIso,
+        },
+      })
+      expect(saveFuture.status).toBe(201)
+
+      // 3. Query dueOnly=true => only returns cards with due <= now
+      const dueOnlyRes = await makeRequest('/api/vocabulary?dueOnly=true', {
+        headers: { 'x-user-id': user },
+      })
+      expect(dueOnlyRes.status).toBe(200)
+      const dueOnlyJson = (await dueOnlyRes.json()) as { data: Array<{ word: string }> }
+      expect(dueOnlyJson.data.map((w) => w.word)).toContain('throughput')
+      expect(dueOnlyJson.data.map((w) => w.word)).not.toContain('idempotent')
+
+      // 4. Query review_logs => verifies review history was saved
+      const logsRes = await makeRequest(`/api/vocabulary/review-logs?cardId=${dueJson.data.id}`, {
+        headers: { 'x-user-id': user },
+      })
+      expect(logsRes.status).toBe(200)
+      const logsJson = (await logsRes.json()) as {
+        data: Array<{ card_id: string; rating: number; review_time: string }>
+      }
+      expect(logsJson.data).toHaveLength(1)
+      expect(logsJson.data[0].card_id).toBe(dueJson.data.id)
+      expect(logsJson.data[0].rating).toBe(3)
+    })
   })
 
   describe('8. Edge Cases, Failure Handling & Security', () => {

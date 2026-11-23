@@ -23,6 +23,7 @@ import type {
   UserLessonProgress,
   UserSentenceProgress,
   VocabularyItem,
+  VocabularyReviewLog,
 } from './types'
 import { DEFAULT_YOUTUBE_VIDEOS } from './data/defaultVideo'
 import { DEFAULT_B1_B2_AUDIO_LESSONS } from './data/defaultAudioLessons'
@@ -49,7 +50,7 @@ import { AutoStartModal } from './components/AutoStartModal'
 import { TranscriptImportModal } from './features/transcript/TranscriptImportModal'
 import { fetchYouTubeVideoMetadata } from './lib/youtube/videoMetadata'
 import { lookupContextualWord } from './lib/translation/itOpsWordDictionary'
-import { getDueVocabulary } from './lib/srs/sm2'
+import { getDueVocabulary, createInitialFSRSFields } from './lib/srs/fsrsEngine'
 import {
   getMaxUnlockedIndex,
   getNextSameLevelLesson,
@@ -1221,6 +1222,7 @@ export function App() {
     if (!activeLesson) return
 
     const resolvedMeaning = meaning?.trim() || lookupContextualWord(word) || undefined
+    const now = new Date()
 
     const newItem: VocabularyItem = {
       id: `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1231,13 +1233,11 @@ export function App() {
       timestamp,
       videoId: activeLesson.videoId,
       lessonTitle: activeLesson.title,
-      savedAt: new Date().toISOString(),
+      savedAt: now.toISOString(),
+      ...createInitialFSRSFields(now),
     }
     const updated = storage.addVocabulary(newItem)
     setVocabularyList(updated)
-
-    // Persist to Cloudflare D1
-    apiClient.saveVocabulary(newItem).catch(() => { })
   }
 
   // Update a segment's Vietnamese translation in lesson
@@ -1256,16 +1256,16 @@ export function App() {
     [activeLesson, videosList]
   )
 
-  const handleUpdateVocabulary = (updatedItem: VocabularyItem) => {
-    const updated = storage.updateVocabulary(updatedItem)
+  const handleUpdateVocabulary = (updatedItem: VocabularyItem, reviewLog?: VocabularyReviewLog) => {
+    const updated = storage.updateVocabulary(updatedItem, reviewLog)
     setVocabularyList(updated)
-    apiClient.saveVocabulary(updatedItem).catch(() => { })
   }
 
   const handleAddVocabulary = (item: VocabularyItem) => {
-    const updated = storage.addVocabulary(item)
+    const initialized: VocabularyItem =
+      item.due && item.state !== undefined ? item : { ...createInitialFSRSFields(), ...item }
+    const updated = storage.addVocabulary(initialized)
     setVocabularyList(updated)
-    apiClient.saveVocabulary(item).catch(() => { })
   }
 
   const handleRemoveVocabulary = (id: string) => {

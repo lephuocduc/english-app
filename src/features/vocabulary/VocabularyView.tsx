@@ -14,14 +14,16 @@ import {
   Check,
   BookOpen,
 } from 'lucide-react'
-import type { VocabularyItem } from '../../types'
+import type { VocabularyItem, VocabularyReviewLog } from '../../types'
 import {
   getSRSStats,
   isWordDue,
   getDueVocabulary,
+  getNextReviewBadgeText,
+  FSRS_STATE_LABELS,
   speakWord,
   speakSentence,
-} from '../../lib/srs/sm2'
+} from '../../lib/srs/fsrsEngine'
 import { parseMeaningWithPos, POS_LABELS } from '../../lib/translation/itOpsWordDictionary'
 import { FlashcardReviewModal } from './FlashcardReviewModal'
 import { AddVocabularyModal } from './AddVocabularyModal'
@@ -29,7 +31,7 @@ import { AddVocabularyModal } from './AddVocabularyModal'
 interface VocabularyViewProps {
   vocabularyList: VocabularyItem[]
   onRemoveVocabulary: (id: string) => void
-  onUpdateVocabulary?: (item: VocabularyItem) => void
+  onUpdateVocabulary?: (item: VocabularyItem, reviewLog?: VocabularyReviewLog) => void
   onAddVocabulary?: (item: VocabularyItem) => void
   onJumpToTimestamp?: (videoId: string, timestamp: number, contextSentence?: string) => void
   activeLessonTitle?: string
@@ -111,7 +113,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             Vocabulary &amp; Spaced Repetition Review
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Save words with video context, native pronunciation, mastery status, and spaced repetition review via the SuperMemo SM-2 algorithm.
+            Save words with video context, native pronunciation, and smart spaced repetition review powered by FSRS (ts-fsrs).
           </p>
         </div>
 
@@ -367,22 +369,26 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                       </div>
                     )}
 
-                    {/* Mastered Badge */}
+                    {/* FSRS Status Badge */}
                     {item.mastered ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded-lg text-[10px] font-bold">
                         <Check className="w-2.5 h-2.5" /> Mastered
                       </span>
                     ) : due ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 rounded-lg text-[10px] font-bold border border-amber-300/60 dark:border-amber-800">
-                        <Clock className="w-2.5 h-2.5" /> Due today
-                      </span>
-                    ) : item.interval ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-[10px] font-semibold">
-                        Review in {item.interval} day(s)
+                        <Clock className="w-2.5 h-2.5" />
+                        {(item.state ?? 0) === 0 && !(item.reps ?? item.repetitions) ? 'Mới • Đến hạn' : 'Đến hạn'}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-semibold">
-                        New word
+                      <span
+                        title={
+                          item.stability
+                            ? `FSRS: ${FSRS_STATE_LABELS[item.state ?? 2]} • Độ bền trí nhớ ${item.stability.toFixed(1)} ngày • Độ khó ${(item.difficulty ?? 0).toFixed(1)}/10`
+                            : undefined
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-[10px] font-semibold"
+                      >
+                        {getNextReviewBadgeText(item)}
                       </span>
                     )}
                   </div>
@@ -467,9 +473,9 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             setFlashcardCustomQueue(null)
           }}
           itemsToReview={flashcardCustomQueue || (dueItems.length > 0 ? dueItems : vocabularyList)}
-          onUpdateVocabulary={(updated) => {
+          onUpdateVocabulary={(updated, reviewLog) => {
             if (onUpdateVocabulary) {
-              onUpdateVocabulary(updated)
+              onUpdateVocabulary(updated, reviewLog)
             }
           }}
           onJumpToTimestamp={onJumpToTimestamp}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Plus, Sparkles, Loader2, BookmarkPlus } from 'lucide-react'
 import type { VocabularyItem } from '../../types'
+import { createInitialFSRSFields } from '../../lib/srs/fsrsEngine'
 import { translateToVietnamese } from '../../lib/translation/translator'
 import {
   POS_OPTIONS,
@@ -71,6 +72,7 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
 
     const formattedMeaning = formatMeaningWithPos(partOfSpeech, meaning)
 
+    const now = new Date()
     const newItem: VocabularyItem = {
       id: `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       word: word.trim(),
@@ -80,10 +82,8 @@ export const AddVocabularyModal: React.FC<AddVocabularyModalProps> = ({
       timestamp: 0,
       videoId: activeVideoId,
       lessonTitle: activeLessonTitle,
-      savedAt: new Date().toISOString(),
-      mastered: false,
-      interval: 0,
-      repetitions: 0,
+      savedAt: now.toISOString(),
+      ...createInitialFSRSFields(now),
     }
 
     onAddVocabulary(newItem)

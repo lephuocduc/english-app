@@ -23,6 +23,9 @@ export function createTestD1Database(withSeed = false): D1Database {
   const migration3Path = join(process.cwd(), 'migrations', '0003_add_streak_table.sql')
   sqlite.exec(readFileSync(migration3Path, 'utf8'))
 
+  const migration6Path = join(process.cwd(), 'migrations', '0006_add_fsrs_and_review_logs.sql')
+  sqlite.exec(readFileSync(migration6Path, 'utf8'))
+
   if (withSeed) {
     const seedPath = join(process.cwd(), 'migrations', 'seed.sql')
     const seedSql = readFileSync(seedPath, 'utf8')

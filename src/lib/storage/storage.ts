@@ -3,6 +3,7 @@ import type {
   UserLessonProgress,
   UserSentenceProgress,
   VocabularyItem,
+  VocabularyReviewLog,
   YouTubeVideo,
   SentenceSegment,
   StreakData,
@@ -359,7 +360,7 @@ export const storage = {
     return updated
   },
 
-  updateVocabulary(updatedItem: VocabularyItem): VocabularyItem[] {
+  updateVocabulary(updatedItem: VocabularyItem, reviewLog?: VocabularyReviewLog): VocabularyItem[] {
     const current = this.loadVocabulary()
     const targetWord = updatedItem.word.trim().toLowerCase()
     const targetVid = (updatedItem.videoId || '').trim()
@@ -378,9 +379,9 @@ export const storage = {
     }
     this.saveVocabulary(updated)
 
-    // Save directly to Cloudflare D1
+    // Save directly to Cloudflare D1 (including FSRS fields and optional review_logs entry)
     if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      apiClient.saveVocabulary(updatedItem).catch(() => { })
+      apiClient.saveVocabulary(updatedItem, reviewLog).catch(() => { })
     }
 
     return updated
@@ -798,11 +799,10 @@ export const storage = {
         const cloudMatch = matchedKey ? vocabMap.get(matchedKey) : undefined
 
         if (cloudMatch) {
-          // If cloud has newer review date, use cloud SRS progress, otherwise local wins
-          const isCloudSrsNewer = Boolean(
-            cloudMatch.lastReviewedAt &&
-            (!v.lastReviewedAt || cloudMatch.lastReviewedAt > v.lastReviewedAt)
-          )
+          // If cloud has newer review timestamp, use cloud FSRS progress, otherwise local wins
+          const cloudRevAt = cloudMatch.last_review || cloudMatch.lastReviewedAt || ''
+          const localRevAt = v.last_review || v.lastReviewedAt || ''
+          const isCloudSrsNewer = Boolean(cloudRevAt && (!localRevAt || cloudRevAt > localRevAt))
           const srsSource = isCloudSrsNewer ? cloudMatch : v
           const fallbackSrs = isCloudSrsNewer ? v : cloudMatch
 
@@ -819,25 +819,39 @@ export const storage = {
             id: v.id || cloudMatch.id,
             savedAt: v.savedAt || cloudMatch.savedAt || new Date().toISOString(),
 
-            // STRICT SRS SYNC: Whichever device had the most recent review takes precedence
+            // STRICT FSRS SYNC: Whichever device had the most recent review takes precedence
             mastered: srsSource.mastered ?? fallbackSrs.mastered ?? false,
             interval: srsSource.interval ?? fallbackSrs.interval,
             easeFactor: srsSource.easeFactor ?? fallbackSrs.easeFactor,
             repetitions: srsSource.repetitions ?? fallbackSrs.repetitions,
             dueDate: srsSource.dueDate || fallbackSrs.dueDate,
             lastReviewedAt: srsSource.lastReviewedAt || fallbackSrs.lastReviewedAt,
+            due: srsSource.due || fallbackSrs.due,
+            stability: srsSource.stability ?? fallbackSrs.stability,
+            difficulty: srsSource.difficulty ?? fallbackSrs.difficulty,
+            elapsed_days: srsSource.elapsed_days ?? fallbackSrs.elapsed_days,
+            scheduled_days: srsSource.scheduled_days ?? fallbackSrs.scheduled_days,
+            reps: srsSource.reps ?? fallbackSrs.reps,
+            lapses: srsSource.lapses ?? fallbackSrs.lapses,
+            learning_steps: srsSource.learning_steps ?? fallbackSrs.learning_steps,
+            state: srsSource.state ?? fallbackSrs.state,
+            last_review: srsSource.last_review ?? fallbackSrs.last_review,
           }
           vocabMap.set(targetKey, mergedItem)
 
           // If local has progress or differences that need to be uploaded to cloud
           const isDifferentFromCloud =
+            (mergedItem.due || '') !== (cloudMatch.due || '') ||
             (mergedItem.dueDate || '') !== (cloudMatch.dueDate || '') ||
             Boolean(mergedItem.mastered) !== Boolean(cloudMatch.mastered) ||
-            (mergedItem.interval || 0) !== (cloudMatch.interval || 0) ||
-            (mergedItem.repetitions || 0) !== (cloudMatch.repetitions || 0) ||
-            (mergedItem.lastReviewedAt || '') !== (cloudMatch.lastReviewedAt || '')
+            (mergedItem.scheduled_days ?? mergedItem.interval ?? 0) !==
+              (cloudMatch.scheduled_days ?? cloudMatch.interval ?? 0) ||
+            (mergedItem.reps ?? mergedItem.repetitions ?? 0) !==
+              (cloudMatch.reps ?? cloudMatch.repetitions ?? 0) ||
+            (mergedItem.state ?? 0) !== (cloudMatch.state ?? 0) ||
+            (mergedItem.last_review || mergedItem.lastReviewedAt || '') !== cloudRevAt
 
-          if (!isCloudSrsNewer && (isDifferentFromCloud || Boolean(v.lastReviewedAt))) {
+          if (!isCloudSrsNewer && (isDifferentFromCloud || Boolean(localRevAt))) {
             apiClient.saveVocabulary(mergedItem).catch(() => { })
           }
         } else {

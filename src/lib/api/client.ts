@@ -3,6 +3,7 @@ import type {
   SentenceSegment,
   UserLessonProgress,
   VocabularyItem,
+  VocabularyReviewLog,
   StreakData,
   FirstAttemptRecord,
 } from '../../types'
@@ -236,16 +237,36 @@ export class ApiClient {
     return res.success
   }
 
-  // --- Vocabulary Endpoints ---
-  async listVocabulary(): Promise<VocabularyItem[]> {
-    const res = await this.request<VocabularyItem[]>('/vocabulary')
+  // --- Vocabulary & FSRS Endpoints ---
+  async listVocabulary(dueOnly = false): Promise<VocabularyItem[]> {
+    const endpoint = dueOnly ? '/vocabulary?dueOnly=true' : '/vocabulary'
+    const res = await this.request<VocabularyItem[]>(endpoint)
     return res.success && res.data ? res.data : []
   }
 
-  async saveVocabulary(item: Partial<VocabularyItem> & { word: string }): Promise<boolean> {
+  async saveVocabulary(
+    item: Partial<VocabularyItem> & { word: string },
+    reviewLog?: VocabularyReviewLog
+  ): Promise<boolean> {
+    const payload = reviewLog ? { ...item, reviewLog } : item
     const res = await this.request('/vocabulary', {
       method: 'POST',
-      body: JSON.stringify(item),
+      body: JSON.stringify(payload),
+    })
+    return res.success
+  }
+
+  async listReviewLogs(cardId?: string, limit = 500): Promise<VocabularyReviewLog[]> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (cardId) params.set('cardId', cardId)
+    const res = await this.request<VocabularyReviewLog[]>(`/vocabulary/review-logs?${params.toString()}`)
+    return res.success && Array.isArray(res.data) ? res.data : []
+  }
+
+  async recordReviewLog(log: VocabularyReviewLog): Promise<boolean> {
+    const res = await this.request('/vocabulary/review-logs', {
+      method: 'POST',
+      body: JSON.stringify(log),
     })
     return res.success
   }

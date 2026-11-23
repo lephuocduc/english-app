@@ -249,9 +249,16 @@ describe('FlashcardReviewModal Component', () => {
 
     expect(onUpdateVocabulary).toHaveBeenCalledTimes(1)
     const updated = onUpdateVocabulary.mock.calls[0][0] as VocabularyItem
+    const reviewLog = onUpdateVocabulary.mock.calls[0][1] as { card_id: string; rating: number }
     expect(updated.word).toBe('resilient')
+    expect(updated.reps).toBe(1)
     expect(updated.repetitions).toBe(1)
-    expect(updated.interval).toBe(1)
+    expect(updated.state).toBe(1)
+    expect(updated.stability).toBeGreaterThan(0)
+    expect(updated.difficulty).toBeGreaterThanOrEqual(1)
+    expect(updated.due).toBeTruthy()
+    expect(reviewLog.card_id).toBe('v1')
+    expect(reviewLog.rating).toBe(3)
 
     // Advances to second card
     expect(screen.getByText('curiosity')).toBeInTheDocument()
@@ -318,6 +325,10 @@ describe('AddVocabularyModal Component', () => {
     const submitted = onAddVocabulary.mock.calls[0][0] as VocabularyItem
     expect(submitted.word).toBe('innovation')
     expect(submitted.meaning).toBe('(n) sự đổi mới sáng tạo')
+    expect(submitted.state).toBe(0)
+    expect(submitted.reps).toBe(0)
+    expect(submitted.lapses).toBe(0)
+    expect(submitted.due).toBeTruthy()
     expect(onClose).toHaveBeenCalled()
   })
 })

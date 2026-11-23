@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   X,
   Volume2,
@@ -13,21 +13,21 @@ import {
   Trophy,
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
-import type { VocabularyItem, SRSRating } from '../../types'
+import type { VocabularyItem, VocabularyReviewLog, SRSRating, FSRSStateValue } from '../../types'
 import {
-  calculateNextReview,
-  getIntervalPreviewText,
+  getSchedulingPreviews,
+  FSRS_STATE_LABELS,
   speakWord,
   speakSentence,
   createClozeSentence,
-} from '../../lib/srs/sm2'
+} from '../../lib/srs/fsrsEngine'
 import { parseMeaningWithPos, POS_LABELS } from '../../lib/translation/itOpsWordDictionary'
 
 interface FlashcardReviewModalProps {
   isOpen: boolean
   onClose: () => void
   itemsToReview: VocabularyItem[]
-  onUpdateVocabulary: (updated: VocabularyItem) => void
+  onUpdateVocabulary: (updated: VocabularyItem, reviewLog?: VocabularyReviewLog) => void
   onJumpToTimestamp?: (videoId: string, timestamp: number, contextSentence?: string) => void
 }
 
@@ -71,6 +71,12 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
 
   const currentCard: VocabularyItem | undefined = queue[currentIndex]
 
+  // Precompute all 4 FSRS scheduling outcomes (Again, Hard, Good, Easy) once when displaying a card
+  const schedulingPreviews = useMemo(() => {
+    if (!currentCard) return null
+    return getSchedulingPreviews(currentCard, new Date())
+  }, [currentCard])
+
   // Auto-pronounce word when moving to a new card
   useEffect(() => {
     if (isOpen && currentCard && !isComplete && autoSpeak) {
@@ -104,13 +110,14 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
     (rating: SRSRating) => {
       if (!currentCard) return
 
-      const updateResult = calculateNextReview(currentCard, rating)
+      const chosen =
+        schedulingPreviews?.[rating] || getSchedulingPreviews(currentCard, new Date())[rating]
       const updatedItem: VocabularyItem = {
         ...currentCard,
-        ...updateResult,
+        ...chosen.result,
       }
 
-      onUpdateVocabulary(updatedItem)
+      onUpdateVocabulary(updatedItem, chosen.reviewLog)
 
       // Update session statistics
       setStats((prev) => ({
@@ -134,7 +141,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
         setIsComplete(true)
       }
     },
-    [currentCard, currentIndex, queue.length, onUpdateVocabulary]
+    [currentCard, schedulingPreviews, currentIndex, queue.length, onUpdateVocabulary]
   )
 
   const handleReviewMissedCards = () => {
@@ -237,7 +244,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                 id="flashcard-modal-title"
                 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"
               >
-                <span>Flashcard Review (Anki SRS)</span>
+                <span>Flashcard Review (FSRS)</span>
                 {currentCard?.mastered && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
                     Mastered
@@ -245,7 +252,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                 )}
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Spaced repetition via SuperMemo SM-2 algorithm
+                Spaced repetition powered by FSRS (ts-fsrs)
               </p>
             </div>
           </div>
@@ -377,17 +384,37 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                 onClick={handleFlip}
                 className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600 rounded-3xl p-6 sm:p-8 min-h-[260px] sm:min-h-[300px] flex flex-col justify-between cursor-pointer transition shadow-sm hover:shadow-md relative group"
               >
-                {/* Card Top Pill: Video Title & Mastered Status Badge */}
+                {/* Card Top Pill: Video Title & FSRS State Badge */}
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[240px]">
                     {currentCard.lessonTitle}
                   </span>
-                  {currentCard.mastered && (
-                    <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-[11px] font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>Mastered</span>
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {(() => {
+                      const st: FSRSStateValue = currentCard.state ?? ((currentCard.reps ?? currentCard.repetitions ?? 0) > 0 ? 2 : 0)
+                      const stability = currentCard.stability ?? 0
+                      const difficulty = currentCard.difficulty ?? 0
+                      return (
+                        <span
+                          title={
+                            stability > 0
+                              ? `FSRS State: ${FSRS_STATE_LABELS[st]} • Stability: ${stability.toFixed(1)}d • Difficulty: ${difficulty.toFixed(1)}/10`
+                              : `FSRS State: ${FSRS_STATE_LABELS[st]}`
+                          }
+                          className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px] font-semibold"
+                        >
+                          {FSRS_STATE_LABELS[st]}
+                          {stability > 0 ? ` • S ${stability.toFixed(1)}d` : ''}
+                        </span>
+                      )
+                    })()}
+                    {currentCard.mastered && (
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-[11px] font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Mastered</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Card Center: English Word and Pronunciation */}
@@ -524,7 +551,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                         </kbd>
                       </div>
                       <span className="text-[11px] font-mono font-medium text-rose-600 dark:text-rose-400 mt-1">
-                        {getIntervalPreviewText(currentCard, 1)}
+                        {schedulingPreviews?.[1].intervalText}
                       </span>
                     </button>
 
@@ -541,7 +568,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                         </kbd>
                       </div>
                       <span className="text-[11px] font-mono font-medium text-amber-600 dark:text-amber-400 mt-1">
-                        {getIntervalPreviewText(currentCard, 2)}
+                        {schedulingPreviews?.[2].intervalText}
                       </span>
                     </button>
 
@@ -558,7 +585,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                         </kbd>
                       </div>
                       <span className="text-[11px] font-mono font-medium text-emerald-600 dark:text-emerald-400 mt-1">
-                        {getIntervalPreviewText(currentCard, 3)}
+                        {schedulingPreviews?.[3].intervalText}
                       </span>
                     </button>
 
@@ -575,7 +602,7 @@ export const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
                         </kbd>
                       </div>
                       <span className="text-[11px] font-mono font-medium text-blue-600 dark:text-blue-400 mt-1">
-                        {getIntervalPreviewText(currentCard, 4)}
+                        {schedulingPreviews?.[4].intervalText}
                       </span>
                     </button>
                   </div>

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
+  createInitialFSRSFields,
+  getSchedulingPreviews,
   calculateNextReview,
   getIntervalPreviewText,
+  formatFSRSInterval,
   isWordDue,
   getDueVocabulary,
   getSRSStats,
@@ -9,7 +12,7 @@ import {
   createClozeSentence,
   formatDate,
   addDays,
-} from '../lib/srs/sm2'
+} from '../lib/srs/fsrsEngine'
 import type { VocabularyItem } from '../types'
 
 const baseMockWord: VocabularyItem = {
@@ -24,7 +27,7 @@ const baseMockWord: VocabularyItem = {
   savedAt: '2026-10-01T00:00:00.000Z',
 }
 
-describe('SM-2 Spaced Repetition Engine', () => {
+describe('FSRS Spaced Repetition Engine (ts-fsrs)', () => {
   it('formats dates and adds days correctly', () => {
     const fixedDate = new Date('2026-10-11T12:00:00Z')
     expect(formatDate(fixedDate)).toBe('2026-10-11')
@@ -32,157 +35,201 @@ describe('SM-2 Spaced Repetition Engine', () => {
     expect(addDays(fixedDate, 0)).toBe('2026-10-11')
   })
 
-  it('calculates initial review correctly for rating 3 (Good)', () => {
+  it('initializes a brand-new card via ts-fsrs createEmptyCard defaults', () => {
     const now = new Date('2026-10-11T12:00:00Z')
-    const result = calculateNextReview(baseMockWord, 3, now)
+    const init = createInitialFSRSFields(now)
 
-    expect(result.repetitions).toBe(1)
-    expect(result.interval).toBe(1)
-    expect(result.easeFactor).toBe(2.5)
-    expect(result.dueDate).toBe('2026-10-12')
+    expect(init.state).toBe(0)
+    expect(init.due).toBe('2026-10-11T12:00:00.000Z')
+    expect(init.stability).toBe(0)
+    expect(init.difficulty).toBe(0)
+    expect(init.elapsed_days).toBe(0)
+    expect(init.scheduled_days).toBe(0)
+    expect(init.reps).toBe(0)
+    expect(init.lapses).toBe(0)
+    expect(init.last_review).toBeNull()
+    expect(init.mastered).toBe(false)
+  })
+
+  it('precomputes all 4 FSRS ratings (Again, Hard, Good, Easy) with monotonic intervals and review logs', () => {
+    const now = new Date('2026-10-11T12:00:00Z')
+    const newCard: VocabularyItem = { ...baseMockWord, ...createInitialFSRSFields(now) }
+    const previews = getSchedulingPreviews(newCard, now)
+
+    const againDue = new Date(previews[1].result.due).getTime()
+    const hardDue = new Date(previews[2].result.due).getTime()
+    const goodDue = new Date(previews[3].result.due).getTime()
+    const easyDue = new Date(previews[4].result.due).getTime()
+
+    expect(againDue).toBeGreaterThan(now.getTime())
+    expect(hardDue).toBeGreaterThan(againDue)
+    expect(goodDue).toBeGreaterThan(hardDue)
+    expect(easyDue).toBeGreaterThan(goodDue)
+
+    // New card: Again/Hard/Good enter short-term Learning (state 1), Easy graduates straight to Review (state 2)
+    expect(previews[1].result.state).toBe(1)
+    expect(previews[2].result.state).toBe(1)
+    expect(previews[3].result.state).toBe(1)
+    expect(previews[4].result.state).toBe(2)
+    expect(previews[4].result.scheduled_days).toBeGreaterThanOrEqual(4)
+
+    // Stability & Difficulty are populated by ts-fsrs
+    expect(previews[3].result.stability).toBeGreaterThan(0)
+    expect(previews[3].result.difficulty).toBeGreaterThanOrEqual(1)
+    expect(previews[3].result.difficulty).toBeLessThanOrEqual(10)
+    expect(previews[3].result.reps).toBe(1)
+    expect(previews[3].result.last_review).toBe(now.toISOString())
+
+    // Review log matches card_id, rating, and timestamp
+    expect(previews[3].reviewLog.card_id).toBe('v1')
+    expect(previews[3].reviewLog.rating).toBe(3)
+    expect(previews[3].reviewLog.state).toBe(0)
+    expect(previews[3].reviewLog.review_time).toBe(now.toISOString())
+
+    // Human-readable Vietnamese interval previews
+    expect(previews[1].intervalText).toContain('phút')
+    expect(previews[3].intervalText).toContain('phút')
+    expect(previews[4].intervalText).toContain('ngày')
+  })
+
+  it('graduates a Learning card to Review and grows stability across consecutive Good reviews', () => {
+    const t0 = new Date('2026-10-11T12:00:00Z')
+    const card0: VocabularyItem = { ...baseMockWord, ...createInitialFSRSFields(t0) }
+
+    // 1st review: Good -> Learning step (+10 min)
+    const r1 = calculateNextReview(card0, 3, t0)
+    const card1: VocabularyItem = { ...card0, ...r1 }
+    expect(card1.state).toBe(1)
+    expect(card1.reps).toBe(1)
+
+    // 2nd review at due time (+10 min): Good -> graduates to Review (state 2) with scheduled_days >= 1
+    const t1 = new Date(card1.due!)
+    const r2 = calculateNextReview(card1, 3, t1)
+    const card2: VocabularyItem = { ...card1, ...r2 }
+    expect(card2.state).toBe(2)
+    expect(card2.reps).toBe(2)
+    expect(card2.scheduled_days).toBeGreaterThanOrEqual(1)
+
+    // 3rd review when due -> scheduled_days & stability grow further
+    const t2 = new Date(card2.due!)
+    const r3 = calculateNextReview(card2, 3, t2)
+    expect(r3.state).toBe(2)
+    expect(r3.reps).toBe(3)
+    expect(r3.elapsed_days).toBe(card2.scheduled_days)
+    expect(r3.stability).toBeGreaterThan(card2.stability!)
+    expect(r3.scheduled_days).toBeGreaterThan(card2.scheduled_days!)
+  })
+
+  it('increments lapses and enters Relearning (state 3) when rating Again on a Review card', () => {
+    const t0 = new Date('2026-10-11T12:00:00Z')
+    const reviewCard: VocabularyItem = {
+      ...baseMockWord,
+      due: '2026-10-11T00:00:00.000Z',
+      stability: 12,
+      difficulty: 5,
+      elapsed_days: 10,
+      scheduled_days: 10,
+      reps: 4,
+      lapses: 0,
+      learning_steps: 0,
+      state: 2,
+      last_review: '2026-10-01T00:00:00.000Z',
+    }
+
+    const result = calculateNextReview(reviewCard, 1, t0)
+    expect(result.state).toBe(3) // Relearning
+    expect(result.lapses).toBe(1)
+    expect(result.reps).toBe(5)
+    expect(result.scheduled_days).toBe(0)
+    expect(result.stability).toBeLessThan(reviewCard.stability!)
     expect(result.mastered).toBe(false)
   })
 
-  it('calculates progressive intervals on consecutive Good ratings (SM-2 progression)', () => {
+  it('migrates legacy SM-2 reviewed cards seamlessly into FSRS Review state', () => {
     const now = new Date('2026-10-11T12:00:00Z')
-
-    // 1st review: Good -> 1 day
-    const r1 = calculateNextReview(baseMockWord, 3, now)
-    const item1: VocabularyItem = { ...baseMockWord, ...r1 }
-    expect(item1.interval).toBe(1)
-
-    // 2nd review: Good -> 3 days
-    const r2 = calculateNextReview(item1, 3, now)
-    const item2: VocabularyItem = { ...item1, ...r2 }
-    expect(item2.repetitions).toBe(2)
-    expect(item2.interval).toBe(3)
-
-    // 3rd review: Good -> 3 * 2.5 = 8 days (rounded)
-    const r3 = calculateNextReview(item2, 3, now)
-    expect(r3.repetitions).toBe(3)
-    expect(r3.interval).toBe(8)
-  })
-
-  it('resets interval to 0 (due today) and repetitions on rating 1 (Again)', () => {
-    const now = new Date('2026-10-11T12:00:00Z')
-    const experiencedWord: VocabularyItem = {
+    const legacyCard: VocabularyItem = {
       ...baseMockWord,
       repetitions: 3,
-      interval: 10,
+      interval: 8,
       easeFactor: 2.5,
+      dueDate: '2026-10-11',
+      lastReviewedAt: '2026-10-03T12:00:00.000Z',
     }
 
-    const result = calculateNextReview(experiencedWord, 1, now)
-    expect(result.repetitions).toBe(0)
-    expect(result.interval).toBe(0)
-    expect(result.dueDate).toBe('2026-10-11')
-    expect(result.easeFactor).toBe(2.3) // 2.5 - 0.2
-    expect(result.mastered).toBe(false)
+    const res = calculateNextReview(legacyCard, 3, now)
+    expect(res.state).toBe(2)
+    expect(res.reps).toBe(4)
+    expect(res.scheduled_days).toBeGreaterThan(8)
+    expect(res.stability).toBeGreaterThan(8)
   })
 
-  it('increases interval cautiously on rating 2 (Hard) and decreases ease factor', () => {
+  it('formats FSRS interval labels across minutes, hours, days, weeks, and months', () => {
+    const base = new Date('2026-10-11T12:00:00Z')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 60_000), 0)).toBe('1 phút')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 10 * 60_000), 0)).toBe('10 phút')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 2 * 3600_000), 0)).toBe('2 giờ')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 86_400_000), 1)).toBe('1 ngày')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 5 * 86_400_000), 5)).toBe('5 ngày')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 7 * 86_400_000), 7)).toBe('1 tuần')
+    expect(formatFSRSInterval(base, new Date(base.getTime() + 30 * 86_400_000), 30)).toBe('1 tháng')
+    expect(getIntervalPreviewText(baseMockWord, 4, base)).toMatch(/ngày|tuần/)
+  })
+
+  it('identifies due words accurately using FSRS UTC due timestamps (due <= now)', () => {
     const now = new Date('2026-10-11T12:00:00Z')
-    const experiencedWord: VocabularyItem = {
-      ...baseMockWord,
-      repetitions: 2,
-      interval: 5,
-      easeFactor: 2.5,
-    }
 
-    const result = calculateNextReview(experiencedWord, 2, now)
-    expect(result.repetitions).toBe(3)
-    expect(result.interval).toBe(6) // 5 * 1.2 = 6
-    expect(result.easeFactor).toBe(2.35) // 2.5 - 0.15
-  })
-
-  it('boosts interval and increases ease factor on rating 4 (Easy) without premature mastery', () => {
-    const now = new Date('2026-10-11T12:00:00Z')
-    const result = calculateNextReview(baseMockWord, 4, now)
-    expect(result.repetitions).toBe(1)
-    expect(result.interval).toBe(4) // initial easy is 4 days
-    expect(result.easeFactor).toBe(2.65) // 2.5 + 0.15
-    expect(result.mastered).toBe(false)
-
-    // Even after 3rd Easy with interval < 30 days, should not be mastered too early
-    const thirdEasy = calculateNextReview(
-      { ...baseMockWord, repetitions: 2, interval: 7, easeFactor: 2.8 },
-      4,
-      now
-    )
-    expect(thirdEasy.interval).toBe(25)
-    expect(thirdEasy.mastered).toBe(false)
-  })
-
-  it('ensures Good always progresses at least +1 day even at minimum ease factor', () => {
-    const now = new Date('2026-10-11T12:00:00Z')
-    const hardWord: VocabularyItem = {
-      ...baseMockWord,
-      repetitions: 2,
-      interval: 1,
-      easeFactor: 1.3,
-    }
-    const res = calculateNextReview(hardWord, 3, now)
-    expect(res.interval).toBeGreaterThan(hardWord.interval!)
-  })
-
-  it('generates accurate interval preview text for buttons', () => {
-    const now = new Date('2026-10-11T12:00:00Z')
-    expect(getIntervalPreviewText(baseMockWord, 1, now)).toBe('Today')
-    expect(getIntervalPreviewText(baseMockWord, 3, now)).toBe('1 day')
-    expect(getIntervalPreviewText(baseMockWord, 4, now)).toBe('4 days')
-  })
-
-  it('identifies due words correctly', () => {
-    const today = new Date('2026-10-11T12:00:00Z')
-
-    // New word without dueDate: due!
-    expect(isWordDue(baseMockWord, today)).toBe(true)
+    // New word without due: due!
+    expect(isWordDue(baseMockWord, now)).toBe(true)
 
     // Mastered word: not due
-    expect(isWordDue({ ...baseMockWord, mastered: true }, today)).toBe(false)
+    expect(isWordDue({ ...baseMockWord, mastered: true }, now)).toBe(false)
 
-    // Word due today
+    // Word due 1 minute ago: due!
     expect(
-      isWordDue(
-        { ...baseMockWord, repetitions: 1, lastReviewedAt: '2026-10-10', dueDate: '2026-10-11' },
-        today
-      )
+      isWordDue({ ...baseMockWord, state: 1, due: '2026-10-11T11:59:00.000Z', reps: 1 }, now)
     ).toBe(true)
 
-    // Word due yesterday (overdue): due!
+    // Word due 5 minutes from now: NOT due yet!
+    expect(
+      isWordDue({ ...baseMockWord, state: 1, due: '2026-10-11T12:05:00.000Z', reps: 1 }, now)
+    ).toBe(false)
+
+    // Legacy word due yesterday: due!
     expect(
       isWordDue(
         { ...baseMockWord, repetitions: 1, lastReviewedAt: '2026-10-09', dueDate: '2026-10-10' },
-        today
+        now
       )
     ).toBe(true)
 
-    // Word due in 3 days: not due yet
+    // Legacy word due in 3 days: not due yet
     expect(
       isWordDue(
         { ...baseMockWord, repetitions: 1, lastReviewedAt: '2026-10-10', dueDate: '2026-10-14' },
-        today
+        now
       )
     ).toBe(false)
   })
 
   it('filters due vocabulary and calculates stats accurately', () => {
-    const today = new Date('2026-10-11T12:00:00Z')
+    const now = new Date('2026-10-11T12:00:00Z')
     const list: VocabularyItem[] = [
-      { ...baseMockWord, id: '1' }, // new -> due
+      { ...baseMockWord, id: '1', state: 0, due: '2026-10-11T12:00:00.000Z' }, // new -> due
       {
         ...baseMockWord,
         id: '2',
-        repetitions: 1,
-        lastReviewedAt: '2026-10-10',
-        dueDate: '2026-10-11',
-      }, // due today
+        state: 2,
+        reps: 1,
+        due: '2026-10-11T10:00:00.000Z',
+        last_review: '2026-10-10T10:00:00.000Z',
+      }, // overdue review -> due first
       {
         ...baseMockWord,
         id: '3',
-        repetitions: 2,
-        lastReviewedAt: '2026-10-10',
-        dueDate: '2026-10-15',
+        state: 2,
+        reps: 2,
+        due: '2026-10-15T12:00:00.000Z',
+        last_review: '2026-10-10T12:00:00.000Z',
       }, // future -> not due
       {
         ...baseMockWord,
@@ -191,11 +238,10 @@ describe('SM-2 Spaced Repetition Engine', () => {
       }, // mastered -> not due
     ]
 
-    const dueList = getDueVocabulary(list, today)
-    // Due review cards are prioritized before brand-new words
+    const dueList = getDueVocabulary(list, now)
     expect(dueList.map((x) => x.id)).toEqual(['2', '1'])
 
-    const stats = getSRSStats(list, today)
+    const stats = getSRSStats(list, now)
     expect(stats.total).toBe(4)
     expect(stats.due).toBe(2)
     expect(stats.newWords).toBe(1)
@@ -207,12 +253,13 @@ describe('SM-2 Spaced Repetition Engine', () => {
     const now = new Date('2026-10-11T12:00:00Z')
     const masteredWord = toggleWordMastered(baseMockWord, true, now)
     expect(masteredWord.mastered).toBe(true)
-    expect(masteredWord.interval).toBe(30)
+    expect(masteredWord.scheduled_days).toBe(30)
+    expect(masteredWord.stability).toBeGreaterThanOrEqual(30)
     expect(masteredWord.dueDate).toBe('2026-11-10')
 
     const unmastered = toggleWordMastered(masteredWord, false, now)
     expect(unmastered.mastered).toBe(false)
-    expect(unmastered.interval).toBe(1)
+    expect(unmastered.state).toBe(3)
     expect(unmastered.dueDate).toBe('2026-10-11')
   })
 
