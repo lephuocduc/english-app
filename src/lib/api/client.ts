@@ -7,6 +7,7 @@ import type {
   StreakData,
   FirstAttemptRecord,
 } from '../../types'
+import type { AdaptiveLessonBlueprint, WordOutcomeInput } from '../adaptive/adaptiveEngine'
 import { formatLocalDate } from '../streak/streakManager'
 
 const USER_ID_KEY = 'listenflow_user_id_v1'
@@ -198,12 +199,20 @@ export class ApiClient {
     missingCount?: number
     incorrectCount?: number
     extraCount?: number
+    expectedText?: string
+    wordOutcomes?: WordOutcomeInput[]
   }): Promise<boolean> {
     const res = await this.request('/attempts', {
       method: 'POST',
       body: JSON.stringify(attempt),
     })
     return res.success
+  }
+
+  // --- Hidden Adaptive Profile Endpoint (never displayed in UI; used when generating next lessons) ---
+  async getAdaptiveProfile(): Promise<AdaptiveLessonBlueprint | null> {
+    const res = await this.request<AdaptiveLessonBlueprint>('/adaptive/profile')
+    return res.success && res.data ? res.data : null
   }
 
   // --- Per-sentence Learning Progress Endpoints ---

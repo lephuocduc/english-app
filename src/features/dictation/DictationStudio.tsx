@@ -39,6 +39,8 @@ import type {
 } from '../../types'
 import { PHONE_MODE_PRESETS } from '../../lib/audio/ttsAudioPlayer'
 import { scoreDictation } from '../../lib/scoring/scorer'
+import { extractWordOutcomesFromAlignment } from '../../lib/adaptive/adaptiveEngine'
+import { hiddenAdaptiveStore } from '../../lib/adaptive/hiddenAdaptiveStore'
 import { parseUniversalTranscript } from '../../lib/transcript/transcriptParser'
 import { TranscriptImportModal } from '../transcript/TranscriptImportModal'
 import { apiClient } from '../../lib/api/client'
@@ -327,7 +329,21 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
     }
     onSaveProgress(progress)
 
-    // Persist attempt and metrics to Cloudflare D1
+    // Silently update hidden adaptive learning database (Weak Words, Mastered Words, Recent 5 Lessons)
+    const wordOutcomes = extractWordOutcomesFromAlignment(result.alignments)
+    if (lesson?.id) {
+      hiddenAdaptiveStore.recordGradedCheck({
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        segmentId: currentSegment.id,
+        score: result.score,
+        alignments: result.alignments,
+        isFirstAttempt: isFirstGradedAttempt,
+        nowIso,
+      })
+    }
+
+    // Persist attempt, metrics, and silent adaptive outcomes to Cloudflare D1
     if (typeof window !== 'undefined' && typeof fetch === 'function' && lesson?.id) {
       apiClient
         .recordAttempt({
@@ -340,6 +356,8 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
           missingCount: result.missingCount,
           incorrectCount: result.incorrectCount,
           extraCount: result.extraCount,
+          expectedText: currentSegment.text,
+          wordOutcomes,
         })
         .catch(() => { })
     }

@@ -1,8 +1,15 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { Env, Variables } from '../types'
+import { updateHiddenAdaptiveMemoryInD1 } from './adaptive'
 
 export const attemptsRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
+
+const wordOutcomeSchema = z.object({
+  word: z.string().min(1).max(80),
+  outcome: z.enum(['correct', 'incorrect', 'missing']),
+  userWord: z.string().max(80).optional(),
+})
 
 const recordAttemptSchema = z.object({
   id: z.string().optional(),
@@ -15,6 +22,8 @@ const recordAttemptSchema = z.object({
   missingCount: z.number().int().min(0).default(0),
   incorrectCount: z.number().int().min(0).default(0),
   extraCount: z.number().int().min(0).default(0),
+  expectedText: z.string().max(2000).optional(),
+  wordOutcomes: z.array(wordOutcomeSchema).max(200).optional(),
 })
 
 interface AttemptRow {
@@ -124,6 +133,21 @@ attemptsRouter.post('/', async (c) => {
       )
 
     await db.batch([insertAttemptStmt, upsertProgressStmt])
+
+    // 4. Silently update hidden adaptive learning database (Weak Words, Mastered Words, Recent 5 Lessons)
+    try {
+      await updateHiddenAdaptiveMemoryInD1(db, {
+        userId,
+        lessonId: data.lessonId,
+        segmentId: data.segmentId,
+        userInput: data.userInput,
+        expectedText: data.expectedText,
+        wordOutcomes: data.wordOutcomes,
+      })
+    } catch (adaptiveErr) {
+      // Never block normal dictation attempt recording if silent memory update fails
+      console.warn('[API attempts:adaptive silent update error]', adaptiveErr)
+    }
 
     return c.json(
       {

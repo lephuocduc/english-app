@@ -10,6 +10,7 @@ import { vocabularyRouter } from './routes/vocabulary'
 import { transcriptRouter } from './routes/transcript'
 import { streakRouter } from './routes/streak'
 import { ttsRouter } from './routes/tts'
+import { adaptiveRouter } from './routes/adaptive'
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -66,6 +67,7 @@ app.route('/api/vocabulary', vocabularyRouter)
 app.route('/api/transcript', transcriptRouter)
 app.route('/api/streak', streakRouter)
 app.route('/api/tts', ttsRouter)
+app.route('/api/adaptive', adaptiveRouter)
 
 // 5. Global 404 Not Found Handler
 app.notFound((c) => {

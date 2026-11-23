@@ -10,14 +10,21 @@ Nhật ký phát triển tổng hợp từ `git log` của dự án **ListenFlow
 - **Backend & Database**: Cloudflare Workers (Hono + Zod) + **Cloudflare D1** (`listenflow-db`, `https://listenflow-api.duc-todo-api.workers.dev`).
 - **Audio & DSP**: Proxy TTS `/api/tts` (mặc định giọng UK `en-GB`, hỗ trợ US/AU), WSOLA time-stretch giữ nguyên cao độ khi đổi tốc độ, phân tách giọng 2 người nói, **Phone Mode Lv 1/2/3** (Web Audio / `OfflineAudioContext` + `HTMLAudioElement` mở khóa sẵn cho iOS/Android).
 - **Spaced Repetition (SRS)**: Thuật toán **FSRS** dùng thư viện chính thức `ts-fsrs` (v6) lưu đủ trạng thái thẻ & bảng `review_logs` trên D1.
-- **Theo dõi tiến bộ**: Thống kê điểm trung bình **lần chấm điểm đầu tiên** (First-Attempt Score) so sánh theo tuần / theo tháng + Daily Streak & Streak Freeze.
+- **Theo dõi tiến bộ & Cơ sở dữ liệu ẩn thích ứng (Adaptive 85%)**: Thống kê điểm trung bình **lần chấm điểm đầu tiên** (First-Attempt Score) theo tuần / tháng + Daily Streak & Streak Freeze; đồng thời âm thầm lưu **cơ sở dữ liệu ẩn** (`adaptive_word_memory` & `adaptive_lesson_history` trên D1, không hiển thị trên UI) để tối ưu từ vựng và tự động điều chỉnh độ khó bài nghe tiếp theo quanh mục tiêu ~85% (`GET /api/adaptive/profile`).
 
 ---
 
 ## Nhật ký phát triển chi tiết
 
-### 2026-11-23 — Nâng cấp FSRS, sửa Audio Mobile, Phone Mode sạch nền & Thống kê tiến bộ
+### 2026-11-23 — Cơ sở dữ liệu ẩn thích ứng (Mục tiêu 85%), Nâng cấp FSRS, sửa Audio Mobile & Thống kê tiến bộ
 
+- *(Adaptive Hidden DB)* — **Cơ sở dữ liệu ẩn theo dõi Weak Words / Mastered Words / 5 bài gần nhất & quy tắc tạo bài nghe quanh 85%**
+  - Tạo migration `migrations/0007_add_hidden_adaptive_memory.sql` (đã chạy trên D1): thêm 2 bảng ẩn `adaptive_word_memory` và `adaptive_lesson_history` (không hiển thị bất kỳ UI nào ra màn hình).
+  - Tự động ghi ngầm sau mỗi lần chấm điểm (`DictationStudio` → `hiddenAdaptiveStore` + `POST /api/attempts` → `updateHiddenAdaptiveMemoryInD1`):
+    - **Từ hay sai (`weak`)**: lưu từ nghe sai / nghe thiếu / sai chính tả, reset chuỗi đúng liên tiếp về 0.
+    - **Từ đã vững (`mastered`)**: tự động nâng hạng khi nghe đúng liên tiếp ≥ 3 lần.
+    - **Lịch sử điểm lần đầu 5 bài gần nhất**: tính điểm trung bình lần đầu tiên của 5 bài gần nhất để suy ra hướng điều chỉnh độ khó cho bài nghe tiếp theo (`< 80%` giảm nhẹ, `80%–90%` giữ nguyên, `> 90%` tăng nhẹ).
+  - Cung cấp endpoint nội bộ `GET /api/adaptive/profile` và `POST /api/adaptive/backfill` để dùng ngay khi tạo bài nghe mới về sau.
 - **`466cce5`** — *feat(srs): migrate spaced repetition from SM-2 to FSRS (ts-fsrs) with D1 schema and review_logs*
   - Nâng cấp toàn bộ hệ thống SRS từ SM-2 sang **FSRS** bằng thư viện chính thức `ts-fsrs@6.0.1`.
   - Tạo migration `migrations/0006_add_fsrs_and_review_logs.sql` (đã chạy trên D1): bổ sung các cột `due`, `stability`, `difficulty`, `elapsed_days`, `scheduled_days`, `reps`, `lapses`, `learning_steps`, `state` (0–3), `last_review` vào `saved_vocabulary` và backfill dữ liệu cũ; tạo bảng `review_logs` phục vụ thống kê & Optimize sau này.
