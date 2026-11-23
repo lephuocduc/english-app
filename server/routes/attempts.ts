@@ -9,6 +9,7 @@ const wordOutcomeSchema = z.object({
   word: z.string().min(1).max(80),
   outcome: z.enum(['correct', 'incorrect', 'missing']),
   userWord: z.string().max(80).optional(),
+  errorCategory: z.enum(['ending_s', 'vocab_or_listening']).optional(),
 })
 
 const recordAttemptSchema = z.object({

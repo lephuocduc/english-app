@@ -3,11 +3,13 @@ import { normalizeWord } from '../scoring/scorer'
 
 export type AdaptiveWordStatus = 'weak' | 'learning' | 'mastered'
 export type AdaptiveDifficultyAction = 'decrease' | 'maintain' | 'increase'
+export type WordErrorCategory = 'ending_s' | 'vocab_or_listening'
 
 export interface WordOutcomeInput {
   word: string
   outcome: 'correct' | 'incorrect' | 'missing'
   userWord?: string
+  errorCategory?: WordErrorCategory
 }
 
 export interface AdaptiveWordEntry {
@@ -16,11 +18,27 @@ export interface AdaptiveWordEntry {
   wrongCount: number
   correctCount: number
   consecutiveCorrect: number
+  endingSCount: number
+  lastEndingSInput: string | null
   lastErrorType: 'missing' | 'incorrect' | null
   lastWrongInput: string | null
   status: AdaptiveWordStatus
   lastSeenAt: string
   updatedAt: string
+}
+
+export interface EndingSErrorExample {
+  expectedWord: string
+  lastTyped: string | null
+  count: number
+}
+
+export interface EndingSTrainingSummary {
+  totalEndingSErrors: number
+  affectedWordsCount: number
+  needsDrill: boolean
+  topExamples: EndingSErrorExample[]
+  guidanceVi: string
 }
 
 export interface AdaptiveLessonScoreEntry {
@@ -53,6 +71,7 @@ export interface AdaptiveLessonBlueprint {
   priorityWeakWords: AdaptiveWordEntry[]
   weakWords: AdaptiveWordEntry[]
   masteredWords: AdaptiveWordEntry[]
+  endingSTraining: EndingSTrainingSummary
   recentLessons: AdaptiveLessonScoreEntry[]
 }
 
@@ -72,6 +91,11 @@ const COMMON_FUNCTION_WORDS = new Set([
   'yes', 'ok', 'hi', 'hey', 'oh', 'up', 'out',
 ])
 
+// Non-inflectional word pairs that happen to differ by a trailing 's' but are completely different words
+const NON_ENDING_S_WORDS = new Set([
+  'is', 'as', 'us', 'his', 'has', 'was', 'yes', 'this', 'thus', 'plus', 'bus', 'gas', 'yes',
+])
+
 export function isContentWord(word: string): boolean {
   const norm = normalizeWord(word)
   if (norm.length < 3) return false
@@ -79,9 +103,44 @@ export function isContentWord(word: string): boolean {
   return !COMMON_FUNCTION_WORDS.has(norm)
 }
 
+function differsOnlyByTrailingS(longer: string, shorter: string): boolean {
+  if (shorter.length < 2) return false
+  if (NON_ENDING_S_WORDS.has(longer)) return false
+
+  // 1. Direct -s (servers/server, logs/log, alerts/alert, checks/check)
+  if (longer === `${shorter}s`) return true
+
+  // 2. Possessive / contraction -'s (server's/server, system's/system, that's/that)
+  if (longer === `${shorter}'s`) return true
+
+  // 3. Regular -es after sibilant or -o (patches/patch, crashes/crash, fixes/fix, processes/process, goes/go)
+  if (longer === `${shorter}es` && /(?:s|x|z|ch|sh|o)$/.test(shorter)) return true
+
+  // 4. Consonant + y -> -ies (queries/query, retries/retry, policies/policy, proxies/proxy)
+  if (shorter.endsWith('y') && shorter.length >= 3 && longer === `${shorter.slice(0, -1)}ies`) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Detects whether a word mismatch is purely a trailing -s / -es / -ies / 's ending sound error
+ * (either missed final -s like "servers" -> "server", or hypercorrected extra -s like "server" -> "servers"),
+ * rather than not knowing the word itself.
+ */
+export function isTrailingSEndingError(expectedWord: string, userWord?: string): boolean {
+  if (!expectedWord || !userWord) return false
+  const exp = normalizeWord(expectedWord)
+  const usr = normalizeWord(userWord)
+  if (!exp || !usr || exp === usr) return false
+
+  return differsOnlyByTrailingS(exp, usr) || differsOnlyByTrailingS(usr, exp)
+}
+
 /**
  * Extracts normalized word-level outcomes from a dictation alignment result.
- * Ignores 'extra' insertions since they are not target words in the expected transcript.
+ * Distinguishes pure trailing -s ending errors from genuine vocabulary/listening errors.
  */
 export function extractWordOutcomesFromAlignment(alignments: AlignmentWord[]): WordOutcomeInput[] {
   const outcomes: WordOutcomeInput[] = []
@@ -89,22 +148,34 @@ export function extractWordOutcomesFromAlignment(alignments: AlignmentWord[]): W
     if (item.status === 'extra' || !item.expectedWord) continue
     const normalized = normalizeWord(item.expectedWord)
     if (!normalized) continue
+    const normalizedUser = item.userWord ? normalizeWord(item.userWord) : undefined
+    const isEndingS =
+      item.status === 'incorrect' && isTrailingSEndingError(normalized, normalizedUser)
+
     outcomes.push({
       word: normalized,
       outcome: item.status,
-      userWord: item.userWord ? normalizeWord(item.userWord) : undefined,
+      userWord: normalizedUser,
+      errorCategory:
+        item.status === 'correct'
+          ? undefined
+          : isEndingS
+            ? 'ending_s'
+            : 'vocab_or_listening',
     })
   }
   return outcomes
 }
 
 /**
- * Applies one or more word outcomes onto an existing word memory entry.
+ * Applies one word outcome onto an existing hidden word memory entry.
  * Rules:
- * - 'incorrect' or 'missing' => increment wrong/miss count, reset consecutiveCorrect = 0, status = 'weak'
- * - 'correct' => increment correctCount & consecutiveCorrect;
- *   if consecutiveCorrect >= 3 => status = 'mastered'
- *   else preserve 'weak' if previously weak, otherwise 'learning'
+ * - Pure trailing -s error ('ending_s'):
+ *   Records under endingSCount (ending sound error), does NOT mark the word itself as Weak vocabulary.
+ * - Genuine 'incorrect' or 'missing':
+ *   Increments wrong/miss count, resets consecutiveCorrect = 0, sets status = 'weak'.
+ * - 'correct':
+ *   Increments correctCount & consecutiveCorrect; if >= 3 consecutive => status = 'mastered'.
  */
 export function updateAdaptiveWordEntry(
   existing: AdaptiveWordEntry | undefined,
@@ -120,12 +191,18 @@ export function updateAdaptiveWordEntry(
         wrongCount: 0,
         correctCount: 0,
         consecutiveCorrect: 0,
+        endingSCount: 0,
+        lastEndingSInput: null,
         lastErrorType: null,
         lastWrongInput: null,
         status: 'learning',
         lastSeenAt: nowIso,
         updatedAt: nowIso,
       }
+
+  const isEndingS =
+    input.outcome === 'incorrect' &&
+    (input.errorCategory === 'ending_s' || isTrailingSEndingError(word, input.userWord))
 
   if (input.outcome === 'correct') {
     base.correctCount += 1
@@ -135,6 +212,10 @@ export function updateAdaptiveWordEntry(
     } else if (base.status !== 'weak') {
       base.status = 'learning'
     }
+  } else if (isEndingS) {
+    // Track purely as a trailing -s ending sound error, NOT as a weak vocabulary word
+    base.endingSCount += 1
+    base.lastEndingSInput = input.userWord || null
   } else {
     if (input.outcome === 'missing') {
       base.missCount += 1
@@ -262,9 +343,10 @@ export function computeAdaptiveDirective(
 
 /**
  * Builds the complete next-lesson adaptive blueprint combining:
- * 1) Weak words (and top content-word priorityWeakWords to weave into new contexts)
- * 2) Mastered words (>= 3 consecutive correct, to reduce frequency)
- * 3) Recent 5 lessons' first-attempt averages & difficulty adjustment directive
+ * 1) Genuine Weak Words (excluding pure trailing -s errors)
+ * 2) Mastered Words (>= 3 consecutive correct, to reduce frequency)
+ * 3) Separate Trailing -s Ending Sound Error summary for targeted ear training
+ * 4) Recent 5 lessons' first-attempt averages & difficulty adjustment directive (85% target)
  */
 export function buildAdaptiveLessonBlueprint(
   words: AdaptiveWordEntry[],
@@ -284,6 +366,28 @@ export function buildAdaptiveLessonBlueprint(
     .filter((w) => w.status === 'mastered' && w.consecutiveCorrect >= MASTERED_CONSECUTIVE_THRESHOLD)
     .sort((a, b) => b.consecutiveCorrect - a.consecutiveCorrect || b.correctCount - a.correctCount)
 
+  const endingSWords = words
+    .filter((w) => w.endingSCount > 0)
+    .sort((a, b) => b.endingSCount - a.endingSCount || b.updatedAt.localeCompare(a.updatedAt))
+
+  const totalEndingSErrors = endingSWords.reduce((sum, w) => sum + w.endingSCount, 0)
+  const topExamples: EndingSErrorExample[] = endingSWords.slice(0, 15).map((w) => ({
+    expectedWord: w.word,
+    lastTyped: w.lastEndingSInput,
+    count: w.endingSCount,
+  }))
+  const needsDrill = totalEndingSErrors >= 3
+
+  const endingSTraining: EndingSTrainingSummary = {
+    totalEndingSErrors,
+    affectedWordsCount: endingSWords.length,
+    needsDrill,
+    topExamples,
+    guidanceVi: needsDrill
+      ? `Phát hiện ${totalEndingSErrors} lần thiếu/thừa âm đuôi -s/-es (trên ${endingSWords.length} từ) — đã tách riêng là lỗi âm đuôi -s (không tính là từ vựng yếu). Nên lồng ghép câu có số nhiều / ngôi 3 số ít để luyện tai nghe âm -s đuôi.`
+      : 'Ít lỗi âm đuôi -s — giữ tần suất số nhiều / ngôi 3 số ít tự nhiên.',
+  }
+
   const trimmedLessons = [...recentLessons]
     .sort((a, b) => b.lastGradedAt.localeCompare(a.lastGradedAt))
     .slice(0, RECENT_LESSONS_WINDOW)
@@ -294,6 +398,7 @@ export function buildAdaptiveLessonBlueprint(
     priorityWeakWords,
     weakWords,
     masteredWords,
+    endingSTraining,
     recentLessons: trimmedLessons,
   }
 }

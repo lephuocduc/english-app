@@ -22,6 +22,7 @@ Nhật ký phát triển tổng hợp từ `git log` của dự án **ListenFlow
   - Tạo migration `migrations/0007_add_hidden_adaptive_memory.sql` (đã chạy trên D1): thêm 2 bảng ẩn `adaptive_word_memory` và `adaptive_lesson_history` (không hiển thị bất kỳ UI nào ra màn hình).
   - Tự động ghi ngầm sau mỗi lần chấm điểm (`DictationStudio` → `hiddenAdaptiveStore` + `POST /api/attempts` → `updateHiddenAdaptiveMemoryInD1`):
     - **Từ hay sai (`weak`)**: lưu từ nghe sai / nghe thiếu / sai chính tả, reset chuỗi đúng liên tiếp về 0.
+    - **Lỗi âm đuôi `-s` (`ending_s_count`)**: tự động phân biệt các lỗi chỉ thiếu/thừa đuôi `-s / -es / -ies / 's` (vd: `servers` ↔ `server`, `patches` ↔ `patch`, `queries` ↔ `query`) vào nhóm luyện âm đuôi riêng, **không** đánh nhầm từ đó vào danh sách Từ hay sai.
     - **Từ đã vững (`mastered`)**: tự động nâng hạng khi nghe đúng liên tiếp ≥ 3 lần.
     - **Lịch sử điểm lần đầu 5 bài gần nhất**: tính điểm trung bình lần đầu tiên của 5 bài gần nhất để suy ra hướng điều chỉnh độ khó cho bài nghe tiếp theo (`< 80%` giảm nhẹ, `80%–90%` giữ nguyên, `> 90%` tăng nhẹ).
   - Cung cấp endpoint nội bộ `GET /api/adaptive/profile` và `POST /api/adaptive/backfill` để dùng ngay khi tạo bài nghe mới về sau.

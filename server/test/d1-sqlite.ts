@@ -29,6 +29,9 @@ export function createTestD1Database(withSeed = false): D1Database {
   const migration7Path = join(process.cwd(), 'migrations', '0007_add_hidden_adaptive_memory.sql')
   sqlite.exec(readFileSync(migration7Path, 'utf8'))
 
+  const migration8Path = join(process.cwd(), 'migrations', '0008_add_ending_s_tracking.sql')
+  sqlite.exec(readFileSync(migration8Path, 'utf8'))
+
   if (withSeed) {
     const seedPath = join(process.cwd(), 'migrations', 'seed.sql')
     const seedSql = readFileSync(seedPath, 'utf8')

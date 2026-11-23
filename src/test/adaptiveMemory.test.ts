@@ -5,6 +5,7 @@ import {
   buildAdaptiveLessonBlueprint,
   computeAdaptiveDirective,
   extractWordOutcomesFromAlignment,
+  isTrailingSEndingError,
   type AdaptiveLessonScoreEntry,
   type AdaptiveWordEntry,
 } from '../lib/adaptive/adaptiveEngine'
@@ -58,6 +59,51 @@ describe('Hidden Adaptive Learning Database & 85% Difficulty Controller', () => 
     applyWordOutcomesToMap(wordMap, [{ word: 'server', outcome: 'missing' }], '2026-11-24T10:00:00Z')
     expect(wordMap.get('server')?.consecutiveCorrect).toBe(0)
     expect(wordMap.get('server')?.status).toBe('weak')
+  })
+
+  it('classifies missing/extra trailing -s/-es/-ies/\'s as ending_s sound errors, NOT weak vocabulary words', () => {
+    // True trailing -s ending errors
+    expect(isTrailingSEndingError('servers', 'server')).toBe(true)
+    expect(isTrailingSEndingError('patches', 'patch')).toBe(true)
+    expect(isTrailingSEndingError('queries', 'query')).toBe(true)
+    expect(isTrailingSEndingError("system's", 'system')).toBe(true)
+    expect(isTrailingSEndingError('server', 'servers')).toBe(true)
+
+    // Genuine non-ending-s errors (must NOT be misclassified)
+    expect(isTrailingSEndingError('his', 'hi')).toBe(false)
+    expect(isTrailingSEndingError('was', 'wa')).toBe(false)
+    expect(isTrailingSEndingError('latency', 'later')).toBe(false)
+    expect(isTrailingSEndingError('is', 'i')).toBe(false)
+
+    const wordMap = new Map<string, AdaptiveWordEntry>()
+    const scored = scoreDictation(
+      'Three servers deploy patches and queries for throughput.',
+      'Three server deploy patch and query for truput.'
+    )
+    applyWordOutcomesToMap(
+      wordMap,
+      extractWordOutcomesFromAlignment(scored.alignments),
+      '2026-11-23T14:00:00Z'
+    )
+
+    // "servers", "patches", "queries" were ONLY missing trailing -s -> tracked under endingSCount, NOT weak!
+    expect(wordMap.get('servers')?.status).not.toBe('weak')
+    expect(wordMap.get('servers')?.endingSCount).toBe(1)
+    expect(wordMap.get('servers')?.lastEndingSInput).toBe('server')
+    expect(wordMap.get('patches')?.status).not.toBe('weak')
+    expect(wordMap.get('patches')?.endingSCount).toBe(1)
+    expect(wordMap.get('queries')?.status).not.toBe('weak')
+    expect(wordMap.get('queries')?.endingSCount).toBe(1)
+
+    // "throughput" -> "truput" IS a genuine weak word!
+    expect(wordMap.get('throughput')?.status).toBe('weak')
+    expect(wordMap.get('throughput')?.wrongCount).toBe(1)
+
+    const bp = buildAdaptiveLessonBlueprint(Array.from(wordMap.values()), [])
+    expect(bp.weakWords.map((w) => w.word)).toEqual(['throughput'])
+    expect(bp.endingSTraining.totalEndingSErrors).toBe(3)
+    expect(bp.endingSTraining.affectedWordsCount).toBe(3)
+    expect(bp.endingSTraining.needsDrill).toBe(true)
   })
 
   it('adjusts next-lesson difficulty around 85% target (<80% decrease, 80-90% maintain, >90% increase) using last 5 lessons', () => {

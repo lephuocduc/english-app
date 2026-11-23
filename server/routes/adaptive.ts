@@ -19,6 +19,8 @@ interface WordMemoryRow {
   wrong_count: number
   correct_count: number
   consecutive_correct: number
+  ending_s_count: number | null
+  last_ending_s_input: string | null
   last_error_type: string | null
   last_wrong_input: string | null
   status: string
@@ -41,6 +43,8 @@ function mapRowToWordEntry(row: WordMemoryRow): AdaptiveWordEntry {
     wrongCount: Number(row.wrong_count || 0),
     correctCount: Number(row.correct_count || 0),
     consecutiveCorrect: Number(row.consecutive_correct || 0),
+    endingSCount: Number(row.ending_s_count || 0),
+    lastEndingSInput: row.last_ending_s_input || null,
     lastErrorType:
       row.last_error_type === 'missing' || row.last_error_type === 'incorrect'
         ? row.last_error_type
@@ -99,6 +103,7 @@ export async function updateHiddenAdaptiveMemoryInD1(
       const { results } = await db
         .prepare(
           `SELECT word, miss_count, wrong_count, correct_count, consecutive_correct,
+                  ending_s_count, last_ending_s_input,
                   last_error_type, last_wrong_input, status, last_seen_at, updated_at
            FROM adaptive_word_memory
            WHERE user_id = ? AND word IN (${placeholders})`
@@ -118,13 +123,16 @@ export async function updateHiddenAdaptiveMemoryInD1(
           .prepare(
             `INSERT INTO adaptive_word_memory (
               user_id, word, miss_count, wrong_count, correct_count, consecutive_correct,
+              ending_s_count, last_ending_s_input,
               last_error_type, last_wrong_input, status, last_seen_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id, word) DO UPDATE SET
               miss_count = excluded.miss_count,
               wrong_count = excluded.wrong_count,
               correct_count = excluded.correct_count,
               consecutive_correct = excluded.consecutive_correct,
+              ending_s_count = excluded.ending_s_count,
+              last_ending_s_input = excluded.last_ending_s_input,
               last_error_type = excluded.last_error_type,
               last_wrong_input = excluded.last_wrong_input,
               status = excluded.status,
@@ -138,6 +146,8 @@ export async function updateHiddenAdaptiveMemoryInD1(
             entry.wrongCount,
             entry.correctCount,
             entry.consecutiveCorrect,
+            entry.endingSCount,
+            entry.lastEndingSInput,
             entry.lastErrorType,
             entry.lastWrongInput,
             entry.status,
@@ -207,6 +217,7 @@ adaptiveRouter.get('/profile', async (c) => {
     const { results: wordRows } = await db
       .prepare(
         `SELECT word, miss_count, wrong_count, correct_count, consecutive_correct,
+                ending_s_count, last_ending_s_input,
                 last_error_type, last_wrong_input, status, last_seen_at, updated_at
          FROM adaptive_word_memory
          WHERE user_id = ?`
@@ -215,7 +226,6 @@ adaptiveRouter.get('/profile', async (c) => {
       .all<WordMemoryRow>()
 
     // Always compute latest 5 lessons directly from dictation_attempts first-attempts
-    // so historical lessons are immediately reflected even before backfill
     const { results: recentRows } = await db
       .prepare(
         `SELECT
@@ -307,8 +317,9 @@ adaptiveRouter.post('/backfill', async (c) => {
             .prepare(
               `INSERT INTO adaptive_word_memory (
                 user_id, word, miss_count, wrong_count, correct_count, consecutive_correct,
+                ending_s_count, last_ending_s_input,
                 last_error_type, last_wrong_input, status, last_seen_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
             .bind(
               userId,
@@ -317,6 +328,8 @@ adaptiveRouter.post('/backfill', async (c) => {
               entry.wrongCount,
               entry.correctCount,
               entry.consecutiveCorrect,
+              entry.endingSCount,
+              entry.lastEndingSInput,
               entry.lastErrorType,
               entry.lastWrongInput,
               entry.status,
@@ -391,6 +404,8 @@ adaptiveRouter.post('/backfill', async (c) => {
         trackedWords: allWords.length,
         weakWordsCount: blueprint.weakWords.length,
         masteredWordsCount: blueprint.masteredWords.length,
+        endingSErrorsTotal: blueprint.endingSTraining.totalEndingSErrors,
+        endingSAffectedWords: blueprint.endingSTraining.affectedWordsCount,
         recentLessonsCount: blueprint.recentLessons.length,
         directive: blueprint.directive,
       },
