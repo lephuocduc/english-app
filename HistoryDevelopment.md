@@ -16,6 +16,16 @@ Nhật ký phát triển tổng hợp từ `git log` của dự án **ListenFlow
 
 ## Nhật ký phát triển chi tiết
 
+### 2026-11-24 — Nâng cấp giọng UK bản xứ (Cloudflare Workers AI Deepgram Aura-2) & hiển thị rõ nút chọn giọng UK/US/AU
+
+- *(Workers AI Aura-2 TTS & Accent UI)* — **Giọng Anh-Anh (UK) đặc chất bản xứ & nút chọn UK/US/AU luôn hiển thị**
+  - Gắn binding **Cloudflare Workers AI** (`"ai": { "binding": "AI" }` trong `wrangler.jsonc`) và nâng cấp `/api/tts` (`server/routes/tts.ts`) dùng **`@cf/deepgram/aura-2-en`** kèm Cloudflare Edge Cache (0 Neurons khi phát lại) và fallback tự động sang Google TTS:
+    - **UK (`en-GB`, mặc định)**: giọng Nam Anh `draco` + Nữ Anh `pandora` (chất giọng Anh-Anh tự nhiên, đặc trưng).
+    - **US (`en-US`)**: giọng Nam Mỹ `orion` + Nữ Mỹ `luna`.
+    - **AU (`en-AU`)**: giọng Nam Úc `hyperion` + Nữ Úc `theia`.
+  - Khi backend trả 2 giọng bản xứ riêng (`X-Tts-Distinct-Voice: 1`), `ttsAudioPlayer.ts` bỏ bóp pitch nhân tạo để giữ nguyên chất giọng tự nhiên.
+  - Sửa lỗi khung `aspect-video overflow-hidden` trong `AudioPlayerView.tsx` che mất nút chọn giọng trên màn hình nhỏ; đưa cụm nút **UK | US | AU** (mặc định UK) ra rõ ràng ở cả thanh điều khiển Audio Player lẫn thanh công cụ nhanh cạnh `Play / Phone / Loop` trong `DictationStudio.tsx`.
+
 ### 2026-11-23 — Cơ sở dữ liệu ẩn thích ứng (Mục tiêu 85%), Nâng cấp FSRS, sửa Audio Mobile & Thống kê tiến bộ
 
 - *(Adaptive Hidden DB)* — **Cơ sở dữ liệu ẩn theo dõi Weak Words / Mastered Words / 5 bài gần nhất & quy tắc tạo bài nghe quanh 85%**

@@ -36,6 +36,7 @@ import type {
   ScoreResult,
   UserSentenceProgress,
   StreakData,
+  VoiceAccent,
 } from '../../types'
 import { PHONE_MODE_PRESETS } from '../../lib/audio/ttsAudioPlayer'
 import { scoreDictation } from '../../lib/scoring/scorer'
@@ -57,11 +58,13 @@ interface DictationStudioProps {
   hasLeadIn?: boolean
   isPhoneCallMode?: boolean
   phoneCallLevel?: PhoneCallLevel
+  voiceAccent?: VoiceAccent
   maxUnlockedIndex?: number
   onTogglePlayPause?: () => void
   onToggleLoop?: () => void
   onTogglePhoneCallMode?: () => void
   onChangePhoneCallLevel?: (level: PhoneCallLevel) => void
+  onChangeAccent?: (accent: VoiceAccent) => void
   onToggleLeadIn?: () => void
   onPlayPreviousSegment?: () => void
   onSelectSegment: (index: number) => void
@@ -100,11 +103,13 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
   isLooping = false,
   isPhoneCallMode = false,
   phoneCallLevel = 1,
+  voiceAccent = 'en-GB',
   maxUnlockedIndex: propMaxUnlocked,
   onTogglePlayPause,
   onToggleLoop,
   onTogglePhoneCallMode,
   onChangePhoneCallLevel,
+  onChangeAccent,
   onPlayPreviousSegment,
   onSelectSegment,
   onReplaySegment,
@@ -1279,6 +1284,37 @@ export const DictationStudio: React.FC<DictationStudioProps> = ({
                             ))}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {onChangeAccent && (
+                      <div
+                        role="group"
+                        aria-label="Quick voice accent selector"
+                        className="inline-flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5"
+                      >
+                        {(
+                          [
+                            { value: 'en-GB', label: 'UK', title: 'Giọng Anh-Anh (UK — mặc định)' },
+                            { value: 'en-US', label: 'US', title: 'Giọng Anh-Mỹ (US)' },
+                            { value: 'en-AU', label: 'AU', title: 'Giọng Anh-Úc (AU)' },
+                          ] as { value: VoiceAccent; label: string; title: string }[]
+                        ).map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => onChangeAccent(opt.value)}
+                            aria-pressed={voiceAccent === opt.value}
+                            title={opt.title}
+                            className={`px-1.5 py-0.2 text-[10px] font-bold rounded transition cursor-pointer ${
+                              voiceAccent === opt.value
+                                ? 'bg-indigo-600 text-white shadow-2xs'
+                                : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
                       </div>
                     )}
 

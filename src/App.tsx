@@ -1892,10 +1892,12 @@ export function App() {
                     isLooping={effectiveIsLooping}
                     isPhoneCallMode={activeIsAudio ? audioPlayer.isPhoneCallMode : undefined}
                     phoneCallLevel={activeIsAudio ? audioPlayer.phoneCallLevel : undefined}
+                    voiceAccent={activeIsAudio ? audioPlayer.voiceAccent : undefined}
                     onTogglePlayPause={handleTogglePlayPause}
                     onToggleLoop={handleToggleLoop}
                     onTogglePhoneCallMode={activeIsAudio ? handleTogglePhoneCallMode : undefined}
                     onChangePhoneCallLevel={activeIsAudio ? handleChangePhoneCallLevel : undefined}
+                    onChangeAccent={activeIsAudio ? handleChangeAudioAccent : undefined}
                     onPlayPreviousSegment={handlePlayPreviousSegment}
                     onSelectSegment={handleSelectSegment}
                     onReplaySegment={handleReplayCurrent}

@@ -226,6 +226,7 @@ function selectBestSpeechVoice(
 
 const bufferCache = new Map<string, AudioBuffer>()
 const rawBlobCache = new Map<string, Blob>()
+const distinctVoiceCache = new Map<string, boolean>()
 
 // Tiny valid 10ms silent 16-bit PCM WAV (22050Hz mono) for synchronous mobile HTMLAudioElement unlock
 const SILENT_WAV_DATA_URI = (() => {
@@ -606,18 +607,24 @@ export class TtsAudioEngine {
     accent: VoiceAccent = 'en-GB',
     speakerIndex = 0,
     speed = 1.0
-  ): Promise<AudioBuffer> {
+  ): Promise<{ buffer: AudioBuffer; hasDistinctNativeVoice: boolean }> {
     const cleanText = text.trim()
     const safeSpeed = Math.round(Math.min(2.0, Math.max(0.5, speed)) * 100) / 100
+    const speakerSlot = Math.abs(Math.floor(speakerIndex || 0)) % 2
     const profile = getSpeakerVoiceProfile(speakerIndex)
-    const baseCacheKey = `${accent}:::${cleanText}`
+    const baseCacheKey = `${accent}:::spk=${speakerSlot}:::${cleanText}`
     const voiceCacheKey =
       profile.id === 'voice-a' ? baseCacheKey : `${accent}:::${profile.id}:::${cleanText}`
     const finalCacheKey =
       Math.abs(safeSpeed - 1.0) < 0.01 ? voiceCacheKey : `${voiceCacheKey}:::spd=${safeSpeed}`
 
     const cachedFinal = bufferCache.get(finalCacheKey)
-    if (cachedFinal) return cachedFinal
+    if (cachedFinal) {
+      return {
+        buffer: cachedFinal,
+        hasDistinctNativeVoice: Boolean(distinctVoiceCache.get(baseCacheKey)),
+      }
+    }
 
     const ctx = this.getAudioContext()
     if (!ctx) {
@@ -625,10 +632,12 @@ export class TtsAudioEngine {
     }
 
     let voiceBuffer = bufferCache.get(voiceCacheKey)
+    let hasDistinctNativeVoice = Boolean(distinctVoiceCache.get(baseCacheKey))
+
     if (!voiceBuffer) {
       let baseBuffer = bufferCache.get(baseCacheKey)
       if (!baseBuffer) {
-        const url = apiClient.getTtsAudioUrl(cleanText, accent)
+        const url = apiClient.getTtsAudioUrl(cleanText, accent, speakerIndex)
         const response = await fetch(url)
         if (!response.ok) {
           throw new Error(`TTS HTTP ${response.status}`)
@@ -638,6 +647,9 @@ export class TtsAudioEngine {
         if (contentType.includes('text/html') || contentType.includes('application/json')) {
           throw new Error('TTS endpoint did not return audio')
         }
+
+        hasDistinctNativeVoice = response.headers?.get?.('x-tts-distinct-voice') === '1'
+        distinctVoiceCache.set(baseCacheKey, hasDistinctNativeVoice)
 
         const arrayBuf = await response.arrayBuffer()
         if (arrayBuf.byteLength < 64) {
@@ -652,7 +664,9 @@ export class TtsAudioEngine {
         bufferCache.set(baseCacheKey, baseBuffer)
       }
 
-      if (Math.abs(profile.pitchRatio - 1.0) >= 0.01) {
+      // Skip artificial pitch-shifting when the backend already returned distinct native neural voices
+      // (e.g., British Male 'draco' vs British Female 'pandora' from Aura-2)
+      if (!hasDistinctNativeVoice && Math.abs(profile.pitchRatio - 1.0) >= 0.01) {
         voiceBuffer = pitchShiftAudioBuffer(ctx, baseBuffer, profile.pitchRatio)
         bufferCache.set(voiceCacheKey, voiceBuffer)
       } else {
@@ -664,10 +678,10 @@ export class TtsAudioEngine {
     if (Math.abs(safeSpeed - 1.0) >= 0.01) {
       const stretched = timeStretchAudioBuffer(ctx, voiceBuffer, safeSpeed)
       bufferCache.set(finalCacheKey, stretched)
-      return stretched
+      return { buffer: stretched, hasDistinctNativeVoice }
     }
 
-    return voiceBuffer
+    return { buffer: voiceBuffer, hasDistinctNativeVoice }
   }
 
   private connectWithSpeakerEq(
@@ -879,7 +893,8 @@ export class TtsAudioEngine {
     speakerIndex: number,
     effectiveLeadInSpeaker: number,
     isPhoneCallMode: boolean,
-    phoneCallLevel: PhoneCallLevel
+    phoneCallLevel: PhoneCallLevel,
+    skipSpeakerEq = false
   ): Promise<AudioBuffer> {
     if (typeof window === 'undefined') return mainBuffer
     const OfflineCtx =
@@ -910,14 +925,22 @@ export class TtsAudioEngine {
       if (hasLeadIn && leadInBuffer) {
         const leadInSrc = offlineCtx.createBufferSource()
         leadInSrc.buffer = leadInBuffer
-        this.connectWithSpeakerEq(offlineCtx, leadInSrc, inputNode, effectiveLeadInSpeaker)
+        if (skipSpeakerEq) {
+          leadInSrc.connect(inputNode)
+        } else {
+          this.connectWithSpeakerEq(offlineCtx, leadInSrc, inputNode, effectiveLeadInSpeaker)
+        }
         const offset = Math.max(0, leadInBuffer.duration - leadInSlice)
         leadInSrc.start(0, offset, leadInSlice)
       }
 
       const mainSrc = offlineCtx.createBufferSource()
       mainSrc.buffer = mainBuffer
-      this.connectWithSpeakerEq(offlineCtx, mainSrc, inputNode, speakerIndex)
+      if (skipSpeakerEq) {
+        mainSrc.connect(inputNode)
+      } else {
+        this.connectWithSpeakerEq(offlineCtx, mainSrc, inputNode, speakerIndex)
+      }
       mainSrc.start(mainStartAt)
 
       return await offlineCtx.startRendering()
@@ -987,14 +1010,16 @@ export class TtsAudioEngine {
     cleanText: string,
     accent: VoiceAccent,
     speed: number,
+    speakerIndex: number,
     token: number,
     onStart?: () => void,
     onEnd?: () => void,
     onFallbackUsed?: (usedFallback: boolean, fallbackVoiceMatched?: boolean) => void
   ): Promise<boolean> {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return false
-    const ttsUrl = apiClient.getTtsAudioUrl(cleanText, accent)
-    const baseCacheKey = `${accent}:::${cleanText}`
+    const speakerSlot = Math.abs(Math.floor(speakerIndex || 0)) % 2
+    const ttsUrl = apiClient.getTtsAudioUrl(cleanText, accent, speakerIndex)
+    const baseCacheKey = `${accent}:::spk=${speakerSlot}:::${cleanText}`
 
     // Tier A: Play cached or freshly fetched MP3 Blob via persistent gesture-unlocked HTMLAudioElement
     try {
@@ -1092,10 +1117,13 @@ export class TtsAudioEngine {
           )
         : Promise.resolve(null)
 
-      const [mainBuffer, leadInBuffer] = await Promise.all([
+      const [mainResult, leadInResult] = await Promise.all([
         mainBufferPromise,
         leadInBufferPromise,
       ])
+      const mainBuffer = mainResult.buffer
+      const leadInBuffer = leadInResult ? leadInResult.buffer : null
+      const skipSpeakerEq = mainResult.hasDistinctNativeVoice
 
       if (this.playbackToken !== token) return
 
@@ -1110,7 +1138,8 @@ export class TtsAudioEngine {
           speakerIndex,
           effectiveLeadInSpeaker,
           isPhoneCallMode,
-          phoneCallLevel
+          phoneCallLevel,
+          skipSpeakerEq
         )
         if (this.playbackToken !== token) return
 
@@ -1143,6 +1172,7 @@ export class TtsAudioEngine {
           cleanText,
           accent,
           speed,
+          speakerIndex,
           token,
           onStart,
           onEnd,
@@ -1170,7 +1200,11 @@ export class TtsAudioEngine {
         const leadInSrc = ctx.createBufferSource()
         leadInSrc.buffer = leadInBuffer
         leadInSrc.playbackRate.value = 1.0
-        this.connectWithSpeakerEq(ctx, leadInSrc, inputNode, effectiveLeadInSpeaker)
+        if (leadInResult?.hasDistinctNativeVoice) {
+          leadInSrc.connect(inputNode)
+        } else {
+          this.connectWithSpeakerEq(ctx, leadInSrc, inputNode, effectiveLeadInSpeaker)
+        }
 
         const sliceDuration = Math.min(1.1, leadInBuffer.duration)
         const offset = Math.max(0, leadInBuffer.duration - sliceDuration)
@@ -1183,7 +1217,11 @@ export class TtsAudioEngine {
       const mainSrc = ctx.createBufferSource()
       mainSrc.buffer = mainBuffer
       mainSrc.playbackRate.value = 1.0
-      this.connectWithSpeakerEq(ctx, mainSrc, inputNode, speakerIndex)
+      if (skipSpeakerEq) {
+        mainSrc.connect(inputNode)
+      } else {
+        this.connectWithSpeakerEq(ctx, mainSrc, inputNode, speakerIndex)
+      }
       this.activeSource = mainSrc
 
       mainSrc.onended = () => {
@@ -1211,6 +1249,7 @@ export class TtsAudioEngine {
         cleanText,
         accent,
         speed,
+        speakerIndex,
         token,
         onStart,
         onEnd,

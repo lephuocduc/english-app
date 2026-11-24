@@ -25,8 +25,17 @@ export interface D1Database {
   exec(query: string): Promise<D1ExecResult>
 }
 
+export interface AiBinding {
+  run(
+    model: string,
+    input: Record<string, unknown>,
+    options?: { returnRawResponse?: boolean }
+  ): Promise<Response | ReadableStream<Uint8Array> | ArrayBuffer | Uint8Array>
+}
+
 export interface Env {
   DB: D1Database
+  AI?: AiBinding
   API_SECRET?: string
   JWT_SECRET?: string
   ENVIRONMENT?: string

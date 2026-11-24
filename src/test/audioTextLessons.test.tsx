@@ -538,6 +538,42 @@ describe('Text-to-Audio Lesson Creator & Phone Call Mode', () => {
       const ttsBad = await serverApp.request('/api/tts?text=', { method: 'GET' }, { DB: db })
       expect(ttsBad.status).toBe(400)
 
+      // Verify Cloudflare Workers AI Deepgram Aura-2 selects authentic British / US / AU speakers per speaker slot
+      const aiCalls: Array<{ model: string; input: Record<string, unknown> }> = []
+      const fakeAi = {
+        run: vi.fn(async (model: string, input: Record<string, unknown>) => {
+          aiCalls.push({ model, input })
+          return new Response(new Uint8Array(128), {
+            status: 200,
+            headers: { 'content-type': 'audio/mpeg' },
+          })
+        }),
+      }
+      const ukSpk0 = await serverApp.request(
+        '/api/tts?text=Check+the+server+schedule&lang=en-GB&speaker=0',
+        { method: 'GET' },
+        { DB: db, AI: fakeAi }
+      )
+      expect(ukSpk0.status).toBe(200)
+      expect(ukSpk0.headers.get('x-tts-provider')).toBe('cloudflare-aura-2')
+      expect(ukSpk0.headers.get('x-tts-speaker')).toBe('draco')
+      expect(ukSpk0.headers.get('x-tts-distinct-voice')).toBe('1')
+
+      const ukSpk1 = await serverApp.request(
+        '/api/tts?text=Right+away&lang=en-GB&speaker=1',
+        { method: 'GET' },
+        { DB: db, AI: fakeAi }
+      )
+      expect(ukSpk1.headers.get('x-tts-speaker')).toBe('pandora')
+
+      const usSpk0 = await serverApp.request(
+        '/api/tts?text=Checking+now&lang=en-US&speaker=0',
+        { method: 'GET' },
+        { DB: db, AI: fakeAi }
+      )
+      expect(usSpk0.headers.get('x-tts-speaker')).toBe('orion')
+      expect(aiCalls[0].model).toBe('@cf/deepgram/aura-2-en')
+
       const sampleAudio = DEFAULT_B1_B2_AUDIO_LESSONS[0]
       const createRes = await serverApp.request(
         '/api/lessons',

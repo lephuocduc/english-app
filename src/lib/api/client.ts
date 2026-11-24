@@ -322,12 +322,13 @@ export class ApiClient {
   }
 
   // --- Text-to-Speech Audio URL Builder ---
-  getTtsAudioUrl(text: string, lang = 'en-GB'): string {
+  getTtsAudioUrl(text: string, lang = 'en-GB', speakerIndex = 0): string {
     const isLocalDev =
       typeof window !== 'undefined' &&
       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     const base = isLocalDev ? '/api' : this.baseUrl
-    return `${base}/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}`
+    const speakerSlot = Math.abs(Math.floor(speakerIndex || 0)) % 2
+    return `${base}/tts?text=${encodeURIComponent(text)}&lang=${encodeURIComponent(lang)}&speaker=${speakerSlot}`
   }
 }
 

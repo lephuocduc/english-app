@@ -109,7 +109,7 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col transition-colors">
       {/* Audio Visualizer & Phone Call Simulation Stage */}
       <div
-        className={`relative aspect-video w-full flex flex-col items-center justify-between p-5 sm:p-6 overflow-hidden transition-colors duration-300 ${
+        className={`relative min-h-[210px] sm:min-h-[244px] w-full flex flex-col items-center justify-between gap-3 p-4 sm:p-6 overflow-hidden transition-colors duration-300 ${
           isPhoneCallMode
             ? 'bg-gradient-to-br from-slate-950 via-amber-950/40 to-slate-950 text-amber-100'
             : 'bg-gradient-to-br from-slate-950 via-indigo-950/60 to-slate-950 text-white'
@@ -212,15 +212,15 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
 
           <p className="text-[11px] text-slate-300/90 leading-snug">
             {isPhoneCallMode
-              ? 'Đang bật chế độ nghe qua điện thoại: âm thanh hẹp băng tần và có tạp âm nhẹ để luyện phản xạ thực tế.'
+              ? 'Đang bật chế độ nghe qua điện thoại: âm thanh hẹp băng tần đặc trưng để luyện phản xạ thực tế.'
               : 'Nhấn Play hoặc phím Alt+R để nghe đoạn audio được tổng hợp từ văn bản.'}
           </p>
         </div>
 
-        {/* Bottom Accent Selector */}
-        <div className="w-full flex items-center justify-between gap-2 z-10 text-[11px]">
-          <div className="flex items-center gap-1">
-            {usingFallbackSpeech && fallbackAccentMissing ? (
+        {/* Fallback voice notice (when offline / no /api/tts) */}
+        {usingFallbackSpeech && (
+          <div className="w-full flex items-center justify-start gap-2 z-10 text-[11px]">
+            {fallbackAccentMissing ? (
               <span
                 className="px-2 py-0.5 rounded bg-amber-900/70 border border-amber-500/40 text-amber-200 text-[10px] font-medium"
                 title="Trình duyệt đang dùng giọng hệ thống và chưa cài gói giọng vùng này; hãy chạy server /api/tts để nghe đủ giọng US/UK/AU."
@@ -230,36 +230,12 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
                 /api/tts)
               </span>
             ) : (
-              usingFallbackSpeech && (
-                <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300 text-[10px]">
-                  Browser Speech Voice
-                </span>
-              )
+              <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700 text-slate-300 text-[10px]">
+                Browser Speech Voice
+              </span>
             )}
           </div>
-
-          {onChangeAccent && (
-            <div className="inline-flex items-center gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5">
-              <span className="px-1.5 text-[10px] text-slate-300 font-medium">Accent:</span>
-              {ACCENT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onChangeAccent(opt.value)}
-                  aria-pressed={voiceAccent === opt.value}
-                  title={opt.title}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
-                    voiceAccent === opt.value
-                      ? 'bg-indigo-600 text-white shadow-2xs'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Error Overlay */}
         {audioError && (
@@ -405,6 +381,32 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
                 <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'animate-spin-slow' : ''}`} />
                 <span>Loop</span>
               </button>
+            )}
+
+            {/* Accent Selector (UK default, US, AU) */}
+            {onChangeAccent && (
+              <div
+                role="group"
+                aria-label="Voice accent"
+                className="inline-flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 shadow-2xs"
+              >
+                {ACCENT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => onChangeAccent(opt.value)}
+                    aria-pressed={voiceAccent === opt.value}
+                    title={opt.title}
+                    className={`px-2 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                      voiceAccent === opt.value
+                        ? 'bg-indigo-600 text-white shadow-2xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             )}
 
             {/* Speed Selector */}
